@@ -1,0 +1,31 @@
+#cloud-config
+autoinstall:
+  version: 1
+  locale: fi_FI
+  keyboard:
+      layout: fi
+  apt:
+      primary:
+          - arches: [default]
+            uri: http://mirrors.nic.funet.fi/ubuntu/
+      sources:
+          virtualbox-oracle.list:
+            source: "deb [arch=amd64] https://download.virtualbox.org/virtualbox/debian focal contrib"
+            keyid: 2980AECF
+            keyserver: keyserver.ubuntu.com
+  packages:
+    - virtualbox-6.1
+  storage:
+      layout:
+          name: lvm
+  identity:
+      hostname: testhost
+      username: ytl
+      # ytl
+      password: $1$wIiwKtrF$0Y3YOfuHMSIdsg.69sIWw0
+  ssh:
+      install-server: no
+  late-commands:
+    # install Vagrant
+    - wget -O /target/tmp/vagrant.deb -c https://releases.hashicorp.com/vagrant/2.2.10/vagrant_2.2.10_x86_64.deb
+    - curtin in-target --target=/target -- apt install /tmp/vagrant.deb
