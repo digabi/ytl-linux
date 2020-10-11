@@ -1,0 +1,74 @@
+#!/bin/sh
+
+set -e
+
+# This script will download a Ubuntu installation ISO image
+# and modify it so that it will boot by default to an autoinstall
+# mode and download our install configuration.
+
+# Configurable settings:
+
+# location of the original Ubuntu installation ISO image
+DOWNLOAD_URL=https://releases.ubuntu.com/20.04/ubuntu-20.04.1-live-server-amd64.iso
+
+# location where the clients should download the installation configuration
+# (exported for the benefit of mangle-image below)
+# "_gateway" can be used for testing
+export AUTOINSTALL_URL=http://_gateway:3003/
+
+# Label on the modified ISO image
+ISO_LABEL="YTL Ubuntu Install CD"
+
+# Filename of the resulting image
+RESULT_IMAGE=ytl-install.iso
+
+#########################################
+# Step 0: Check some prerequisites
+#########################################
+
+for prog in wget bsdtar mkisofs; do
+    if ! which $prog >/dev/null 2>&1; then
+        echo "Missing $prog, cannot continue" 1>&2
+        exit 1
+    fi
+done
+
+#########################################
+# Step 1: Download the original ISO image
+#########################################
+
+IMAGE=ubuntu.iso
+if [ ! -e $IMAGE ]; then
+    wget -O $IMAGE $DOWNLOAD_URL
+fi
+
+#########################################
+# Step 2: Extract the image to a work directory
+#########################################
+
+WORKDIR=$(mktemp -d)
+bsdtar xf $IMAGE  -C "$WORKDIR"
+chmod -R u+w "$WORKDIR"
+
+#########################################
+# Step 3: Call an external script to modify the work directory
+#########################################
+
+./mangle-image "$WORKDIR"
+
+#########################################
+# Step 4: Repack the image
+#########################################
+
+mkisofs -q -r -V "$ISO_LABEL" \
+            -cache-inodes \
+            -J -l -b isolinux/isolinux.bin \
+            -c isolinux/boot.cat -no-emul-boot \
+            -boot-load-size 4 -boot-info-table \
+            -o "$RESULT_IMAGE" "$WORKDIR/"
+
+#########################################
+# Step 5: Clean up the work directory
+#########################################
+
+rm -rf "$WORKDIR"

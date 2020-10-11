@@ -1,0 +1,5 @@
+default ytl
+label ytl
+  menu label ^Install YTL Ubuntu Server
+  kernel /casper/vmlinuz
+  append   initrd=/casper/initrd quiet --- autoinstall ds=nocloud-net;s=##AUTOINSTALL_URL##
