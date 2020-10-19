@@ -1,5 +1,5 @@
 menuentry "Install YTL Ubuntu Server" {
         set gfxpayload=keep
-        linux   /casper/vmlinuz   quiet  nomodeset --- autoinstall ds=nocloud-net;s=##AUTOINSTALL_URL##
+        linux   /casper/vmlinuz   quiet  nomodeset --- autoinstall ds=nocloud-net\;s=##AUTOINSTALL_URL##
         initrd  /casper/initrd
 }
