@@ -26,7 +26,7 @@ RESULT_IMAGE=ytl-install.iso
 # Step 0: Check some prerequisites
 #########################################
 
-for prog in wget bsdtar mkisofs; do
+for prog in wget bsdtar xorriso; do
     if ! which $prog >/dev/null 2>&1; then
         echo "Missing $prog, cannot continue" 1>&2
         exit 1
@@ -60,15 +60,26 @@ chmod -R u+w "$WORKDIR"
 # Step 4: Repack the image
 #########################################
 
-mkisofs -q -r -V "$ISO_LABEL" \
-            -cache-inodes \
-            -J -l -b isolinux/isolinux.bin \
-            -c isolinux/boot.cat -no-emul-boot \
-            -boot-load-size 4 -boot-info-table \
-            -o "$RESULT_IMAGE" "$WORKDIR/"
+# based on
+#  https://help.ubuntu.com/community/InstallCDCustomization#Building_the_ISO_image
+
+MBR_FILE=$(mktemp)
+dd if="$IMAGE" bs=1 count=446 of="$MBR_FILE"
+
+xorriso -as mkisofs -r -V "$ISO_LABEL" \
+            -cache-inodes -J -l \
+            -isohybrid-mbr "$MBR_FILE" \
+            -c isolinux/boot.cat \
+            -b isolinux/isolinux.bin \
+               -no-emul-boot -boot-load-size 4 -boot-info-table \
+            -eltorito-alt-boot \
+            -e boot/grub/efi.img \
+               -no-emul-boot -isohybrid-gpt-basdat \
+            -o "$RESULT_IMAGE" \
+            "$WORKDIR"
 
 #########################################
-# Step 5: Clean up the work directory
+# Step 5: Clean up
 #########################################
 
-rm -rf "$WORKDIR"
+rm -rf "$WORKDIR" "$MBR_FILE"
