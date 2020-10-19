@@ -10,6 +10,10 @@ set -e
 
 WORKDIR="$1"
 
+#########################################
+# Step 1: legacy boot mode / ISOLINUX
+#########################################
+
 # make our own ISOLINUX boot entry in place, substituting
 # the URL where the clients will fetch the autoinstall configuration
 sed "s|##AUTOINSTALL_URL##|$AUTOINSTALL_URL|" ytl.cfg.template > "$WORKDIR"/isolinux/ytl.cfg
@@ -19,5 +23,14 @@ sed -i '/txt\.cfg/ iinclude ytl.cfg' "$WORKDIR"/isolinux/menu.cfg
 
 # disable the default boot to live installation mode
 sed -i 's/^ui /# ui/' "$WORKDIR"/isolinux/isolinux.cfg
+
+#########################################
+# Step 2: UEFI boot mode / GRUB
+#########################################
+
+sed -i '/"Install Ubuntu Server"/iINCLUDE_YTL_MENU' "$WORKDIR"/boot/grub/grub.cfg
+sed -i '/INCLUDE_YTL_MENU/r ytl-grub.template' "$WORKDIR"/boot/grub/grub.cfg
+sed -i '/INCLUDE_YTL_MENU/d' "$WORKDIR"/boot/grub/grub.cfg
+sed -i "s|##AUTOINSTALL_URL##|$AUTOINSTALL_URL|" "$WORKDIR"/boot/grub/grub.cfg
 
 # All done!
