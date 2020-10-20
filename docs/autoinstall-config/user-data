@@ -26,6 +26,9 @@ autoinstall:
   ssh:
       install-server: no
   late-commands:
+    # clean up autoinstall traces from Grub configuration and add a "safe graphics" setting
+    - sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="nomodeset"/' /target/etc/default/grub
+    - curtin in-target --target=/target -- update-grub
     # install Vagrant
     - wget -O /target/tmp/vagrant.deb -c https://releases.hashicorp.com/vagrant/2.2.10/vagrant_2.2.10_x86_64.deb
     - curtin in-target --target=/target -- apt install /tmp/vagrant.deb
