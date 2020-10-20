@@ -16,7 +16,7 @@ WORKDIR="$1"
 
 # make our own ISOLINUX boot entry in place, substituting
 # the URL where the clients will fetch the autoinstall configuration
-sed "s|##AUTOINSTALL_URL##|$AUTOINSTALL_URL|" ytl.cfg.template > "$WORKDIR"/isolinux/ytl.cfg
+sed "s|##AUTOINSTALL_URL##|$AUTOINSTALL_URL|" templates/ytl-isolinux.cfg > "$WORKDIR"/isolinux/ytl.cfg
 
 # activate the entry
 sed -i '/txt\.cfg/ iinclude ytl.cfg' "$WORKDIR"/isolinux/menu.cfg
@@ -29,7 +29,7 @@ sed -i 's/^ui /# ui/' "$WORKDIR"/isolinux/isolinux.cfg
 #########################################
 
 sed -i '/"Install Ubuntu Server"/iINCLUDE_YTL_MENU' "$WORKDIR"/boot/grub/grub.cfg
-sed -i '/INCLUDE_YTL_MENU/r ytl-grub.template' "$WORKDIR"/boot/grub/grub.cfg
+sed -i '/INCLUDE_YTL_MENU/r templates/ytl-grub.cfg' "$WORKDIR"/boot/grub/grub.cfg
 sed -i '/INCLUDE_YTL_MENU/d' "$WORKDIR"/boot/grub/grub.cfg
 sed -i "s|##AUTOINSTALL_URL##|$AUTOINSTALL_URL|" "$WORKDIR"/boot/grub/grub.cfg
 
