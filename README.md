@@ -15,6 +15,16 @@ Just run
 
 which should result in a new ISO file "ytl-install.iso".
 
+## Updating configuration
+
+The installation configuration is in
+[``docs/autoinstall-config/user-data``](https://github.com/digabi/ytl-linux/blob/main/docs/autoinstall-config/user-data)
+and the format is documented
+[here](https://ubuntu.com/server/docs/install/autoinstall-reference).
+Pushing changes to the file will make
+it available to installers via [GitHub
+pages](https://digabi.github.io/ytl-linux/autoinstall-config/user-data)
+
 ## Testing instructions
 
 In its current state the image will fetch the autoinstall configuration
