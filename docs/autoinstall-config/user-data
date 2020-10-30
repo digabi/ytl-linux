@@ -1,7 +1,7 @@
 #cloud-config
 autoinstall:
   version: 1
-  locale: fi_FI
+  locale: en_US.UTF8
   keyboard:
       layout: fi
   apt:
@@ -15,14 +15,16 @@ autoinstall:
             keyserver: keyserver.ubuntu.com
   packages:
     - virtualbox-6.1
+    - cinnamon-core
   storage:
       layout:
           name: lvm
   identity:
-      hostname: testhost
-      username: ytl
-      # ytl
-      password: $1$wIiwKtrF$0Y3YOfuHMSIdsg.69sIWw0
+      hostname: ktp
+      username: school
+      realname: School
+      # school
+      password: paN7zaXhmvMKE
   ssh:
       install-server: no
   late-commands:
@@ -32,3 +34,16 @@ autoinstall:
     # install Vagrant
     - wget -O /target/tmp/vagrant.deb -c https://releases.hashicorp.com/vagrant/2.2.10/vagrant_2.2.10_x86_64.deb
     - curtin in-target --target=/target -- apt install /tmp/vagrant.deb
+    # add user for the school (password: school)
+    - curtin in-target --target=/target -- useradd -p $1$wIiwKtrF$0Y3YOfuHMSIdsg.69sIWw0 -U -m meb
+    - curtin in-target --target=/target -- usermod -c "Matriculation Examination Board" -s /bin/false -L -e 1 meb
+    - curtin in-target --target=/target -- addgroup meb sudo
+    - curtin in-target --target=/target -- addgroup meb adm
+    - curtin in-target --target=/target -- addgroup meb cdrom
+    - curtin in-target --target=/target -- addgroup meb dip
+    - curtin in-target --target=/target -- addgroup meb plugdev
+    - curtin in-target --target=/target -- addgroup meb lxd
+    # set Cinnamon as default session
+    - echo "[SeatDefaults]\nuser-session=cinnamon" >/target/etc/lightdm/lightdm.conf.d/cinnamon.conf
+    # Disable Cinnamon 3D graphics warning
+    - echo "#!/bin/sh\n\nexport CINNAMON_2D=true\n" >/target/etc/profile.d/cinnamon_2d.sh
