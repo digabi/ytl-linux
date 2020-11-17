@@ -30,6 +30,10 @@ autoinstall:
   late-commands:
     # clean up autoinstall traces from Grub configuration and add a "safe graphics" setting
     - sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="nomodeset"/' /target/etc/default/grub
+    # add boot timeout
+    - sed -i 's/GRUB_TIMEOUT=.*/GRUB_DEFAULT=3/' /target/etc/default/grub
+    - sed -i 's/GRUB_TIMEOUT_STYLE=.*/GRUB_TIMEOUT_STYLE=menu/' /target/etc/default/grub
+    # update grub settings
     - curtin in-target --target=/target -- update-grub
     # install Vagrant
     - wget -O /target/tmp/vagrant.deb -c https://releases.hashicorp.com/vagrant/2.2.10/vagrant_2.2.10_x86_64.deb
