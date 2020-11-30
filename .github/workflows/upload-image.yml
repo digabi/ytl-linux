@@ -1,14 +1,18 @@
-on: [ push ]
-name: Test build and upload image
+on:
+  push:
+    tags:
+    - 'v*'
+
+name: Build and upload image
 jobs:
   build-and-upload:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: Update test file
+      - name: Build installation image
         run: |
-          date >> test-upload.txt
+          ./build-ytl-image
       - name: Look up AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -17,4 +21,4 @@ jobs:
           aws-region: eu-north-1
       - name: Copy file with the AWS CLI
         run: |
-          aws s3 cp test-upload.txt s3://ytl-linux
+          aws s3 cp ytl-install.iso s3://ytl-linux
