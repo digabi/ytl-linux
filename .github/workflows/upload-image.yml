@@ -8,6 +8,9 @@ jobs:
   build-and-upload:
     runs-on: ubuntu-latest
     steps:
+      - name: Install prerequisite packages
+        run: |
+          sudo apt -y install libarchive-tools xorriso
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Build installation image
