@@ -14,4 +14,4 @@ jobs:
           aws-region: eu-north-1
       - name: Copy files with the AWS CLI
         run: |
-          aws s3 sync test-upload.txt s3://ytl-linux
+          aws s3 cp test-upload.txt s3://ytl-linux
