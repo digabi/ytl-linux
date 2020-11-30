@@ -1,17 +1,20 @@
 on: [ push ]
-name: Test S3 uploading
+name: Test build and upload image
 jobs:
-  upload:
+  build-and-upload:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+      - name: Update test file
+        run: |
+          date >> test-upload.txt
       - name: Look up AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-north-1
-      - name: Copy files with the AWS CLI
+      - name: Copy file with the AWS CLI
         run: |
           aws s3 cp test-upload.txt s3://ytl-linux
