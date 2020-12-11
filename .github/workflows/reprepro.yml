@@ -1,0 +1,46 @@
+name: update Debian repository
+on:
+  push:
+    paths:
+        - 'debs/**'
+        - 'ytl-linux-customize/**'
+  workflow_dispatch:
+
+jobs:
+  run-reprepro:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install prerequisite packages
+        run: |
+            sudo apt -y install reprepro gnupg ruby ruby-dev rubygems build-essential
+            sudo gem install --no-document fpm
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Build deb packages
+        run: |
+            make -C ytl-linux-customize deb
+      - name: Build repository
+        env:
+            SKEY: ${{ secrets.YTL_LINUX_PACKAGE_SIGNING_PRIVATE_KEY }}
+            SPUBKEY: ${{ secrets.YTL_LINUX_PACKAGE_SIGNING_PUBLIC_KEY }}
+        run: |
+            echo "$SKEY" | gpg --import
+            # dynamically update reprepro configuration to sign with the public key
+            keyid=$(echo "$SPUBKEY" | gpg --import-options show-only --import --with-colons | awk -F: '/pub/ { print $5 }')
+            echo "Signing with key 0x$keyid"
+            echo "SignWith: 0x$keyid" >> reprepro/conf/distributions
+            for dir in debs/ ytl-linux-customize/; do [ -d $dir ] || mkdir $dir; done
+            find debs/ ytl-linux-customize/ -name '*.deb' | while read deb; do echo $deb; reprepro -b reprepro includedeb ytl-linux $deb; done
+            # also make signing key available on the web site
+            echo "$SPUBKEY" > apt-signing-key.pub
+      - name: Look up AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-north-1
+      - name: Copy repository to AWS S3
+        run: |
+          aws s3 sync reprepro/pool  s3://ytl-linux/deb/pool
+          aws s3 sync reprepro/dists s3://ytl-linux/deb/dists
+          aws s3 cp apt-signing-key.pub s3://ytl-linux/

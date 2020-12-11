@@ -1,0 +1,6 @@
+Codename: ytl-linux
+Architectures: amd64 source
+Components: main
+Description: deb package repository for https://github.com/digabi/ytl-linux
+AlsoAcceptFor: UNRELEASED
+# SignWith will be filled in by GitHub workflow
