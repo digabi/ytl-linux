@@ -31,6 +31,20 @@ Pushing changes to the file will make
 it available to installers via [GitHub
 pages](https://digabi.github.io/ytl-linux/autoinstall-config/user-data)
 
+## APT repository and deb packages
+
+The ytl-linux-customize deb package is built automatically by a GitHub action
+on pushes to the source code directory. The resulting package, along with any others
+in the debs/ directory (currently none) get pushed to an apt repository at
+
+  deb https://linux.abitti.fi/deb ytl-linux main
+
+and are signed with the GPG key currently available at
+
+  https://linux.abitti.fi/apt-signing-key.pub
+
+The installation ISO image will pull in the ytl-linux-customize package from there.
+
 ## Testing instructions
 
 In its current state the image will fetch the autoinstall configuration
