@@ -13,7 +13,7 @@ autoinstall:
             source: "deb [arch=amd64] https://linux.abitti.fi/deb ytl-linux main"
             key: |
                -----BEGIN PGP PUBLIC KEY BLOCK-----
-               
+
                mQINBF/OM8EBEADbtIT8en8PLczP2egPDeBXIXaSsQFzGgCBGd1vjCLbe1bhZ3ii
                O/FWr2QqORnbzrNim5VyzeZ8Qq4Yj0XoQNhvkw9eD2old1mThjra5BMesMNXHnEB
                PG6LAfPFDE9hsUaQDIJrHRO09GKlMJDIFX/cSPkzlQw2Pnzf6UTY8E2L6CORPWih
@@ -69,7 +69,6 @@ autoinstall:
             keyid: 2980AECF
             keyserver: keyserver.ubuntu.com
   packages:
-    - virtualbox-6.1
     - cinnamon-core
     - ytl-linux-customize
   storage:
