@@ -73,7 +73,7 @@ autoinstall:
     - ytl-linux-customize
   storage:
       layout:
-          name: lvm
+          name: direct
   identity:
       hostname: ktp
       username: school
