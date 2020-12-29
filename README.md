@@ -60,3 +60,13 @@ The image can be tested in KVM with something like this:
 - run a virtual KVM machine
 
         kvm -hda test.img -cdrom ytl-install.iso -m 2048
+
+## Debugging failing installations
+
+When installation fails the installer stops and prints a Python traceback or similar
+error log describing the problem. In this case you can open a new console by
+pressing Alt+F2 (Alt+F3...) and study the log files. The most relevant log files
+are:
+ * `/var/log/cloud-init-output.log` Output of the cloud-init part of the installation
+ * `/var/log/cloud-init.log` Log of the cloud-init part of the installation
+ * `/var/log/curtin/install.log` Log of the Curtin part of the installation
