@@ -93,7 +93,7 @@ autoinstall:
     # install Vagrant
     - wget -O /target/tmp/vagrant.deb -c https://releases.hashicorp.com/vagrant/2.2.10/vagrant_2.2.10_x86_64.deb
     - curtin in-target --target=/target -- apt install /tmp/vagrant.deb
-    # add user for the school (password: school)
+    # add user for MEB
     - curtin in-target --target=/target -- useradd -p $1$wIiwKtrF$0Y3YOfuHMSIdsg.69sIWw0 -U -m meb
     - curtin in-target --target=/target -- usermod -c "Matriculation Examination Board" -s /bin/false -L -e 1 meb
     - curtin in-target --target=/target -- addgroup meb sudo
