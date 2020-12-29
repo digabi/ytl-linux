@@ -24,6 +24,9 @@ sed -i '/txt\.cfg/ iinclude ytl.cfg' "$WORKDIR"/isolinux/menu.cfg
 # disable the default boot to live installation mode
 sed -i 's/^ui /# ui/' "$WORKDIR"/isolinux/isolinux.cfg
 
+# disable timeout to avoid installation loops and accidents
+sed -i 's/timeout [[:digit:]]\+/timeout 0/' "$WORKDIR"/isolinux/*.cfg
+
 #########################################
 # Step 2: UEFI boot mode / GRUB
 #########################################
@@ -32,5 +35,8 @@ sed -i '/"Install Ubuntu Server"/iINCLUDE_YTL_MENU' "$WORKDIR"/boot/grub/grub.cf
 sed -i '/INCLUDE_YTL_MENU/r templates/ytl-grub.cfg' "$WORKDIR"/boot/grub/grub.cfg
 sed -i '/INCLUDE_YTL_MENU/d' "$WORKDIR"/boot/grub/grub.cfg
 sed -i "s|##AUTOINSTALL_URL##|$AUTOINSTALL_URL|" "$WORKDIR"/boot/grub/grub.cfg
+
+# disable timeout to avoid installation loops and accidents
+sed -i 's/timeout=[[:digit:]]\+/timeout=-1/' "$WORKDIR"/boot/grub/grub.cfg
 
 # All done!
