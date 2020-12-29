@@ -106,3 +106,7 @@ autoinstall:
     - echo "[SeatDefaults]\nuser-session=cinnamon" >/target/etc/lightdm/lightdm.conf.d/cinnamon.conf
     # Disable Cinnamon 3D graphics warning
     - echo "#!/bin/sh\n\nexport CINNAMON_2D=true\n" >/target/etc/profile.d/cinnamon_2d.sh
+    # Use NetworkManager instead of networkd
+    - 'rm -fR /target/etc/netplan/*'
+    - 'echo "network:\n  version: 2\n  renderer: NetworkManager\n" >/target/etc/netplan/01-use-network-manager.yaml'
+    - curtin in-target --target=/target -- netplan apply
