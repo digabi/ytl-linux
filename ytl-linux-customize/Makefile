@@ -1,7 +1,7 @@
-VERSION := "1.0.1"
+VERSION := "1.0.2"
 
 # Dependencies which are not related to any code in the
-DEPENDENCIES_META := --depends virtualbox-6.1
+DEPENDENCIES_META := --depends virtualbox-6.1 --depends ethtool --depends exfat-fuse --depends update-manager
 
 DEPENDENCIES_NAKSU := --depends wget --depends zenity
 DEPENDENCIES_YTL-GRUB-SAFE-GRAPHICS := --depends policykit-1
