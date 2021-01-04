@@ -25,7 +25,7 @@ YTL Linux installs:
 
 ## What to do if the installation fails
 
- 1. Try again. The installation downloads massive amount of data and there might be shortages. The installation is less robust what comes to the network problems.
+ 1. Try again. The installation downloads massive amount of data and there might be outages. The installation is less robust what comes to the network problems.
  1. Try with a different network (e.g. by sharing a network via your mobile phone). Maybe your ISP blocks or filters data?
  1. Are you using Legacy/BIOS boot? Try enabling SecureBoot instead.
  1. Take some screenshots (again, your mobile phone is your friend here):

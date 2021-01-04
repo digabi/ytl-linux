@@ -2,7 +2,7 @@
 
 The YTL Linux is an Ubuntu environment which installs automatically
 everything you need to run a virtual Abitti server (Oracle VirtualBox and Naksu). The ultimate goals are:
- * Take the pain of updating servers and finding working combinations of software from the schools to the Matriculation Examination Board (Ylioppilastutkintolautakunta YTL in Finnish).
+ * Move the pain of updating servers and finding working combinations of software from the schools to the Matriculation Examination Board (Ylioppilastutkintolautakunta YTL in Finnish).
  * Make the Linux servers more uniform in order to help communication between the schools and the Abitti support in case of trouble.
  * In the long term make it possible to provide remote support during the exams.
 
