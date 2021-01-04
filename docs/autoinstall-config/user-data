@@ -73,7 +73,7 @@ autoinstall:
     - ytl-linux-customize
   storage:
       layout:
-          name: lvm
+          name: direct
   identity:
       hostname: ktp
       username: school
@@ -90,10 +90,7 @@ autoinstall:
     - sed -i 's/GRUB_TIMEOUT_STYLE=.*/GRUB_TIMEOUT_STYLE=menu/' /target/etc/default/grub
     # update grub settings
     - curtin in-target --target=/target -- update-grub
-    # install Vagrant
-    - wget -O /target/tmp/vagrant.deb -c https://releases.hashicorp.com/vagrant/2.2.10/vagrant_2.2.10_x86_64.deb
-    - curtin in-target --target=/target -- apt install /tmp/vagrant.deb
-    # add user for the school (password: school)
+    # add user for MEB
     - curtin in-target --target=/target -- useradd -p $1$wIiwKtrF$0Y3YOfuHMSIdsg.69sIWw0 -U -m meb
     - curtin in-target --target=/target -- usermod -c "Matriculation Examination Board" -s /bin/false -L -e 1 meb
     - curtin in-target --target=/target -- addgroup meb sudo
@@ -106,3 +103,7 @@ autoinstall:
     - echo "[SeatDefaults]\nuser-session=cinnamon" >/target/etc/lightdm/lightdm.conf.d/cinnamon.conf
     # Disable Cinnamon 3D graphics warning
     - echo "#!/bin/sh\n\nexport CINNAMON_2D=true\n" >/target/etc/profile.d/cinnamon_2d.sh
+    # Use NetworkManager instead of networkd
+    - 'rm -fR /target/etc/netplan/*'
+    - 'echo "network:\n  version: 2\n  renderer: NetworkManager\n" >/target/etc/netplan/01-use-network-manager.yaml'
+    - curtin in-target --target=/target -- netplan apply
