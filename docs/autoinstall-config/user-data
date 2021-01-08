@@ -80,6 +80,8 @@ autoinstall:
       realname: School
       # school
       password: paN7zaXhmvMKE
+  user-data:
+      timezone: Europe/Helsinki
   ssh:
       install-server: no
   late-commands:
