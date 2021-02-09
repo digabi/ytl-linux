@@ -112,3 +112,5 @@ autoinstall:
     # Disable automatic updates
     - sed -i 's/APT::Periodic::Update-Package-Lists .*/APT::Periodic::Update-Package-Lists "0";/' /target/etc/apt/apt.conf.d/20auto-upgrades
     - sed -i 's/APT::Periodic::Unattended-Upgrade .*/APT::Periodic::Unattended-Upgrade "0";/' /target/etc/apt/apt.conf.d/20auto-upgrades
+    # Disable CPU power saving mode
+    - curtin in-target --target=/target -- systemctl disable ondemand
