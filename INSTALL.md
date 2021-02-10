@@ -21,7 +21,7 @@ YTL Linux installs:
  1. The computer reboots after a successful installation.
  1. Log in (`school` / `school`) and change the password: Menu (bottom-left) > Preferences > Account Details > Password.
  1. In case your screen resolution is bad try: Menu > Preferences > Display: Normal Graphics On Boot. Finally, reboot the server.
- 1. Start Naksu to install the virtualised server: Menu > Administration > Naksu.
+ 1. Start Naksu to install the virtualised server: Menu > Administration > Naksu (You can pin Naksu icon to bottom panel by right-clicing it > Add to panel)
 
 ## What to do if the installation fails
 
