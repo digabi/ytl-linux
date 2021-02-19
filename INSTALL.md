@@ -35,6 +35,44 @@ YTL Linux installs:
      and take a screenshot.
    * Send these screenshots and your contact information to Abitti support.
 
+## What to do if Naksu complains about unloaded kernel modules
+
+This problem is caused by unsigned kernel modules while kernel is booted with SecureBoot checking.
+The Oracle VirtualBox kernel modules do not have a valid signatures and thus cannot be loaded to the
+running kernel.
+
+There are three options to solve this problem.
+
+### Option 1: Make sure you have SecureBoot enable during installation
+
+In some cases the kernel signatures will be carried out automatically if the SecureBoot has been
+enforced throughout the installation. If you have changed the setting during the installation
+process you could try to re-install with SecureBoot enabled.
+
+### Option 2: Disable SecureBoot
+
+As the problem is caused by the SecureBoot checking the obvious solution is to disable this security
+feature.
+
+### Option 3: Create a signature and sign the modules
+
+In this option you create a signature (Machine Owner Key, MOK), add it to your UEFI keys and sign the modules with this signature. Fear not - the Oracle people have made this very automatic.
+
+ 1. In some cases the `update-secureboot-policy` is running and causing the signing process to fail. Therefore, start by terminating this process:\
+   `sudo killall -TERM update-secureboot-policy`
+ 1. Now reconfigure the VirtualBox installation:\
+   `sudo dpkg-reconfigure virtualbox-6.1`
+ 1. When asked, enter a short (8+) password which you need only after reboot. "secureboot" is an excellent password for the MOK.
+ 1. Reboot.
+ 1. After the reboot you will be asked whether you want to enroll your MOK. This is an example process in some Dell and HP models, but your mileage may vary:
+  * Perform MOK Management: Continue boot / Enroll MOK / Enroll key from disk / Enroll hash from disk: "Enroll MOK"
+  * Enroll MOK: View key / Continue: "Continue"
+  * Enroll the key(s)?: No / Yes: "Yes"
+  * Password: [this is the password you invented before the reboot, e.g. "secureboot"]
+  * Reboot
+
+After this process your SecureBoot stack and kernel know your MOK. The VirtualBox kernel modules have been signed with MOK.
+
 ## What to do if you want to suggest changes and/or additions
 
  * Contact Abitti support by email. You'll find the contact information from the [Abitti website](https://abitti.fi).
