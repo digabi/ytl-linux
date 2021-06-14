@@ -6,8 +6,24 @@ everything you need to run a virtual Abitti server (Oracle VirtualBox and Naksu)
  * Make the Linux servers more uniform in order to help communication between the schools and the Abitti support in case of trouble.
  * In the long term make it possible to provide remote support during the exams.
 
-This is work in progress. If you want to try the latest version please read the
-[installation instructions](INSTALL.md).
+This is the advised way to install a Linux-based Abitti server. For the end-user instructions see [Abitti.fi](https://www.abitti.fi/fi/ohjeet/koetilan-palvelin/).
+If you have problems with SecureBoot installation see the [tech version of the installation instructions](INSTALL.md).
+
+## Install USB Monster without YTL Linux
+
+The YTL Linux contains world-famous [USB Monster](https://github.com/digabi/usb-monster) which handles simulaneous writes
+to massive amount of USB memories. The Matriculation Examination Board uses USB
+Monster to write its fleet for biannual exams.
+
+Here are the steps to install USB Monster to your non-YTL Linux deb-based distro:
+ * Import the key: \
+   `sudo bash -c 'wget -O - https://linux.abitti.fi/apt-signing-key.pub | apt-key add -'`
+ * Add our repo to your sources: \
+   `sudo bash -c 'echo "deb https://linux.abitti.fi/deb ytl-linux main" >/etc/apt/sources.list.d/usbmonster.list'`
+ * Update your packages and install: \
+   `sudo apt update && sudo apt install digabi-usb-monster`
+
+After this your USB Monster will be updated automatically.
 
 ## Building the image
 
