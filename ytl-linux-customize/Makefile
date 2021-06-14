@@ -59,6 +59,10 @@ deb:
 	cp ytl-grub-safe-graphics/*.md deb-root/usr/local/share/doc/ytl-linux-customize/
 
 	fpm -C deb-root/ -s dir --name ytl-linux-customize --architecture native -t deb --version "$(VERSION)" \
+		 --description "YTL Linux specific customisations" \
+		 --maintainer "abitti@ylioppilastutkinto.fi" \
+		 --vendor "Matriculation Examination Board" \
+		 --url "https://github.com/digabi/ytl-linux" \
 		 --after-install deb-scripts/after-install.sh \
 		 --after-remove deb-scripts/after-remove.sh \
 		 $(DEPENDENCIES_META) \
