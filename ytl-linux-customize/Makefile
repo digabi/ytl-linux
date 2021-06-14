@@ -1,4 +1,4 @@
-VERSION := "1.0.2"
+VERSION := "1.0.3"
 
 # Dependencies which are not related to any code in the
 DEPENDENCIES_META := --depends virtualbox-6.1 --depends ethtool --depends exfat-fuse --depends update-manager --depends firefox --depends gnome-icon-theme --depends dconf-cli
