@@ -21,12 +21,13 @@ YTL Linux installs:
  1. The computer reboots after a successful installation.
  1. Log in (`school` / `school`) and change the password: Menu (bottom-left) > Preferences > Account Details > Password.
  1. In case your screen resolution is bad try: Menu > Preferences > Display: Normal Graphics On Boot. Finally, reboot the server.
- 1. Start Naksu to install the virtualised server: Menu > Administration > Naksu (You can pin Naksu icon to bottom panel by right-clicing it > Add to panel)
+ 1. Start Naksu to install the virtualised server: Menu > Administration > Naksu (You can pin Naksu icon to bottom panel by right-clicking it > Add to panel)
 
 ## What to do if the installation fails
 
+ 1. Go through the Frequently observed problems below.
  1. Try again. The installation downloads massive amount of data and there might be outages. The installation is less robust what comes to the network problems.
- 1. Try with a different network (e.g. by sharing a network via your mobile phone). Maybe your ISP blocks or filters data?
+ 1. Try with a different network (e.g. by sharing a network via 4G model). Maybe your ISP blocks or filters data?
  1. Are you using Legacy/BIOS boot? Try enabling SecureBoot instead.
  1. Take some screenshots (again, your mobile phone is your friend here):
    * The screen where the installation finished.
@@ -35,7 +36,41 @@ YTL Linux installs:
      and take a screenshot.
    * Send these screenshots and your contact information to Abitti support.
 
-## What to do if Naksu complains about unloaded kernel modules
+## Frequently observed problems
+
+### It asks my language
+
+If the installation ends up asking you about installation language the installation
+script does not have a network connection.
+
+![Screenshot of the language selection menu](assets/install-no-network.png)
+
+Things to consider:
+ 1. Make sure your network offers network settings via DHCP server to an
+    unknown computer. Are you able to get an internet access if you connect
+    your private laptop to this network? If so, the network probably is good.
+ 1. Make sure your network adapter is supported by the install-time kernel.
+    After hitting the language dialog open a new console with Alt+F2 and enter
+    command `ip a`. This lists your detected network devices. If there are no
+    entries starting with `en` (see sample outputs below) you don't have supported
+    network devices.
+      * Unfortunately the install procedure does not support wireless network devices.
+      * Maybe you have an USB Ethernet dongle you could give a try? Remember, the
+        lack of device support applies the installation phase only. The installed
+        Ubuntu Linux has far more larger variety of supported devices. You need
+        the USB Ethernet device for the installation phase only.
+
+![Example: Network device does not get settings from DHCP](assets/install-network-no-settings.png)
+
+In the example above there is one ethernet device (`enp0s3`) but it hasn't received network
+settings from the DHCP server.
+
+![Example: Network device with settings](assets/install-network-ok.png)
+
+In the example above the ethernet device `enp0s3` has received network settings (IP
+`10.0.2.15`, netmask `/24` and broadcast address `10.0.2.255`).
+
+### Naksu complains about unloaded kernel modules
 
 This problem is caused by unsigned kernel modules while kernel is booted with SecureBoot checking.
 The Oracle VirtualBox kernel modules do not have a valid signatures and thus cannot be loaded to the
@@ -43,18 +78,18 @@ running kernel.
 
 There are three options to solve this problem.
 
-### Option 1: Make sure you have SecureBoot enable during installation
+#### Option 1: Make sure you have SecureBoot enable during installation
 
 In some cases the kernel signatures will be carried out automatically if the SecureBoot has been
 enforced throughout the installation. If you have changed the setting during the installation
 process you could try to re-install with SecureBoot enabled.
 
-### Option 2: Disable SecureBoot
+#### Option 2: Disable SecureBoot
 
 As the problem is caused by the SecureBoot checking the obvious solution is to disable this security
 feature.
 
-### Option 3: Create a signature and sign the modules
+#### Option 3: Create a signature and sign the modules
 
 In this option you create a signature (Machine Owner Key, MOK), add it to your UEFI keys and sign the modules with this signature. Fear not - the Oracle people have made this very automatic.
 
