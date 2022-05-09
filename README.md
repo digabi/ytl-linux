@@ -9,7 +9,23 @@ everything you need to run a virtual Abitti server (Oracle VirtualBox and Naksu)
 This is the advised way to install a Linux-based Abitti server. For the end-user instructions see [Abitti.fi](https://www.abitti.fi/fi/ohjeet/koetilan-palvelin/).
 If you have problems with SecureBoot installation see the [tech version of the installation instructions](INSTALL.md).
 
-## Install USB Monster without YTL Linux
+## USB Monster
+
+### Using USB Monster with YTL Linux
+
+The default behaviour of Cinnamon (thus, YTL Linux) is to automount all USB memories inserted into
+the workstation. Before starting to use USB Monster this feature should be disabled by entering
+following commands:
+
+```
+gsettings set org.cinnamon.desktop.media-handling automount-open false
+gsettings set org.cinnamon.desktop.media-handling automount false
+```
+
+These commands are per-user so your Abitti server user (e.g. the default `school`) can have the automount
+on while the USB monster user may have the automount turned off. 
+
+### Install USB Monster without YTL Linux
 
 The YTL Linux contains world-famous [USB Monster](https://github.com/digabi/usb-monster) which handles simulaneous writes
 to massive amount of USB memories. The Matriculation Examination Board uses USB
