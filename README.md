@@ -51,13 +51,13 @@ Just run
 
     ./build-ytl-image
 
-which should result in a new ISO file "ytl-install.iso".
+which should result in a new ISO file "ytl-install-22.iso".
 
 ## GitHub automation
 
-Pushing a tag of the form 'v0.X' to the digabi/ytl-linux GitHub repository
-will trigger an action that automatically rebuilds the image and uploads
-it to https://linux.abitti.fi/ytl-install.iso .
+Pushing a tag of the form 'v22.X' to the digabi/ytl-linux GitHub
+repository will trigger an action that automatically rebuilds the image
+and uploads it to https://linux.abitti.fi/ytl-install-22.iso .
 
 ## Updating configuration
 
@@ -97,7 +97,7 @@ The image can be tested in KVM with something like this:
 
 - run a virtual KVM machine
 
-        kvm -hda test.img -cdrom ytl-install.iso -m 2048
+        kvm -hda test.img -cdrom ytl-install-22.iso -m 2048
 
 ## Debugging failing installations
 

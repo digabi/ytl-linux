@@ -20,7 +20,7 @@ export AUTOINSTALL_URL=https://digabi.github.io/ytl-linux/autoinstall-config-22/
 ISO_LABEL="YTL Ubuntu Install CD"
 
 # Filename of the resulting image
-RESULT_IMAGE=ytl-install.iso
+RESULT_IMAGE=ytl-install-22.iso
 
 #########################################
 # Step 0: Check some prerequisites

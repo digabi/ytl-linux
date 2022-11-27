@@ -10,7 +10,7 @@ YTL Linux installs:
 
 ## Instructions
 
- 1. Download [the installation image](https://linux.abitti.fi/ytl-install.iso).
+ 1. Download [the installation image](https://linux.abitti.fi/ytl-install-22.iso).
  1. Write the image to an USB stick.
  1. The installation is silent and it overwrites the storage. Make sure your disks do not contain any valuable data.
  1. Connect the server to a wired network. Your network needs to provide network settings from a DHCP server. If your network requires proxy settings or filters traffic you may encounter problems.
