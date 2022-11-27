@@ -63,18 +63,29 @@ chmod -R u+w "$WORKDIR"
 # based on
 #  https://help.ubuntu.com/community/InstallCDCustomization#Building_the_ISO_image
 
-MBR_FILE=$(mktemp)
+MBR_FILE=$(mktemp).mbr
+EFI_FILE=$(mktemp).efi
 dd if="$IMAGE" bs=1 count=446 of="$MBR_FILE"
 
+# Extract EFI partition image
+skip=$(/sbin/fdisk -l "$IMAGE" | fgrep '.iso2 ' | awk '{print $2}')
+size=$(/sbin/fdisk -l "$IMAGE" | fgrep '.iso2 ' | awk '{print $4}')
+dd if="$IMAGE" bs=512 skip="$skip" count="$size" of="$EFI_FILE"
+
+
 xorriso -as mkisofs -r -V "$ISO_LABEL" \
-            -cache-inodes -J -l \
-            -isohybrid-mbr "$MBR_FILE" \
-            -c isolinux/boot.cat \
-            -b isolinux/isolinux.bin \
-               -no-emul-boot -boot-load-size 4 -boot-info-table \
+            -iso-level 3 \
+            -partition_offset 16 \
+            --grub2-mbr "$MBR_FILE" \
+            --mbr-force-bootable \
+            -append_partition 2 0xEF "$EFI_FILE" \
+            -appended_part_as_gpt \
+            -c /boot.catalog \
+            -b /boot/grub/i386-pc/eltorito.img \
+            -no-emul-boot -boot-load-size 4 -boot-info-table --grub2-boot-info \
             -eltorito-alt-boot \
-            -e boot/grub/efi.img \
-               -no-emul-boot -isohybrid-gpt-basdat \
+            -e '--interval:appended_partition_2:all::' \
+            -no-emul-boot \
             -o "$RESULT_IMAGE" \
             "$WORKDIR"
 
@@ -82,4 +93,4 @@ xorriso -as mkisofs -r -V "$ISO_LABEL" \
 # Step 5: Clean up
 #########################################
 
-rm -rf "$WORKDIR" "$MBR_FILE"
+rm -rf "$WORKDIR" "$MBR_FILE" "$EFI_FILE"
