@@ -55,9 +55,9 @@ which should result in a new ISO file "ytl-install.iso".
 
 ## GitHub automation
 
-Pushing a tag to the digabi/ytl-linux GitHub repository will trigger
-an action that automatically rebuilds the image and uploads it to
-https://linux.abitti.fi/ytl-install.iso .
+Pushing a tag of the form 'v0.X' to the digabi/ytl-linux GitHub repository
+will trigger an action that automatically rebuilds the image and uploads
+it to https://linux.abitti.fi/ytl-install.iso .
 
 ## Updating configuration
 
