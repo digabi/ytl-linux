@@ -1,4 +1,6 @@
 *.iso
+*.img
+*.vdi
 
 ytl-linux-customize/*.deb
 ytl-linux-customize/deb-root/
