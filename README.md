@@ -43,17 +43,20 @@ After this your USB Monster will be updated automatically.
 
 ## Building the image
 
+### Building the image locally
+
 The build script will download a Ubuntu installation ISO image and modify
 it so that it will boot by default to an autoinstall mode and download
 our install configuration.
 
-Just run
+The build script `build-ytl-image` can be executed with or without Docker. Both
+should give you a new ISO file `ytl-install-22.iso` which can be tested with
+instructions given below.
 
-    ./build-ytl-image
+ * Building with Docker: `make docker`
+ * Building on your bare OS: `./build-ytl-image`
 
-which should result in a new ISO file "ytl-install-22.iso".
-
-## GitHub automation
+### Building the image with GitHub automation
 
 Pushing a tag of the form 'v22.X' to the digabi/ytl-linux GitHub
 repository will trigger an action that automatically rebuilds the image
@@ -89,15 +92,13 @@ In its current state the image will fetch the autoinstall configuration
 (located in the docs/autoinstall-config subdirectory) over the network
 from GitHub. This can be changed by modifying the build script.
 
-The image can be tested in KVM with something like this:
+### Testing with VirtualBox
 
-- make a filesystem for a "virtual hard disk"
+`make create-vb-vm`
 
-        qemu-img create -f qcow2 test.img 8G
+### Testing with KVM
 
-- run a virtual KVM machine
-
-        kvm -hda test.img -cdrom ytl-install-22.iso -m 2048
+`make create-kvm-vm`
 
 ## Debugging failing installations
 
