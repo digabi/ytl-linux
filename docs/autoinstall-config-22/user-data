@@ -122,6 +122,9 @@ autoinstall:
   packages:
     - cinnamon-core
     - ytl-linux-customize
+    - snapd
+  snaps:
+    - name: firefox
   storage:
       layout:
           name: direct
