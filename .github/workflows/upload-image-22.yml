@@ -6,11 +6,11 @@ on:
 name: Build and upload image
 jobs:
   build-and-upload:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Install prerequisite packages
         run: |
-          sudo apt -y install libarchive-tools xorriso
+          sudo apt -y install wget fdisk libarchive-tools xorriso cd-boot-images-amd64
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Build installation image
