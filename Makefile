@@ -1,5 +1,7 @@
-VB_VMNAME = "YTL Linux"
-IMAGE = "ytl-install-22.iso"
+INSTALL_IMAGE = "ytl-install-22.iso"
+VM_NAME = YTL Linux
+VM_DISK_SIZE = 20480
+VM_MEMORY_SIZE = 4096
 
 docker:
 	mkdir -p bin
@@ -9,16 +11,16 @@ docker:
 	docker cp ytl-linux-builder:/app/$(IMAGE) .
 
 create-vb-vm:
-	-VBoxManage controlvm $(VB_VMNAME) poweroff
-	-VBoxManage unregistervm $(VB_VMNAME) --delete
-	VBoxManage createvm --name $(VB_VMNAME) --register --ostype Linux_64
-	VBoxManage modifyvm $(VB_VMNAME) --memory 2048 --nic1 nat --usb off --firmware efi --cpus 2 --vram 16
+	-VBoxManage controlvm "$(VM_NAME)" poweroff
+	-VBoxManage unregistervm "$(VM_NAME)" --delete
+	VBoxManage createvm --name "$(VM_NAME)" --register --ostype Linux_64
+	VBoxManage modifyvm "$(VM_NAME)" --memory $(VM_DISK_SIZE) --nic1 nat --usb off --firmware efi --cpus 2 --vram 16
 
-	VBoxManage storagectl $(VB_VMNAME) --name SATA --add sata --controller IntelAHCI --portcount 2
-	VBoxManage createhd --filename "YTL_Linux.vdi" --size 8192
-	VBoxManage storageattach $(VB_VMNAME) --storagectl "SATA" --device 0 --port 0 --type hdd --medium "YTL_Linux.vdi"
-	VBoxManage storageattach $(VB_VMNAME) --storagectl "SATA" --device 0 --port 1 --type dvddrive --medium $(IMAGE)
+	VBoxManage storagectl "$(VM_NAME)" --name SATA --add sata --controller IntelAHCI --portcount 2
+	VBoxManage createhd --filename "$(VM_NAME).vdi" --size $(VM_DISK_SIZE)
+	VBoxManage storageattach "$(VM_NAME)" --storagectl "SATA" --device 0 --port 0 --type hdd --medium "$(VM_NAME).vdi"
+	VBoxManage storageattach "$(VM_NAME)" --storagectl "SATA" --device 0 --port 1 --type dvddrive --medium $(INSTALL_IMAGE)
 
 create-kvm-vm:
-	qemu-img create -f qcow2 YTL_Linux.img 8G
-	kvm -hda YTL_Linux.img -cdrom $(IMAGE) -m 2048
+	qemu-img create -f qcow2 "$(VM_NAME).img" $(VM_DISK_SIZE)M
+	kvm -hda "$(VM_NAME).img" -cdrom $(INSTALL_IMAGE) -m $(VM_MEMORY_SIZE)
