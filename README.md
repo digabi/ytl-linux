@@ -84,6 +84,9 @@ Pushing a tag of the form 'v22.X' to the digabi/ytl-linux GitHub
 repository will trigger an action that automatically rebuilds the image
 and uploads it to https://linux.abitti.fi/ytl-install-22.iso .
 
+Use Ubuntu version numbers with local build version number. A build 
+number two of Ubuntu 22.04.3 would get version number (tag) `v22.04.3-2`.
+
 ## Updating configuration
 
 The installation configuration is in
