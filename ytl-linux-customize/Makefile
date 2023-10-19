@@ -1,7 +1,7 @@
 VERSION := "1.0.3"
 
 # Dependencies which are not related to any code in the
-DEPENDENCIES_META := --depends virtualbox-6.1 --depends ethtool --depends exfat-fuse --depends update-manager --depends firefox --depends gnome-icon-theme --depends dconf-cli
+DEPENDENCIES_META := --depends virtualbox-7.0 --depends ethtool --depends exfat-fuse --depends update-manager --depends firefox --depends gnome-icon-theme --depends dconf-cli
 RECOMMENDS_META := --deb-recommends digabi-usb-monster
 
 DEPENDENCIES_NAKSU := --depends wget --depends zenity
