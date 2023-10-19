@@ -33,13 +33,35 @@ Monster to write its fleet for biannual exams.
 
 Here are the steps to install USB Monster to your non-YTL Linux deb-based distro:
  * Import the key: \
-   `sudo bash -c 'wget -O - https://linux.abitti.fi/apt-signing-key.pub | apt-key add -'`
+   `wget -qO- https://linux.abitti.fi/apt-signing-key.pub | sudo tee /etc/apt/trusted.gpg.d/ytl-linux.asc`
  * Add our repo to your sources: \
    `sudo bash -c 'echo "deb https://linux.abitti.fi/deb ytl-linux main" >/etc/apt/sources.list.d/usbmonster.list'`
  * Update your packages and install: \
    `sudo apt update && sudo apt install digabi-usb-monster`
 
 After this your USB Monster will be updated automatically.
+
+If you have added the signing key with legacy `apt-key` tool and get `Key is stored in legacy trusted.gpg keyring` errors
+you can change the location of the key with following procedure:
+
+```
+$ sudo apt-key del "19A4 3050 953F DEC0 F0D6  2C81 1B26 415C 1E66 6A78"
+Warning: apt-key is deprecated. Manage keyring files in trusted.gpg.d instead (see apt-key(8)).
+OK
+$ wget -qO- https://linux.abitti.fi/apt-signing-key.pub | sudo tee /etc/apt/trusted.gpg.d/ytl-linux.asc
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+mQINBF/OM8EBEADbtIT8en8PLczP2egPDeBXIXaSsQFzGgCBGd1vjCLbe1bhZ3ii
+O/FWr2QqORnbzrNim5VyzeZ8Qq4Yj0XoQNhvkw9eD2old1mThjra5BMesMNXHnEB
+PG6LAfPFDE9hsUaQDIJrHRO09GKlMJDIFX/cSPkzlQw2Pnzf6UTY8E2L6CORPWih
+...
+ZZYZdDCRzHPA90AVFdev65Yd+2xt+JjmnbldS6z7HaIiCeT5XhhhgSd9AUoM+Hyu
+NkP7g8coWb57JQj63AgO9ukfqYuR4XqQHW3ga6U4cKhPUU1ChE5H
+=swfs
+-----END PGP PUBLIC KEY BLOCK-----
+```
+
+Run `sudo apt update` and make sure the legacy keyring warning has disappeared.
 
 ## Building the image
 
