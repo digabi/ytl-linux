@@ -14,7 +14,7 @@ create-vb-vm:
 	-VBoxManage controlvm "$(VM_NAME)" poweroff
 	-VBoxManage unregistervm "$(VM_NAME)" --delete
 	VBoxManage createvm --name "$(VM_NAME)" --register --ostype Linux_64
-	VBoxManage modifyvm "$(VM_NAME)" --memory $(VM_DISK_SIZE) --nic1 nat --usb off --firmware efi --cpus 2 --vram 16
+	VBoxManage modifyvm "$(VM_NAME)" --memory $(VM_MEMORY_SIZE) --nic1 nat --usb off --firmware efi --cpus 2 --vram 16
 
 	VBoxManage storagectl "$(VM_NAME)" --name SATA --add sata --controller IntelAHCI --portcount 2
 	VBoxManage createhd --filename "$(VM_NAME).vdi" --size $(VM_DISK_SIZE)
