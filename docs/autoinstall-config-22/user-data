@@ -162,6 +162,7 @@ autoinstall:
     # Use NetworkManager instead of networkd
     - 'rm -fR /target/etc/netplan/*'
     - 'echo "network:\n  version: 2\n  renderer: NetworkManager\n" >/target/etc/netplan/01-use-network-manager.yaml'
+    - 'chmod 0600 /target/etc/netplan/01-use-network-manager.yaml'
     - curtin in-target --target=/target -- netplan apply
     # Disable automatic updates
     - sed -i 's/APT::Periodic::Update-Package-Lists .*/APT::Periodic::Update-Package-Lists "0";/' /target/etc/apt/apt.conf.d/20auto-upgrades
