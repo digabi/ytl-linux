@@ -164,6 +164,8 @@ autoinstall:
     - 'echo "network:\n  version: 2\n  renderer: NetworkManager\n" >/target/etc/netplan/01-use-network-manager.yaml'
     - 'chmod 0600 /target/etc/netplan/01-use-network-manager.yaml'
     - curtin in-target --target=/target -- netplan apply
+    # Disable all network waits
+    - curtin in-target --target=/target -- systemctl mask NetworkManager-wait-online.service
     - curtin in-target --target=/target -- systemctl mask systemd-networkd-wait-online.service
     # Disable automatic updates
     - sed -i 's/APT::Periodic::Update-Package-Lists .*/APT::Periodic::Update-Package-Lists "0";/' /target/etc/apt/apt.conf.d/20auto-upgrades
