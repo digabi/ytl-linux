@@ -4,6 +4,7 @@ on:
     paths:
         - 'debs/**'
         - 'ytl-linux-customize/**'
+        - 'ytl-linux-purge-deb/**'
         - '.github/workflows/reprepro.yml'
   workflow_dispatch:
 
@@ -17,9 +18,12 @@ jobs:
             sudo gem install --no-document fpm
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Build deb packages
+      - name: Build ytl-linux-customize deb package
         run: |
             make -C ytl-linux-customize deb
+      - name: Build ytl-linux-purge-deb deb package
+        run: |
+            make -C ytl-linux-purge-deb deb
       - name: Build repository
         env:
             SKEY: ${{ secrets.YTL_LINUX_PACKAGE_SIGNING_PRIVATE_KEY }}
@@ -31,7 +35,7 @@ jobs:
             echo "Signing with key 0x$keyid"
             echo "SignWith: 0x$keyid" >> reprepro/conf/distributions
             for dir in debs/ ytl-linux-customize/; do [ -d $dir ] || mkdir $dir; done
-            find debs/ ytl-linux-customize/ -name '*.deb' | while read deb; do echo $deb; reprepro -b reprepro includedeb ytl-linux $deb; done
+            find debs/ ytl-linux-customize/ ytl-linux-purge-deb/ -name '*.deb' | while read deb; do echo $deb; reprepro -b reprepro includedeb ytl-linux $deb; done
             # also make signing key available on the web site
             echo "$SPUBKEY" > apt-signing-key.pub
       - name: Look up AWS credentials
