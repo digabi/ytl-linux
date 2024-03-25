@@ -3,3 +3,6 @@
 ytl-linux-customize/*.deb
 ytl-linux-customize/deb-root/
 ytl-linux-customize/deb-scripts/
+
+ytl-linux-purge-deb/*.deb
+ytl-linux-purge-deb/deb-root/
