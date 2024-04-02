@@ -122,6 +122,7 @@ autoinstall:
   packages:
     - cinnamon-core
     - ytl-linux-customize
+    - ytl-linux-purge-deb
     - snapd
   snaps:
     - name: firefox
@@ -167,6 +168,9 @@ autoinstall:
     # Disable all network waits
     - curtin in-target --target=/target -- systemctl mask NetworkManager-wait-online.service
     - curtin in-target --target=/target -- systemctl mask systemd-networkd-wait-online.service
+    # Remove some unnecessary packages on next boot
+    - echo open-iscsi >>/target/etc/ytl-linux-purge-deb.conf
+    - echo networkd-dispatcher >>/target/etc/ytl-linux-purge-deb.conf
     # Disable automatic updates
     - sed -i 's/APT::Periodic::Update-Package-Lists .*/APT::Periodic::Update-Package-Lists "0";/' /target/etc/apt/apt.conf.d/20auto-upgrades
     - sed -i 's/APT::Periodic::Unattended-Upgrade .*/APT::Periodic::Unattended-Upgrade "0";/' /target/etc/apt/apt.conf.d/20auto-upgrades
