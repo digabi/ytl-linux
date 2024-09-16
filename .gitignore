@@ -8,3 +8,6 @@ ytl-linux-customize/deb-scripts/
 
 ytl-linux-purge-deb/*.deb
 ytl-linux-purge-deb/deb-root/
+
+ytl-linux-cpu-governor/*.deb
+ytl-linux-cpu-governor/deb-root/
