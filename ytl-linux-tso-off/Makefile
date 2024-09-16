@@ -1,4 +1,4 @@
-VERSION := "0.0"
+VERSION := 0.0
 
 DEPENDENCIES := --depends ethtool --depends bash --depends bsdutils
 
