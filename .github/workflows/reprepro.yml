@@ -24,6 +24,9 @@ jobs:
       - name: Build ytl-linux-purge-deb deb package
         run: |
             make -C ytl-linux-purge-deb deb
+      - name: Build ytl-linux-cpu-governor deb package
+        run: |
+            make -C ytl-linux-cpu-governor deb
       - name: Build repository
         env:
             SKEY: ${{ secrets.YTL_LINUX_PACKAGE_SIGNING_PRIVATE_KEY }}
@@ -35,7 +38,7 @@ jobs:
             echo "Signing with key 0x$keyid"
             echo "SignWith: 0x$keyid" >> reprepro/conf/distributions
             for dir in debs/ ytl-linux-customize/; do [ -d $dir ] || mkdir $dir; done
-            find debs/ ytl-linux-customize/ ytl-linux-purge-deb/ -name '*.deb' | while read deb; do echo $deb; reprepro -b reprepro includedeb ytl-linux $deb; done
+            find debs/ ytl-linux-customize/ ytl-linux-purge-deb/ ytl-linux-cpu-governor/ -name '*.deb' | while read deb; do echo $deb; reprepro -b reprepro includedeb ytl-linux $deb; done
             # also make signing key available on the web site
             echo "$SPUBKEY" > apt-signing-key.pub
       - name: Look up AWS credentials
