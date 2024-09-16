@@ -1,5 +1,5 @@
-NAME := "ytl-linux-cpu-governor"
-VERSION := "0.0"
+NAME := ytl-linux-cpu-governor
+VERSION := 0.0
 
 DEPENDENCIES := --depends cpufrequtils
 
