@@ -9,7 +9,7 @@ test -x $ETHTOOL || exit 0
 
 [ "$IFACE" != "lo" ] || exit 0
 
-if [[ "$IFACE" =~ ^en ]]; then
+if [[ "$IFACE" =~ ^en ]] || [[ "$IFACE" =~ ^eth ]]; then
     ethtool -K $IFACE tso off
     log Setting TSO off for device $IFACE
 else
