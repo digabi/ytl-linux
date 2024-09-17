@@ -1,5 +1,5 @@
 NAME := ytl-linux-cpu-governor
-VERSION := 0.0
+VERSION := 0.1
 
 DEPENDENCIES := --depends cpufrequtils
 
@@ -18,7 +18,7 @@ deb:
 	cp *.md deb-root/usr/local/share/doc/$(NAME)/
 
 	fpm -C deb-root/ -s dir --name $(NAME) --architecture all -t deb --version "$(VERSION)" \
-		 --description "Turn TSO off for all ethernet devices" \
+		 --description "Sets CPU governor 'performance' to all CPUs/cores" \
 		 --maintainer "abitti@ylioppilastutkinto.fi" \
 		 --vendor "Matriculation Examination Board" \
 		 --url "https://github.com/digabi/ytl-linux" \
