@@ -20,6 +20,8 @@ jobs:
             sudo gem install --no-document fpm
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          lfs: true
       - name: Build ytl-linux-customize deb package
         run: |
             make -C ytl-linux-customize deb
