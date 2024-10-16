@@ -14,4 +14,8 @@ ytl-linux-cpu-governor/deb-root/
 
 ytl-linux-tso-off/*.deb
 ytl-linux-tso-off/deb-root/
+
+ytl-linux-digabi2/*.deb
+ytl-linux-digabi2/deb-root/
+
 .DS_STORE
