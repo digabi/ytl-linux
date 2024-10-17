@@ -2,6 +2,5 @@
 
 set -euo pipefail
 
-sudo groupadd docker
 # Use SUDO_USER to get actual user because fpm after install scripts are run as root
 sudo usermod -aG docker $SUDO_USER
