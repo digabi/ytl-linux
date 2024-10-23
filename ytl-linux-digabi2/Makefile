@@ -1,7 +1,7 @@
 NAME := ytl-linux-digabi2
 VERSION := "0.0.1"
 
-DEPENDENCIES := --depends naksu2 --depends libnotify4 --depends libnss3 --depends xdg-utils --depends libasound2 --depends docker-ce --depends docker-ce-cli
+DEPENDENCIES := --depends naksu2 --depends libnotify4 --depends libnss3 --depends xdg-utils --depends libasound2 --depends docker-ce --depends docker-ce-cli --depends ethtool
 DEB_ROOT := deb-root
 
 deb:
