@@ -4,3 +4,13 @@ set -euo pipefail
 
 # Use SUDO_USER to get actual user because fpm after install scripts are run as root
 sudo usermod -aG docker $SUDO_USER
+
+if grep -qi "microsoft" /proc/version; then
+  echo "Installing on WSL machine"
+
+  xdg-settings set default-web-browser wslview.desktop
+else
+  echo "Installing on Linux machine"
+
+  xdg-settings set default-web-browser firefox.desktop
+fi
