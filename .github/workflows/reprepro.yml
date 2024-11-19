@@ -65,3 +65,10 @@ jobs:
           aws s3 sync --cache-control no-store reprepro/pool  s3://ytl-linux/deb/pool
           aws s3 sync --cache-control no-store reprepro/dists s3://ytl-linux/deb/dists
           aws s3 cp --cache-control no-store apt-signing-key.pub s3://ytl-linux/
+      - name: Update Naksu 2 latest version
+        if: ${{ github.ref == 'refs/heads/main' }}
+        run: |
+          export NAKSU_DEB=$(find debs -name 'naksu2*.deb')
+          export VERSION=$(dpkg-deb -f "$NAKSU_DEB" Version)
+          echo '{ "version": "$VERSION" }' | envsubst > naksu2-latest-version.json
+          aws s3 cp --cache-control no-store naksu2-latest-version.json s3://ytl-linux/meta/
