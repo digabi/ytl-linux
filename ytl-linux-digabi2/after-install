@@ -13,6 +13,11 @@ if grep -qi "microsoft" /proc/version; then
 else
   echo "Installing on Linux machine"
 
-  echo "Set default web browser to firefox"
-  su -c "xdg-settings set default-web-browser firefox.desktop" "$SUDO_USER"
+  if [ -f /snap/firefox/current/firefox.desktop ]; then
+    echo "Set default web browser to firefox (snap)"
+    su -l -c "xdg-settings set default-web-browser firefox_firefox.desktop" "$SUDO_USER"
+  elif [ -f /usr/share/applications/firefox.desktop ]; then
+    echo "Set default web browser to firefox (deb)"
+    su -l -c "xdg-settings set default-web-browser firefox.desktop" "$SUDO_USER"
+  fi
 fi
