@@ -115,6 +115,16 @@ and are signed with the GPG key currently available at
 
 The installation ISO image will pull in the ytl-linux-customize package from there.
 
+### Testing deb packages
+
+When adding/updating deb packages in this repository remember to test the
+packages in following environments:
+ * YTL Linux - the current production version of this very flavour of Ubuntu Linux
+ * WSL - the currently instructed environment to run Abitti 2 servers
+
+For the official instructions on installing production versions see
+https://abitti.fi/abitti2/
+
 ## Testing instructions
 
 In its current state the image will fetch the autoinstall configuration
