@@ -82,6 +82,20 @@ instructions given below.
  * Building with Docker: `make docker`
  * Building on your bare OS: `./build-ytl-image`
 
+### Testing the image and install script locally
+
+To test the image and the install script `docs/autoinstall-config-XX/user-data`
+you can do the following:
+
+ * Start a local httpd server at port 8080: `make start-httpd`
+ * Edit `AUTOINSTALL_URL` in `build-ytl-image` to point to the
+   aforementioned httpd server at your local port 8080, e.g.
+   ```
+   export AUTOINSTALL_URL=http://192.168.0.62:8080/autoinstall-config-24/
+   ```
+ * Run `build-ytl-image` to rebuild the test image with the test
+   URL
+
 ### Building the image with GitHub automation
 
 Pushing a tag of the form 'v22.X' to the digabi/ytl-linux GitHub
