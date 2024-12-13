@@ -1,4 +1,4 @@
-INSTALL_IMAGE = "ytl-install-22.iso"
+INSTALL_IMAGE = "ytl-install-24.iso"
 VM_NAME = YTL Linux
 VM_DISK_SIZE = 51200
 VM_MEMORY_SIZE = 4096
