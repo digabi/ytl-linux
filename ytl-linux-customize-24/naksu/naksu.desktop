@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Name=Naksu
+Comment=Install and update Abitti virtual server
+Comment[fi]=Asenna ja päivitä Abitti-virtuaalipalvelinta
+Comment[sv]=Installera och uppdatera den virtuella Abitti-servern
+Exec=/usr/local/bin/naksu
+Terminal=false
+Type=Application
+Categories=System;Utility;
+Icon=/usr/local/lib/naksu/naksu.png

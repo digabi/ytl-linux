@@ -1,0 +1,31 @@
+#!/bin/sh
+
+ZENITY_WIDTH=300
+GRUB_CONF=/etc/default/grub
+
+TEMPFILE=`tempfile --prefix=ytl-grub-safe-graphics- --mode=0644`
+
+if [ ! -f ${TEMPFILE} ]; then
+  zenity --error --width=${ZENITY_WIDTH} --text="Failed to create temporary file ${TEMPFILE}"
+  exit 1
+fi
+
+cat ${GRUB_CONF} | perl -e 'while (<STDIN>) { if (/GRUB_CMDLINE_LINUX_DEFAULT/ && ! /nomodeset/) { s/\"/\"nomodeset /; s/(\s)+/$1/g; } print $_; }' >${TEMPFILE}
+if [ $? -gt 0 ]; then
+  zenity --error  --width=${ZENITY_WIDTH} --text="Failed to add 'nomodeset' entry to grub configuration"
+  exit 1
+fi
+
+mv ${TEMPFILE} ${GRUB_CONF}
+if [ $? -gt 0 ]; then
+  zenity --error --width=${ZENITY_WIDTH} --text="Failed to replace grub configuration with ${TEMPFILE}"
+  exit 1
+fi
+
+update-grub 2>&1 | zenity --progress --pulsate --text="Please wait..." --auto-close --no-cancel
+if [ $? -gt 0 ]; then
+  zenity --error --width=${ZENITY_WIDTH} --text="Failed to re-create grub configuration (update-grub)"
+  exit 1
+fi
+
+zenity --info --width=${ZENITY_WIDTH} --text="Safe Graphics setting has been set to ${GRUB_CONF}"

@@ -1,0 +1,5 @@
+[org/cinnamon/theme]
+name='cinnamon'
+
+[org/cinnamon/desktop/interface]
+icon-theme='Qogir'
