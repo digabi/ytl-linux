@@ -36,6 +36,11 @@ deb:
 	mkdir -p deb-root/usr/share/icons
 	tar --get --xz --overwrite --file=Qogir.tar.xz --directory=deb-root/usr/share/icons
 
+	# YTL Linux background
+	mkdir -p deb-root/usr/share/backgrounds/meb
+	cp ytl-linux-background.svg deb-root/usr/share/backgrounds/meb/
+	sed -i 's/@VERSION/Ubuntu 24.04/' deb-root/usr/share/backgrounds/meb/ytl-linux-background.svg
+
 	# dconf default settings
 	mkdir -p deb-root/etc/dconf/profile/
 	cp dconf/user deb-root/etc/dconf/profile/
