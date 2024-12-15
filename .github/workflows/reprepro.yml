@@ -4,6 +4,7 @@ on:
     paths:
         - 'debs/**'
         - 'ytl-linux-customize/**'
+        - 'ytl-linux-customize-24/**'
         - 'ytl-linux-purge-deb/**'
         - 'ytl-linux-cpu-governor/**'
         - 'ytl-linux-tso-off/**'
@@ -26,6 +27,9 @@ jobs:
       - name: Build ytl-linux-customize deb package
         run: |
             make -C ytl-linux-customize deb
+      - name: Build ytl-linux-customize-24 deb package
+        run: |
+            make -C ytl-linux-customize-24 deb
       - name: Build ytl-linux-purge-deb deb package
         run: |
             make -C ytl-linux-purge-deb deb
@@ -49,7 +53,7 @@ jobs:
             echo "Signing with key 0x$keyid"
             echo "SignWith: 0x$keyid" >> reprepro/conf/distributions
             for dir in debs/ ytl-linux-customize/; do [ -d $dir ] || mkdir $dir; done
-            find debs/ ytl-linux-customize/ ytl-linux-purge-deb/ ytl-linux-cpu-governor/ ytl-linux-tso-off/ ytl-linux-digabi2/ -name '*.deb' | while read deb; do echo $deb; reprepro -b reprepro includedeb ytl-linux $deb; done
+            find debs/ ytl-linux-customize/ ytl-linux-customize-24/ ytl-linux-purge-deb/ ytl-linux-cpu-governor/ ytl-linux-tso-off/ ytl-linux-digabi2/ -name '*.deb' | while read deb; do echo $deb; reprepro -b reprepro includedeb ytl-linux $deb; done
             # also make signing key available on the web site
             echo "$SPUBKEY" > apt-signing-key.pub
       - name: Look up AWS credentials
