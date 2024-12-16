@@ -37,7 +37,7 @@ done
 # Step 1: Download the original ISO image
 #########################################
 
-IMAGE=ubuntu-24.iso
+IMAGE=ubuntu.iso
 if [ ! -e $IMAGE ]; then
     wget -O $IMAGE $DOWNLOAD_URL
 fi
