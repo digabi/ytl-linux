@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN" "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+
+<policyconfig>
+  <vendor>Matriculation Examination Board</vendor>
+  <vendor_url>http://github.com/digabi/ytl-linux/</vendor_url>
+
+  <action id="fi.ylioppilastutkinto.fi.ytl-grub-safe-graphics.on">
+    <description>Modify GRUB settings to add "nomodeset" boot parameter for safe graphics mode</description>
+    <message>Authentication is required to run the ytl-grub-safe-graphics-on</message>
+    <icon_name>audio-x-generic</icon_name>
+    <defaults>
+     <allow_any>no</allow_any>
+     <allow_inactive>no</allow_inactive>
+     <allow_active>auth_self_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/local/sbin/ytl-grub-safe-graphics-on</annotate>
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate>
+  </action>
+
+  <action id="fi.ylioppilastutkinto.fi.ytl-grub-safe-graphics.off">
+    <description>Modify GRUB settings to remove "nomodeset" boot parameter for normal graphics mode</description>
+    <message>Authentication is required to run the ytl-grub-safe-graphics-off</message>
+    <icon_name>audio-x-generic</icon_name>
+    <defaults>
+     <allow_any>no</allow_any>
+     <allow_inactive>no</allow_inactive>
+     <allow_active>auth_self_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/local/sbin/ytl-grub-safe-graphics-off</annotate>
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate>
+  </action>
+</policyconfig>

@@ -1,4 +1,4 @@
-INSTALL_IMAGE = "ytl-install-22.iso"
+INSTALL_IMAGE = "ytl-install-24.iso"
 VM_NAME = YTL Linux
 VM_DISK_SIZE = 51200
 VM_MEMORY_SIZE = 4096
@@ -24,3 +24,6 @@ create-vb-vm:
 create-kvm-vm:
 	qemu-img create -f qcow2 "$(VM_NAME).img" $(VM_DISK_SIZE)M
 	kvm -hda "$(VM_NAME).img" -cdrom $(INSTALL_IMAGE) -m $(VM_MEMORY_SIZE)
+
+start-httpd:
+	python3 -m http.server -d docs/ 8080
