@@ -1,0 +1,243 @@
+#cloud-config
+autoinstall:
+  version: 1
+  locale: en_US.UTF8
+  keyboard:
+      layout: fi
+  apt:
+      primary:
+          - arches: [default]
+            uri: http://mirrors.nic.funet.fi/ubuntu/
+      sources:
+          ytl-linux.list:
+            source: "deb [arch=amd64] https://linux.abitti.fi/deb ytl-linux main"
+            key: |
+               -----BEGIN PGP PUBLIC KEY BLOCK-----
+
+               mQINBF/OM8EBEADbtIT8en8PLczP2egPDeBXIXaSsQFzGgCBGd1vjCLbe1bhZ3ii
+               O/FWr2QqORnbzrNim5VyzeZ8Qq4Yj0XoQNhvkw9eD2old1mThjra5BMesMNXHnEB
+               PG6LAfPFDE9hsUaQDIJrHRO09GKlMJDIFX/cSPkzlQw2Pnzf6UTY8E2L6CORPWih
+               WIXNtNZHc1Eumsa8JwQy8xtIgHuEeqpTQYWaaiUdMZ/7zN5lhpOpDkoIpJyAMgqJ
+               GoX+SXrIynDw1rsKJM/xjZyG50VN5MwVnkoJ9e7v4BYJt3sc+WQVB6/k2vOaWjNX
+               BrcMMICOgbuofXW2Q85ArHpQRmQbzPePH5jxajq9JMcc5tjshIiGEQJpi59f+cLB
+               hVkNVBShsSJI0f7zfteoNfXb2nglp13Y0Bv7ksdrU7SGpTETU/+52No7ursz+slN
+               J1YHIA3HIb1n3Kp5GHfo5evRBdgFEotUa8gIdNAM/01NFjQNxdlhf7kHlEfcXrdA
+               Sl3TM1i4S9VKOTXTuYhWCz4c0/HiRuPqKBZ+8A8K4UjtZ2g55wtGLvH/ShT7w5ZI
+               vlxWNCff0qlThOgxQa3s0pa4X4cA5BLbQlweUB3VcK8WTZCO+68OVWijOc9KKi2+
+               ESOlOalQb3bOwYX3DZIxKZVntyIvoZVoH1YBJHH1WeM922IW2V2pqp+tCQARAQAB
+               tEtBYml0dGkgVGVhbSAoS2V5IGZvciBzaWduaW5nIExpbnV4IHBhY2thZ2VzKSA8
+               YWJpdHRpQHlsaW9wcGlsYXN0dXRraW50by5maT6JAk4EEwEKADgWIQQZpDBQlT/e
+               wPDWLIEbJkFcHmZqeAUCX84zwQIbAwULCQgHAgYVCgkICwIEFgIDAQIeAQIXgAAK
+               CRAbJkFcHmZqeFQkD/wLMcIPdcwbh83KaMjReUDvzvieFkzGqmU0LkjYNCFLoHn5
+               Mq8pLe/KCiEH1JG9nswZwJhuP9scDkWIRwlqUu0VzZA3qsUiIgkWF6GRUj7qr1Bw
+               s2dvWm/40+4Pz8cEQAd4M73MERe6byMrZvwhZMuCygJVmPu9CvgWUossbBUVCpOC
+               PXeaVhpJM1JqSL8HOlZO1kg+Rv6Crg1F6p9SWmgRBF41qULNdpOJUtptGcGwKnyy
+               rW6ShrrW30VVCRoGDf015LyR6cvuYsI4feqhFSZWXBhfHQO+631vv+WCy3H7XGq6
+               atoUu2U37yhaaTTFfbr1SSMbUuDumNCXc0dtmBvBeCG1qxtlhXUO4N6OAuWkEuFy
+               IDAjvtQYyUfNC4FycBgMj9nOrGGaTUxB3IqYVBDyrBV5oWd4NHvbb3SGIiR/v1SR
+               6sKbkHjoZ+lFAC9hqCHivQ4ujU+/zA/otAxlQTH4/v242pBMru5HEt+iujjyJsfq
+               dKDC3cFD6p5s+p55LoLd+r53y+sZm89Z9771BaAEFwoRgcXWyOpgxE5SJBkkLPMq
+               QVgz7WvU+n6QUG7B+jitu8ktz+ZKeuVBXvosRRK1umgoq1tzGJ0hdrJC3mVGrwKR
+               dn5yfLuSMByTA1z0kELvqpdpTP1SOARLl/8tXMJFXHgOkifwIDeM0Rt6oYG4sLkC
+               DQRfzjPBARAAr6cRB9oLSXPWCnyJxFeIeqdUtfi88HDVhh5JjYyrY5wblSxUn17/
+               rC5G0XQew/6y0PX78wyvzKcoaGaIWI5gT6Lfv1IlL7oMWQsn+qxpLznpU5l3IC8g
+               PWQSa6H6UwnZS502VZn4a+Y6YVw7BsWwRabHACtJBnbcmCkz9hK/2uuyCedweKXb
+               g+9VIy1wqhO7bpG/HTplZlyZiOWHFaeDqk7v/4rpl5CWs1yfHTG84GDtGQaRrc+v
+               05wPK3mxmm9mjGIQ69Gcr1UmGAPbSDyg0oSgi8mNp37/KoGVNP3LkZvt34VgAqgO
+               zvNZ/WI15stAqpjd8g8Ya86RQWtkZhQ/uxRsli+N8hT0NjRqzq9q80t5eVOVM3dl
+               6IGS0iZH+iSX27vJpi3hOMFG5gcuwaXxKNn5H0LaYKJnl5v8KvAHUme9eFeCN//r
+               YzwLTaDEvUo94AS/4Hc8OQuFxUtvuddbxzUqlVr9xcZupMgsW6xk15Ngft8IEvAo
+               caTNVSMbbgN8U/7B/Eudu7bPEDaEX/MGIq5n6DyIl2TESPid4iUfrN1qR3g2kKDZ
+               fQeEAbZJJGwZdEmagCWTckum6Kjych0t1NKMxxfF6bVIeQFHOuVOo9Tfv7I6wJHA
+               1iUfw9B2YX8eCIFMqQ9AYpcznOTl5SHUCfRAvINreRjV3oOfj7y83kUAEQEAAYkC
+               NgQYAQoAIBYhBBmkMFCVP97A8NYsgRsmQVweZmp4BQJfzjPBAhsMAAoJEBsmQVwe
+               Zmp4xjUP/AlYE7nV8wTKCaNOcFa35Dlaroa145LSymY1sDdmf1tR5sy85KTTyehy
+               b+YL/3vPPzN+X+s2b/3HgG53QW3tHN+drWLWK4N2vmZ+KS2RKZSz4ReiQSBMuQdB
+               sJiT63bQTunaHK4B+cf1/OrQ+d6pXe6IAxnKKqTvxeqK4IX3HCmHAq+eA/OH7uqR
+               1lRw4bx8UBL/5lu60OcsMOUeV0QBq1T47NrOKMP1a4measgzhjZLIBhKVhiopLbk
+               jmXxK0q6FQnktoWo3KKHW1nd/1fX5s3oJrl8EUlqT13BZKazj6zttWB84jzoM4U0
+               rh1xWBNY1Wks4mqkD5YXTY3C2V8nf3TmcbhS0P/kDXpi77dh7V1QZSGZBEXL7QhH
+               T4H9/c5JqPxz98jaF1xcic+Ks7GFgBw40mteRIOi8tswHbZD7n1CPhy879PCe30V
+               f98tnasCNtwZC2MaWJCknL3lorjdW32Mm85tLYfdv0hoVfOW054K+hy0xCSvcHxe
+               GfzzgLDJgdUkfAY8XG4BhCB0FJkTtHBrGNtwGSqpNSKUvH6ZjK2NfCdfmHySCJCw
+               ZZYZdDCRzHPA90AVFdev65Yd+2xt+JjmnbldS6z7HaIiCeT5XhhhgSd9AUoM+Hyu
+               NkP7g8coWb57JQj63AgO9ukfqYuR4XqQHW3ga6U4cKhPUU1ChE5H
+               =swfs
+               -----END PGP PUBLIC KEY BLOCK-----
+          virtualbox-oracle.list:
+            source: "deb [arch=amd64] https://download.virtualbox.org/virtualbox/debian noble contrib"
+            key: |
+               -----BEGIN PGP PUBLIC KEY BLOCK-----
+               Version: GnuPG v1.4.12 (GNU/Linux)
+
+               mQINBFcZ9OEBEACSvycoAEIKJnyyIpZ9cZLCWa+rHjXJzPymndnPOwZr9lksZVYs
+               12YnsEy7Uj48rTB6mipbIuDDH9VBybJzpu3YjY7PFTkYAeW6WAPeJ8RcSGXsDvc0
+               fQ8c+7/2V1bpNofc9vDSdvcM/U8ULQcNeEa6DI4/wgy2sWLXpi1DYhuUOSU10I97
+               KHPwmpWQPsLtLHEeodeOTvnmSvLX1RRl32TPFLpLdjTpkEGS7XrOEXelqzMBQXau
+               VUwanUzQ2VkzKnh4WecmKFT7iekOFVHiW0355ErL2RZvEDfjMjeIOOa/lPmW7y4F
+               fHMU3a3sT3EzpD9ST/JGhrmaZ+r5yQD4s4hn1FheYFUtUN0dqHe9KgPDecUGgh4w
+               rGnm0nUQsmQLKGSFXskqt26IiERdRt1eXpR9C5yufCVZfYpSsoG/mIHAt9opXFqi
+               ryJqzx5pfQkOLTz9WErThHK1399jyXJwYGKLyddHFQEdy3u3ELM8Kfp7SZD/ERVq
+               t2oA8jsr24IOyL16cydzfSP2kAV1r30bsF/1Q4qq6ii/KfDLaI0KEliBLQuB9jrA
+               6XQ69VLtkNPgiWzVMclg+qW1pA8ptXqXLMxi4h5EmE5GOhsihuwkwhhBmFqGT1RJ
+               EGlc/uiHWQskOW3nhQ3Epd6xhCUImy8Eu83YRxS6QriH6K8z5LgRSdg9nwARAQAB
+               tElPcmFjbGUgQ29ycG9yYXRpb24gKFZpcnR1YWxCb3ggYXJjaGl2ZSBzaWduaW5n
+               IGtleSkgPGluZm9AdmlydHVhbGJveC5vcmc+iQI3BBMBCgAhBQJXGfThAhsDBQsJ
+               CAcDBRUKCQgLBRYDAgEAAh4BAheAAAoJEKL2g8UpgK7P49QP/39dH+lFqlD9ruCV
+               apBKVPmWTiwWbqmjxAV35PzG9reO7zHeZHil7vQ6UCb6FGMgZaYzcj4Sl9xVxfbH
+               Zk7lMgyLDuNMTTG4c6WUxQV9UH4i75E1IBm9lOJw64bpbpfEezUF/60PAFIiFBvD
+               34qUAoVKe49PbvuTy98er5Kw6Kea880emWxU6I1Q1ZA80+o2dFEEtQc+KCgfWFgd
+               O757WrqbTj6gjQjBAD5B4z5SwBYMg1/TiAYF0oa+a32LNhQIza/5H3Y+ufMfO3tY
+               B/z1jLj8ee5lhjrv0jWvvfUUeIlq5pNoOmtNYFS+TdkO0rsqEC6AD0JRTKsRHOBu
+               eSj7SLt8gmqy7eEzRCMlYIvoQEzt0/JuTQNJjHCuxH1scV13Q3bK6SmxqlY46tf5
+               Ljni9Z4lLJ7MB1BF2MkHuwQ7OcaEgUQBZSudzPkpRnY0AktiQYYP4Q1uDp+vfvFp
+               GTkY1pqz3z2XD66fLz0ea5WIBBb3X/uq9zdHu8BTwDCiZlWLaDR5eQoZWWe+u+5J
+               NUx1wcBpC1Hr2AnmuXBCRq+bzd8iaB8qxWfpCAFZBksSIW2aGhigSeYdx1jpjOob
+               xog4qbuo5w1IUh8YLHwQ6uM12CqwC1nZadLxG0Fj4KoYbvp0T5ryBM3XD+TVGjKB
+               m/QHLqabxZBbuJT0Cw2dRtW/ty5ZuQINBFcZ9OEBEADEY+YveerQjzzy5nA1FjQG
+               XSaPcjy4JlloRxrUyqlATA0AIuK7cwc7PVrpstV8mR9qb38fdeIoY1z1dD3wnQzJ
+               lbDfZhS5nGMzk9AANd6eJ2KcWI3qLeB//4fr2pPS0piOG4qyW4IhY4KeuCwusE6d
+               IyDBg2XEdpG1IesSDaqNsvLZjPFEBNiCIkqrC7XSmoPNwHkKGj5LeD1wAE914cn2
+               a04IlbXiT46V9jjJFnNem/Co0u+2e2J3oReNmHvbb62OC57rqeBxqBplXg9tvJk/
+               w0A3bXxUrfz83tY6vDYoFdwJDudaJJWQjvqpYnySXMJYT6KoE4Xgl5fNcbNIVUpU
+               k74BcWD9PZVadSMN7FWZzMfVsbTMmUA22tuDKD6hrF6ysCelex4YO44kSH7dhXu5
+               ANtZ2BFfRZvdjTQoblOI8C9cy/iX74vvG8OZarFG+u/kon3+xcAgY5KceUVbostO
+               0n3V8iK0gMQWH8sR8vXH+oV4GqHUEQURax2XM2Tt7Ra5XGcQaYDIkNPKSVVVtTk5
+               3OU/bNoBofAbwd4eOZOf9ag5ZVIIaoubMOEiveGYde4AEVE7krSNcYh/C48iCVKr
+               eOyS26AVA15dAvnKTAqxJqICUSQ9zjGfTp1obhXCkMAy0m+AxNVEfSzFznQLHtWK
+               zEGr+zCsvj1R8/qlMpHBXQARAQABiQIfBBgBCgAJBQJXGfThAhsMAAoJEKL2g8Up
+               gK7PKpQP+wY9zLgnJeqrvNowmd70afd8SVge9BvhLh60cdG+piM5ZuEV5ZmfTFoX
+               XPHzOo2dgt6VYTE9JO72Jv7MyzJj3zw3G/IcJQ6VuQwzfKkFTD+IeOiXX2I2lX1y
+               nFv24rs1MTZ4Px1NJai7fdyXLiCl3ToYBmLafFpfbsVEwJ8U9bCDrHE4KTVc9IXO
+               KQ5/86JaIPN+JJLHJoO2EBQC08Cw3oxTDFVcWZ/IWvEFeqyqRSyoFMoDkjLYsqHS
+               we1kEoMmM2qN20otpKYq8R+bIEI5KKuJvAts/1xKE2cHeRvwl5kcFw/S3QQjKj+b
+               LCVTSRZ6EgcDDmsAPKt7o01wmu+P3IjDoiyMZJQZpZIA2pYDxruY+OLXpcmw78Gq
+               lTXb4Q9Vf47sAE8HmHfkh/wrdDeEiY9TQErzCBCufYbQj7sgttGoxAt12N+pUepM
+               MBceAsnqkF6aEa4n8dUTdS2/nijnyUZ2rDVzikmKc0JlrZEKaw8orDzg8fXzfHIc
+               pTrXCmFLX5BzNQ4ezAlw0NZG/qvhSBCuAkFiibfQUal8KLYwswvGJFghuQHsVTkf
+               gF8Op7Br7loTNnp3yiI0jo2D+7DBFqtiSHCq1fIgktmKQoVLCfd3wlBJ/o9cguT4
+               Y3B83Y34PxuSIq2kokIGo8JhqfqPB/ohtTLHg/o9RhP8xmfvALRD
+               =Rv7/
+               -----END PGP PUBLIC KEY BLOCK-----
+          docker.list:
+            source: "deb [arch=amd64] https://download.docker.com/linux/ubuntu noble stable"
+            key: |
+              -----BEGIN PGP PUBLIC KEY BLOCK-----
+
+              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
+              YT90qFF93M3v01BbxP+EIY2/9tiIPbrd
+              =0YYh
+              -----END PGP PUBLIC KEY BLOCK-----
+  packages:
+    - cinnamon-core
+    - ytl-linux-customize
+    - ytl-linux-purge-deb
+    - snapd
+  snaps:
+    - name: firefox
+  storage:
+      layout:
+          name: direct
+  identity:
+      hostname: ktp
+      username: school
+      realname: School
+      # school
+      password: paN7zaXhmvMKE
+  user-data:
+      timezone: Europe/Helsinki
+  ssh:
+      install-server: no
+  late-commands:
+    # clean up autoinstall traces from Grub configuration and add a "safe graphics" setting
+    - sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="nomodeset"/' /target/etc/default/grub
+    # add boot timeout
+    - sed -i 's/GRUB_TIMEOUT=.*/GRUB_DEFAULT=3/' /target/etc/default/grub
+    - sed -i 's/GRUB_TIMEOUT_STYLE=.*/GRUB_TIMEOUT_STYLE=menu/' /target/etc/default/grub
+    # update grub settings
+    - curtin in-target --target=/target -- update-grub
+    # add user for MEB
+    - curtin in-target --target=/target -- useradd -p $1$wIiwKtrF$0Y3YOfuHMSIdsg.69sIWw0 -U -m meb
+    - curtin in-target --target=/target -- usermod -c "Matriculation Examination Board" -s /bin/false -L -e 1 meb
+    - curtin in-target --target=/target -- adduser meb sudo
+    - curtin in-target --target=/target -- adduser meb adm
+    - curtin in-target --target=/target -- adduser meb cdrom
+    - curtin in-target --target=/target -- adduser meb dip
+    - curtin in-target --target=/target -- adduser meb plugdev
+    - curtin in-target --target=/target -- adduser meb lxd
+    # set Cinnamon as default session
+    - echo "[SeatDefaults]\nuser-session=cinnamon" >/target/etc/lightdm/lightdm.conf.d/cinnamon.conf
+    # Disable Cinnamon 3D graphics warning
+    - echo "#!/bin/sh\n\nexport CINNAMON_2D=true\n" >/target/etc/profile.d/cinnamon_2d.sh
+    # Use NetworkManager instead of networkd
+    - 'rm -fR /target/etc/netplan/*'
+    - 'echo "network:\n  version: 2\n  renderer: NetworkManager\n" >/target/etc/netplan/01-use-network-manager.yaml'
+    - 'chmod 0600 /target/etc/netplan/01-use-network-manager.yaml'
+    - curtin in-target --target=/target -- netplan apply
+    # Disable all network waits
+    - curtin in-target --target=/target -- systemctl mask NetworkManager-wait-online.service
+    - curtin in-target --target=/target -- systemctl mask systemd-networkd-wait-online.service
+    # Remove some unnecessary packages on next boot
+    - echo open-iscsi >>/target/etc/ytl-linux-purge-deb.conf
+    - echo networkd-dispatcher >>/target/etc/ytl-linux-purge-deb.conf
+    # Disable automatic updates
+    - sed -i 's/APT::Periodic::Update-Package-Lists .*/APT::Periodic::Update-Package-Lists "0";/' /target/etc/apt/apt.conf.d/20auto-upgrades
+    - sed -i 's/APT::Periodic::Unattended-Upgrade .*/APT::Periodic::Unattended-Upgrade "0";/' /target/etc/apt/apt.conf.d/20auto-upgrades
+    # Disable prompt for upgrading to newer versions
+    - sed -i 's/^Prompt=.*/Prompt=never/' /target/etc/update-manager/release-upgrades

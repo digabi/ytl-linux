@@ -1,0 +1,28 @@
+#!/usr/bin/env sh
+
+TITLE="Naksu Installer"
+
+if [ ! -x ~/ktp/naksu ]; then
+  mkdir ~/ktp
+  TEMPZIP=`tempfile`
+
+  wget -O $TEMPZIP https://github.com/digabi/naksu/releases/download/v1.0.0/naksu_linux_amd64.zip \
+    | zenity --title="$TITLE" --text="Downloading..." --no-cancel --progress --pulsate --auto-close
+  
+  TEMPSIZE=`cat $TEMPZIP | wc -c`
+  echo "TEMPSIZE: $TEMPSIZE"
+  if [ "$TEMPSIZE" = "0" ]; then
+    zenity --error --title="$TITLE" --text="Failed to download Naksu. Check your network connection."
+    exit 1
+  fi
+ 
+  unzip -q -o $TEMPZIP naksu -d ~/ktp/ \
+    | zenity --title="$TITLE" --text="Unpacking..." --no-cancel --progress --pulsate --auto-close
+  chmod 700 ~/ktp/naksu
+  rm $TEMPZIP
+
+  # Start Naksu once to make its updater to do its job
+  ~/ktp/naksu | zenity --title="$TITLE" --text="Updating..." --no-cancel --progress --pulsate --auto-close
+fi
+
+~/ktp/naksu

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Name=Display: Safe Graphics On Boot
+Comment=Adds "nomodeset" boot parameter for safe graphics mode
+Exec=/usr/bin/pkexec /usr/local/sbin/ytl-grub-safe-graphics-on
+Terminal=false
+Type=Application
+Categories=Settings;DesktopSettings;
+Icon=/usr/local/share/pixmaps/ytl-grub-safe-graphics.png
