@@ -1,10 +1,12 @@
-INSTALL_IMAGE = "ytl-install-22.iso"
+INSTALL_IMAGE = "app/ytl-install-22.iso"
 VM_NAME = YTL Linux
 VM_DISK_SIZE = 51200
 VM_MEMORY_SIZE = 4096
 
 docker:
 	mkdir -p bin
+	pwd
+	git rev-parse --short HEAD > commit_hash
 	-docker rm ytl-linux-builder
 	docker build -t ytl-linux-build-img:latest -f Dockerfile.build .
 	docker run -w /app --name ytl-linux-builder ytl-linux-build-img:latest ./build-ytl-image
