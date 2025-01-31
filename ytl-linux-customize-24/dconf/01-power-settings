@@ -1,0 +1,8 @@
+# Default Power settings
+[org/cinnamon/settings-daemon/plugins/power]
+
+# Disable all possible power savings
+sleep-display-ac=0
+sleep-display-battery=0
+sleep-inactive-ac-timeout=0
+sleep-inactive-battery-timeout=0
