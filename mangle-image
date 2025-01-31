@@ -9,6 +9,11 @@ set -e
 # The main repository checkout is in the current working directory.
 
 WORKDIR="$1"
+if [ -f commit_hash ]; then
+    COMMIT_HASH=$(cat commit_hash)
+else
+    COMMIT_HASH="$(git rev-parse --short HEAD)"
+fi
 
 #########################################
 # Step 2: UEFI boot mode / GRUB
@@ -18,7 +23,7 @@ sed -i '/Install Ubuntu Server/iINCLUDE_YTL_MENU' "$WORKDIR"/boot/grub/grub.cfg
 sed -i '/INCLUDE_YTL_MENU/r templates/ytl-grub.cfg' "$WORKDIR"/boot/grub/grub.cfg
 sed -i '/INCLUDE_YTL_MENU/d' "$WORKDIR"/boot/grub/grub.cfg
 sed -i "s|##AUTOINSTALL_URL##|$AUTOINSTALL_URL|" "$WORKDIR"/boot/grub/grub.cfg
-
+sed -i "s/##COMMIT_HASH##/$COMMIT_HASH/" "$WORKDIR"/boot/grub/grub.cfg
 # disable timeout to avoid installation loops and accidents
 sed -i 's/timeout=[[:digit:]]\+/timeout=-1/' "$WORKDIR"/boot/grub/grub.cfg
 

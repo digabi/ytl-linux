@@ -1,7 +1,8 @@
 FROM --platform=linux/amd64 ubuntu:jammy
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get -y install wget fdisk libarchive-tools xorriso cd-boot-images-amd64
+RUN apt-get update && apt-get -y install wget fdisk libarchive-tools xorriso cd-boot-images-amd64 git
 RUN mkdir /app && wget -O /app/ubuntu.iso https://releases.ubuntu.com/jammy/ubuntu-22.04.5-live-server-amd64.iso
 COPY build-ytl-image /app/
 COPY mangle-image /app/
+COPY commit_hash /app/
 COPY templates/ /app/templates/
