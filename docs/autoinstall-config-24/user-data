@@ -240,8 +240,6 @@ autoinstall:
     - echo cups >>/target/etc/ytl-linux-purge-deb.conf
     - echo cups-browsed >>/target/etc/ytl-linux-purge-deb.conf
     - echo cups-bsd >>/target/etc/ytl-linux-purge-deb.conf
-    - echo cups-client >>/target/etc/ytl-linux-purge-deb.conf
-    - echo cups-common >>/target/etc/ytl-linux-purge-deb.conf
     - echo cups-core-drivers >>/target/etc/ytl-linux-purge-deb.conf
     - echo cups-daemon >>/target/etc/ytl-linux-purge-deb.conf
     - echo cups-filters >>/target/etc/ytl-linux-purge-deb.conf
