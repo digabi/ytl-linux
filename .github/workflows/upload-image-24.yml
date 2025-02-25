@@ -1,0 +1,27 @@
+on:
+  push:
+    tags:
+    - 'v24.*'
+
+name: Build and upload image
+jobs:
+  build-and-upload:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Install prerequisite packages
+        run: |
+          sudo apt -y install wget fdisk libarchive-tools xorriso cd-boot-images-amd64
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Build installation image
+        run: |
+          ./build-ytl-image
+      - name: Look up AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-north-1
+      - name: Copy file with the AWS CLI
+        run: |
+          aws s3 cp ytl-install-24.iso s3://ytl-linux
