@@ -186,7 +186,7 @@ autoinstall:
               -----END PGP PUBLIC KEY BLOCK-----
   packages:
     - cinnamon-core
-    - ytl-linux-customize
+    - ytl-linux-customize-24
     - ytl-linux-purge-deb
     - snapd
   snaps:
