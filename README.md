@@ -76,7 +76,7 @@ it so that it will boot by default to an autoinstall mode and download
 our install configuration.
 
 The build script `build-ytl-image` can be executed with or without Docker. Both
-should give you a new ISO file `ytl-install-22.iso` which can be tested with
+should give you a new ISO file `ytl-install-24.iso` which can be tested with
 instructions given below.
 
  * Building with Docker: `make docker`
@@ -98,17 +98,18 @@ you can do the following:
 
 ### Building the image with GitHub automation
 
-Pushing a tag of the form 'v22.X' to the digabi/ytl-linux GitHub
+Pushing a tag of the form 'v24.X' to the digabi/ytl-linux GitHub
 repository will trigger an action that automatically rebuilds the image
-and uploads it to https://linux.abitti.fi/ytl-install-22.iso .
+and uploads it to https://linux.abitti.fi/ytl-install-24.iso .
 
 Use Ubuntu version numbers with local build version number. A build 
-number two of Ubuntu 22.04.3 would get version number (tag) `v22.04.3-2`.
+number two of Ubuntu 24.04.3 would get version number (tag) `v24.04.3-2`.
 
 ## Updating configuration
 
 The installation configuration is in
-[``docs/autoinstall-config/user-data``](https://github.com/digabi/ytl-linux/blob/main/docs/autoinstall-config/user-data)
+[``docs/autoinstall-config-XX/user-data``](https://github.com/digabi/ytl-linux/blob/main/docs/autoinstall-config-XX/user-data)
+(where XX stands 1st part of Ubuntu version number, e.g. 22)
 and the format is documented
 [here](https://ubuntu.com/server/docs/install/autoinstall-reference).
 Pushing changes to the file will make
@@ -121,11 +122,11 @@ The ytl-linux-customize deb package is built automatically by a GitHub action
 on pushes to the source code directory. The resulting package, along with any others
 in the debs/ directory (currently none) get pushed to an apt repository at
 
-  deb https://linux.abitti.fi/deb ytl-linux main
+`deb https://linux.abitti.fi/deb ytl-linux main`
 
 and are signed with the GPG key currently available at
 
-  https://linux.abitti.fi/apt-signing-key.pub
+`https://linux.abitti.fi/apt-signing-key.pub`
 
 The installation ISO image will pull in the ytl-linux-customize package from there.
 
