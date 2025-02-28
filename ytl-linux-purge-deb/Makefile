@@ -23,6 +23,10 @@ deb:
 	cp ytl-linux-purge-deb.conf $(DEB_ROOT)/etc/ytl-linux-purge-deb.conf
 	chmod 644 $(DEB_ROOT)/etc/ytl-linux-purge-deb.conf
 
+	# Package documentation
+	mkdir -p deb-root/usr/local/share/doc/$(NAME)
+	cp *.md deb-root/usr/local/share/doc/$(NAME)/
+
 	fpm -C $(DEB_ROOT)/ -s dir --name $(NAME) --architecture native -t deb --version "$(VERSION)" \
 		--description "Script to remove named deb packages if they are installed" \
 		--maintainer "abitti@ylioppilastutkinto.fi" \
