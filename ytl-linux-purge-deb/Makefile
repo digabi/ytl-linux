@@ -1,5 +1,5 @@
 NAME := ytl-linux-purge-deb
-VERSION := "0.0.1"
+VERSION := "0.0.2"
 
 DEPENDENCIES := --depends debianutils --depends cron --depends bash --depends bsdutils
 DEB_ROOT := deb-root
