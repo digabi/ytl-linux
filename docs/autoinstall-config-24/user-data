@@ -234,7 +234,7 @@ autoinstall:
     - curtin in-target --target=/target -- systemctl mask NetworkManager-wait-online.service
     - curtin in-target --target=/target -- systemctl mask systemd-networkd-wait-online.service
     # Remove some unnecessary packages on next boot
-    - echo open-iscsi:iscsid.service >>/target/etc/ytl-linux-purge-deb.conf
+    - echo open-iscsi:iscsid.service,iscsid.socket,open-iscsi.service >>/target/etc/ytl-linux-purge-deb.conf
     - echo networkd-dispatcher >>/target/etc/ytl-linux-purge-deb.conf
     # Remove CUPS
     - echo cups >>/target/etc/ytl-linux-purge-deb.conf
