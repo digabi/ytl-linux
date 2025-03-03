@@ -12,6 +12,7 @@ which has following format:
 # Empty lines are ignored
 package-name
 another-package-name:service-name
+third-package-name:service-name-1,service-name-2
 ```
 
 In the example case the script
@@ -20,6 +21,9 @@ In the example case the script
 1. if `another-package-name` is installed
     * stops and disables `service-name`
     * purges package `another-package-name`
+1. if `third-package-name` is installed
+    * stops and disables first `service-name-1` and then `service-name-2`
+    * purges package `third-package-name`
 
 At the moment only one service can be stopped for each package to remove.
 
