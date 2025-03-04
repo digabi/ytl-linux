@@ -25,5 +25,3 @@ In the example case the script
     * stops and disables first `service-name-1` and then `service-name-2`
     * purges package `third-package-name`
 
-At the moment only one service can be stopped for each package to remove.
-
