@@ -22,4 +22,7 @@ ytl-linux-tso-off/deb-root/
 ytl-linux-digabi2/*.deb
 ytl-linux-digabi2/deb-root/
 
+ytl-linux-digabi2-examnet/*.deb
+ytl-linux-digabi2-examnet/deb-root/
+
 .DS_STORE

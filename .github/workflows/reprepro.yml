@@ -9,6 +9,7 @@ on:
         - 'ytl-linux-cpu-governor/**'
         - 'ytl-linux-tso-off/**'
         - 'ytl-linux-digabi2/**'
+        - 'ytl-linux-digabi2-examnet/**'
         - '.github/workflows/reprepro.yml'
   workflow_dispatch:
 
@@ -42,6 +43,9 @@ jobs:
       - name: Build ytl-linux-digabi2 deb package
         run: |
             make -C ytl-linux-digabi2 deb
+      - name: Build ytl-linux-digabi2-examnet deb package
+        run: |
+            make -C ytl-linux-digabi2-examnet deb
       - name: Build repository
         env:
             SKEY: ${{ secrets.YTL_LINUX_PACKAGE_SIGNING_PRIVATE_KEY }}
@@ -53,7 +57,7 @@ jobs:
             echo "Signing with key 0x$keyid"
             echo "SignWith: 0x$keyid" >> reprepro/conf/distributions
             for dir in debs/ ytl-linux-customize/; do [ -d $dir ] || mkdir $dir; done
-            find debs/ ytl-linux-customize/ ytl-linux-customize-24/ ytl-linux-purge-deb/ ytl-linux-cpu-governor/ ytl-linux-tso-off/ ytl-linux-digabi2/ -name '*.deb' | while read deb; do echo $deb; reprepro -b reprepro includedeb ytl-linux $deb; done
+            find debs/ ytl-linux-customize/ ytl-linux-customize-24/ ytl-linux-purge-deb/ ytl-linux-cpu-governor/ ytl-linux-tso-off/ ytl-linux-digabi2/ ytl-linux-digabi2-examnet/ -name '*.deb' | while read deb; do echo $deb; reprepro -b reprepro includedeb ytl-linux $deb; done
             # also make signing key available on the web site
             echo "$SPUBKEY" > apt-signing-key.pub
       - name: Look up AWS credentials
