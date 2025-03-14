@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # Exit codes
-readonly EXIT_CODE_UNKNOWN_ERROR=1                    # Unknown error
 readonly EXIT_CODE_NETWORK_DEVICE_NAME_MISSING_WAN=2  # Network device name (internet) is missing
 readonly EXIT_CODE_NETWORK_DEVICE_MISSING_WAN=3       # Given network device name (internet) does not exist
 readonly EXIT_CODE_NETWORK_DEVICE_NAME_MISSING_LAN=4  # Network device name (local network) is missing
@@ -46,11 +45,12 @@ function debug_path() {
     fi
 }
 
-readonly PATH_DEBUG=$(debug_path)
+PATH_DEBUG=$(debug_path)
+readonly PATH_DEBUG
 
 function debug() {
     _DEBUG_MESSAGE=$1
-    $BIN_ECHO "$SCRIPT_PATH DEBUG: $_DEBUG_MESSAGE" >>$PATH_DEBUG
+    $BIN_ECHO "$SCRIPT_PATH DEBUG: $_DEBUG_MESSAGE" >>"$PATH_DEBUG"
 }
 
 function print_error() {
@@ -82,12 +82,12 @@ function print_usage() {
 function exit_script() {
     _EXIT_CODE=$1
     debug "Exiting with code $_EXIT_CODE"
-    exit $_EXIT_CODE
+    exit "$_EXIT_CODE"
 }
 
 function network_enumerate_devices () {
     for dir in /sys/class/net/*; do
-        device=`basename $dir`
+        device=$(basename "$dir")
         if ! [[ "$device" =~ $NETWORK_DEVICE_FILTER_RE ]]; then
             echo "$device "
         fi
@@ -97,24 +97,24 @@ function network_enumerate_devices () {
 function network_enumerate_devices_with_information () {
     device_to_skip=$1
     
-    devices=`network_enumerate_devices`
+    devices=$(network_enumerate_devices)
 
     for device in $devices; do
-        if [ ! -z "$device_to_skip" ] && [ $device == "$device_to_skip" ]; then
+        if [ -n "$device_to_skip" ] && [ "$device" == "$device_to_skip" ]; then
             continue
         fi
         
-        ip=`ip addr show dev $device| grep "inet " | awk '{print $2}' | cut -d/ -f1`
-        if [ -z $ip ]; then
+        ip=$(ip addr show dev "$device" | grep "inet " | awk '{print $2}' | cut -d/ -f1)
+        if [ -z "$ip" ]; then
             ip=-
         fi
 
-        connect=`ip link show dev $device | grep -q "state UP" && echo "Connected" || echo "Disconnected"`
-        if [ -z $connect ]; then
+        connect=$(ip link show dev "$device" | grep -q "state UP" && echo "Connected" || echo "Disconnected")
+        if [ -z "$connect" ]; then
             connect=-
         fi
 
-        echo "$device $ip $connect"
+        echo "$device" "$ip" "$connect"
     done
 }
 
@@ -122,8 +122,9 @@ function ask_network_device () {
     question=$1
     device_to_skip=$2
     
-    devices=`network_enumerate_devices_with_information $device_to_skip`
+    devices=$(network_enumerate_devices_with_information "$device_to_skip")
 
+    # shellcheck disable=SC2086
     $BIN_ZENITY --list --title "$question" \
         --column "Device" --column "IPv4" --column "Connection" \
         --width=400 --height=400 \
@@ -133,14 +134,14 @@ function ask_network_device () {
 
 function network_device_exists() {
     _DEVICE=$1
-    $BIN_IP link show $_DEVICE &> /dev/null && $BIN_ECHO "1"
+    $BIN_IP link show "$_DEVICE" &> /dev/null && $BIN_ECHO "1"
 }
 
 function get_ipv4_address() {
     _DEVICE=$1
-    _IP=$($BIN_IP -oneline -4 addr show scope global $_DEVICE | $BIN_TR -s ' ' | $BIN_TR '/' ' ' | $BIN_CUT -f 4 -d ' ')
+    _IP=$($BIN_IP -oneline -4 addr show scope global "$_DEVICE" | $BIN_TR -s ' ' | $BIN_TR '/' ' ' | $BIN_CUT -f 4 -d ' ')
     if [[ ! "$_IP" =~ "does not exist" ]]; then
-        $BIN_ECHO $_IP
+        $BIN_ECHO "$_IP"
     fi
 }
 
@@ -154,7 +155,8 @@ function check_network_device_names() {
         exit_script $EXIT_CODE_NETWORK_DEVICE_NAME_MISSING_WAN
     fi
 
-    if [ -z $(network_device_exists $_NET_DEVICE_WAN) ]; then
+    WAN_NETWORK_DEVICE_EXISTS=$(network_device_exists "$_NET_DEVICE_WAN")
+    if [ -z "$WAN_NETWORK_DEVICE_EXISTS" ]; then
         print_error "Given network device $_NET_DEVICE_WAN (internet) does not exist"
         print_usage
         exit_script $EXIT_CODE_NETWORK_DEVICE_MISSING_WAN
@@ -166,7 +168,8 @@ function check_network_device_names() {
         exit_script $EXIT_CODE_NETWORK_DEVICE_NAME_MISSING_LAN
     fi
 
-    if [ -z $(network_device_exists $_NET_DEVICE_LAN) ]; then
+    LAN_NETWORK_DEVICE_EXISTS=$(network_device_exists "$_NET_DEVICE_LAN")
+    if [ -z "$LAN_NETWORK_DEVICE_EXISTS" ]; then
         print_error "Given network device $_NET_DEVICE_LAN (local network) does not exist"
         print_usage
         exit_script $EXIT_CODE_NETWORK_DEVICE_MISSING_LAN
@@ -195,7 +198,7 @@ function check_server_number() {
         exit_script $EXIT_CODE_MISSING_SERVER_NUMBER
     fi
 
-    if [ -z "$(server_number_is_valid $_SERVER_NUMBER)" ]; then
+    if [ -z "$(server_number_is_valid "$_SERVER_NUMBER")" ]; then
         print_error "Server number must be 1-254"
         print_usage
         exit_script $EXIT_CODE_ILLEGAL_SERVER_NUMBER
@@ -216,10 +219,10 @@ function write_file() {
     _FILE_FILENAME=$1
     _FILE_CONTENT=$2
 
-    _FILE_PATH=$(dirname $_FILE_FILENAME)
-    if [ ! -d $_FILE_PATH ]; then
+    _FILE_PATH=$(dirname "$_FILE_FILENAME")
+    if [ ! -d "$_FILE_PATH" ]; then
         debug "Path $_FILE_PATH is missing, creating"
-        $BIN_MKDIR -p $_FILE_PATH
+        $BIN_MKDIR -p "$_FILE_PATH"
         _EXIT_CODE=$?
         if [ $_EXIT_CODE -gt 0 ]; then
             print_error "Failed to create directory $_FILE_PATH, exit code: $_EXIT_CODE"
@@ -230,7 +233,7 @@ function write_file() {
     fi
 
     debug "$_FILE_FILENAME: $_FILE_CONTENT"
-    $BIN_ECHO -e "$_FILE_CONTENT" >$_FILE_FILENAME
+    $BIN_ECHO -e "$_FILE_CONTENT" >"$_FILE_FILENAME"
     _EXIT_CODE=$?
     if [ $_EXIT_CODE -gt 0 ]; then
         print_error "Failed to write to $_FILE_FILENAME, exit code: $_EXIT_CODE"
@@ -244,7 +247,7 @@ function configure_networkmanager() {
     _IP_AND_NETMASK=$3
 
     debug "Deleting existing NetworkManager connection '$_CONNECTION_NAME'"
-    $BIN_NMCLI connection delete "$_CONNECTION_NAME" 2>&1 >>$PATH_DEBUG
+    $BIN_NMCLI connection delete "$_CONNECTION_NAME" >>"$PATH_DEBUG" 2>&1
     debug "Adding NetworkManager connection '$_CONNECTION_NAME'"
     $BIN_NMCLI connection add \
         type ethernet \
@@ -252,11 +255,11 @@ function configure_networkmanager() {
         con-name "$_CONNECTION_NAME" \
         ip4 "$_IP_AND_NETMASK" \
         autoconnect yes \
-        save yes 2>&1 >>$PATH_DEBUG
+        save yes >>"$PATH_DEBUG" 2>&1
     debug "Disabling IPv6 in connection '$_CONNECTION_NAME'"
-    $BIN_NMCLI connection modify "$_CONNECTION_NAME" ipv6.method "disabled" 2>&1 >>$PATH_DEBUG
+    $BIN_NMCLI connection modify "$_CONNECTION_NAME" ipv6.method "disabled" >>"$PATH_DEBUG" 2>&1
     debug "Starting connection '$_CONNECTION_NAME'"
-    $BIN_NMCLI connection up "$_CONNECTION_NAME" 2>&1 >>$PATH_DEBUG
+    $BIN_NMCLI connection up "$_CONNECTION_NAME" >>"$PATH_DEBUG" 2>&1
     _EXIT_CODE=$?
     if [ $_EXIT_CODE -gt 0 ]; then
         print_error "Failed to start NetworkManager connection '$_CONNECTION_NAME', exit code: $_EXIT_CODE"
@@ -274,14 +277,14 @@ function restart_network_services() {
         exit_script $EXIT_CODE_CANNOT_RESTART_RESOLVED
     fi
 
-    $BIN_SYSTEMCTL restart dnsmasq 2>&1 >>$PATH_DEBUG
+    $BIN_SYSTEMCTL restart dnsmasq >>"$PATH_DEBUG" 2>&1
     _EXIT_CODE=$?
     if [ $_EXIT_CODE -gt 0 ]; then
         print_error "Failed to restart dnsmasq, exit code: $_EXIT_CODE"
         exit_script $EXIT_CODE_CANNOT_RESTART_DNSMASQ
     fi
 
-    $BIN_SYSTEMCTL restart NetworkManager.service 2>&1 >>$PATH_DEBUG
+    $BIN_SYSTEMCTL restart NetworkManager.service >>"$PATH_DEBUG" 2>&1
     _EXIT_CODE=$?
     if [ $_EXIT_CODE -gt 0 ]; then
         print_error "Failed to restart NetworkManager.service, exit code: $_EXIT_CODE"
@@ -291,10 +294,10 @@ function restart_network_services() {
 
 GUI_MODE=0
 
-if [ -z $PARAM_NET_DEVICE_WAN ]; then
+if [ -z "$PARAM_NET_DEVICE_WAN" ]; then
     GUI_MODE=1
-    NET_DEVICE_WAN=`ask_network_device "Select internet (WAN) network device"`
-    if [ -z $NET_DEVICE_WAN ]; then
+    NET_DEVICE_WAN=$(ask_network_device "Select internet (WAN) network device")
+    if [ -z "$NET_DEVICE_WAN" ]; then
         print_error "Missing WAN network device name"
         exit_script $EXIT_CODE_NETWORK_DEVICE_NAME_MISSING_WAN
     fi
@@ -302,10 +305,10 @@ else
     NET_DEVICE_WAN=$PARAM_NET_DEVICE_WAN
 fi
 
-if [ -z $PARAM_NET_DEVICE_LAN ]; then
+if [ -z "$PARAM_NET_DEVICE_LAN" ]; then
     GUI_MODE=1
-    NET_DEVICE_LAN=`ask_network_device "Select local (LAN) network device" $NET_DEVICE_WAN`
-    if [ -z $NET_DEVICE_LAN ]; then
+    NET_DEVICE_LAN=$(ask_network_device "Select local (LAN) network device" "$NET_DEVICE_WAN")
+    if [ -z "$NET_DEVICE_LAN" ]; then
         print_error "Missing LAN network device name"
         exit_script $EXIT_CODE_NETWORK_DEVICE_NAME_MISSING_LAN
     fi
@@ -316,35 +319,38 @@ fi
 debug "NET_DEVICE_WAN: $NET_DEVICE_WAN"
 debug "NET_DEVICE_LAN: $NET_DEVICE_LAN"
 
-check_network_device_names $NET_DEVICE_WAN $NET_DEVICE_LAN
+check_network_device_names "$NET_DEVICE_WAN" "$NET_DEVICE_LAN"
 
-readonly IP_WAN=$(get_ipv4_address $NET_DEVICE_WAN)
+IP_WAN=$(get_ipv4_address "$NET_DEVICE_WAN")
+readonly IP_WAN
 if [ -z "$IP_WAN" ]; then
     print_error "Given WAN device $NET_DEVICE_WAN does not have an IPv4 address"
     exit_script $EXIT_CODE_WAN_WITH_NO_IP
 fi
 
-readonly IP_LAN_CHECK=$(get_ipv4_address $NET_DEVICE_LAN)
-if [ ! -z "$IP_LAN_CHECK" ]; then
-    print_warning "Given local device $NET_DEVICE_LAN has already an IPv4 address $IP_LAN_CHECK"
+IP_LAN=$(get_ipv4_address "$NET_DEVICE_LAN")
+readonly IP_LAN
+if [ -n "$IP_LAN" ]; then
+    print_warning "Given local device $NET_DEVICE_LAN has already an IPv4 address $IP_LAN"
 fi
 
-if [ -z $PARAM_SERVER_NUMBER ]; then
+if [ -z "$PARAM_SERVER_NUMBER" ]; then
     GUI_MODE=1
-    SERVER_NUMBER=`$BIN_ZENITY --entry --text="Enter server number (1-254)"`
+    SERVER_NUMBER=$($BIN_ZENITY --entry --text="Enter server number (1-254)")
 else
     SERVER_NUMBER=PARAM_SERVER_NUMBER
 fi
 
 debug "SERVER_NUMBER: $SERVER_NUMBER"
 
-check_server_number $SERVER_NUMBER
+check_server_number "$SERVER_NUMBER"
 
 debug "IP_WAN: $IP_WAN"
 debug "IP_LAN: $IP_LAN"
 debug "SERVER_NUMBER: $SERVER_NUMBER"
 
-readonly IP_LAN_PREFIX=$(get_lan_ip_prefix "$IP_WAN")
+IP_LAN_PREFIX=$(get_lan_ip_prefix "$IP_WAN")
+readonly IP_LAN_PREFIX
 
 write_file $PATH_RESOLVED_CONF "[Resolve]\nDNSStubListener=no"
 write_file $PATH_DNSMASQ_CONF "resolv-file=/etc/resolv.conf\ninterface=$NET_DEVICE_LAN\ndhcp-range=${IP_LAN_PREFIX}${SERVER_NUMBER}.10,${IP_LAN_PREFIX}${SERVER_NUMBER}.254,255.255.0.0,1h\n"
@@ -356,6 +362,6 @@ if [ -f /etc/netplan/50-cloud-init.yaml ]; then
     rm /etc/netplan/50-cloud-init.yaml
 fi
 
-restart_network_services $NET_DEVICE_LAN
+restart_network_services "$NET_DEVICE_LAN"
 
 debug "Normal termination"
