@@ -1,0 +1,51 @@
+# ytl-linux-digabi2-examnet
+
+## Purpose
+
+This is a proof-of-concept of a procedure which creates proper network settings
+for Abitti 2 exam server. The setup requires that the server has two network devices
+ * A WAN device connected to the internet. At the moment this is used to get a
+   SSL certificate and DNS address for the server. According to the initial plans
+   it might be later used e.g. to download exam items and upload candidate data.
+   At the moment a wireless device is good enough for a WAN connection.
+ * A LAN device connected to the closed local area network. This is an Abitti 1
+   style network without any external DHCP/DNS servers. After executing the script
+   the server starts working as a DHCP/DNS server for the LAN.
+
+## Usage
+
+The script is executed from command line:
+
+`$ sudo ytl-linux-digabi2-examnet`
+
+If executed without parameters, it asks the WAN and LAN devices as well as the
+server number. It is possible to run multiple servers in one LAN but they must have
+different server numbers.
+
+It is possible to supply the three parameters in command line:
+
+`ytl-linux-digabi2-examnet wan-device lan-device server-number`
+
+Example:
+
+`$ sudo ytl-linux-digabi2-examnet wlo1 eth0 1`
+
+## Removing settings
+
+Following commands should restore the system to pristine state:
+
+```
+sudo rm /etc/systemd/resolved.conf.d/ytl-linux.conf /etc/dnsmasq.d/ytl-linux.conf
+sudo apt purge ytl-linux-digabi2-examnet
+sudo apt autoremove
+```
+
+Finalise the removal by booting the server. Hopefully these steps will be carried by an uninstall script some day.
+
+## Debugging
+
+The debugging messages can be printed to a given file:
+
+`$ DEBUG=/tmp/whatta.log sudo ytl-linux-digabi2-examnet`
+
+The list of exit codes can be found in the script.
