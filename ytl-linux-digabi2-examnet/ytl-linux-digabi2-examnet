@@ -75,6 +75,7 @@ function print_warning() {
 
 function print_usage() {
     $BIN_ECHO "usage: $SCRIPT_PATH wan-network-device local-network-device server-number" >&2
+    $BIN_ECHO "       $SCRIPT_PATH --gui" >&2
     $BIN_ECHO "" >&2
     $BIN_ECHO "example: $SCRIPT_PATH eth0 eth1 1" >&2
 }
@@ -292,9 +293,14 @@ function restart_network_services() {
     fi
 }
 
-GUI_MODE=0
 
 if [ -z "$PARAM_NET_DEVICE_WAN" ]; then
+    print_usage
+    exit_script $EXIT_CODE_NETWORK_DEVICE_NAME_MISSING_WAN
+fi
+
+GUI_MODE=0
+if [ "$PARAM_NET_DEVICE_WAN" == "--gui" ]; then
     GUI_MODE=1
     NET_DEVICE_WAN=$(ask_network_device "Select internet (WAN) network device")
     if [ -z "$NET_DEVICE_WAN" ]; then
@@ -305,8 +311,7 @@ else
     NET_DEVICE_WAN=$PARAM_NET_DEVICE_WAN
 fi
 
-if [ -z "$PARAM_NET_DEVICE_LAN" ]; then
-    GUI_MODE=1
+if [ $GUI_MODE ]; then
     NET_DEVICE_LAN=$(ask_network_device "Select local (LAN) network device" "$NET_DEVICE_WAN")
     if [ -z "$NET_DEVICE_LAN" ]; then
         print_error "Missing LAN network device name"
@@ -334,11 +339,10 @@ if [ -n "$IP_LAN" ]; then
     print_warning "Given local device $NET_DEVICE_LAN has already an IPv4 address $IP_LAN"
 fi
 
-if [ -z "$PARAM_SERVER_NUMBER" ]; then
-    GUI_MODE=1
+if [ $GUI_MODE ]; then
     SERVER_NUMBER=$($BIN_ZENITY --entry --text="Enter server number (1-254)")
 else
-    SERVER_NUMBER=PARAM_SERVER_NUMBER
+    SERVER_NUMBER=$PARAM_SERVER_NUMBER
 fi
 
 debug "SERVER_NUMBER: $SERVER_NUMBER"
