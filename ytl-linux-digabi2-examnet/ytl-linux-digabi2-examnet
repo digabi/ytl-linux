@@ -65,13 +65,13 @@ function print_error() {
     fi
 }
 
-function print_warning() {
-    _WARNING_MESSAGE=$1
-    debug "WARNING: $_WARNING_MESSAGE"
+function print_info() {
+    _INFO_MESSAGE=$1
+    debug "INFO: $_INFO_MESSAGE"
     if [ $GUI_MODE -gt 0 ]; then
-        $BIN_ZENITY --info --text="$_WARNING_MESSAGE"
+        $BIN_ZENITY --info --text="$_INFO_MESSAGE"
     else
-        $BIN_ECHO "$SCRIPT_PATH warning: $_WARNING_MESSAGE"
+        $BIN_ECHO "$SCRIPT_PATH info: $_INFO_MESSAGE"
     fi
 }
 
@@ -361,7 +361,7 @@ fi
 IP_LAN=$(get_ipv4_address "$NET_DEVICE_LAN")
 readonly IP_LAN
 if [ -n "$IP_LAN" ]; then
-    print_warning "Given local device $NET_DEVICE_LAN has already an IPv4 address $IP_LAN"
+    print_info "Given local device $NET_DEVICE_LAN has already an IPv4 address $IP_LAN"
 fi
 
 if [ $GUI_MODE ]; then
@@ -398,4 +398,4 @@ fi
 
 restart_network_services "$NET_DEVICE_LAN"
 
-debug "Normal termination"
+print_info "Changes made successfully"
