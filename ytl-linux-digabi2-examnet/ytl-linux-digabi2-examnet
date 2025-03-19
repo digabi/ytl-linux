@@ -88,6 +88,18 @@ function exit_script() {
     exit "$_EXIT_CODE"
 }
 
+function exit_if_error() {
+    _EXIT_CODE=$(($1))
+    _EXIT_CODE_IF_ERROR=$(($2))
+    _ERROR_MESSAGE_IF_ERROR=$3
+
+    if [ $_EXIT_CODE -gt 0 ]; then
+        debug "Got exit code $_EXIT_CODE"
+        print_error "$_ERROR_MESSAGE_IF_ERROR (original exit code: $_EXIT_CODE)"
+        exit_script $_EXIT_CODE_IF_ERROR
+    fi
+}
+
 function current_user_is_root () {
     if [ "$EUID" == "0" ]; then
         echo 1
@@ -238,22 +250,14 @@ function write_file() {
     if [ ! -d "$_FILE_PATH" ]; then
         debug "Path $_FILE_PATH is missing, creating"
         $BIN_MKDIR -p "$_FILE_PATH"
-        _EXIT_CODE=$?
-        if [ $_EXIT_CODE -gt 0 ]; then
-            print_error "Failed to create directory $_FILE_PATH, exit code: $_EXIT_CODE"
-            exit_script $EXIT_CODE_BAD_FILE_PATH
-        fi
+        exit_if_error $? $EXIT_CODE_BAD_FILE_PATH "Failed to create directory $_FILE_PATH"
     else
         debug "Path $_FILE_PATH exists"
     fi
 
     debug "$_FILE_FILENAME: $_FILE_CONTENT"
     $BIN_ECHO -e "$_FILE_CONTENT" >"$_FILE_FILENAME"
-    _EXIT_CODE=$?
-    if [ $_EXIT_CODE -gt 0 ]; then
-        print_error "Failed to write to $_FILE_FILENAME, exit code: $_EXIT_CODE"
-        exit_script $EXIT_CODE_CANNOT_WRITE
-    fi
+    exit_if_error $? $EXIT_CODE_CANNOT_WRITE "Failed to write to $_FILE_FILENAME"
 }
 
 function configure_networkmanager() {
@@ -263,6 +267,9 @@ function configure_networkmanager() {
 
     debug "Deleting existing NetworkManager connection '$_CONNECTION_NAME'"
     $BIN_NMCLI connection delete "$_CONNECTION_NAME" >>"$PATH_DEBUG" 2>&1
+    # We are not checking the exit code as this command fails if the connection does not exist
+    # This is quite normal if the script has been executed before
+
     debug "Adding NetworkManager connection '$_CONNECTION_NAME'"
     $BIN_NMCLI connection add \
         type ethernet \
@@ -271,40 +278,28 @@ function configure_networkmanager() {
         ip4 "$_IP_AND_NETMASK" \
         autoconnect yes \
         save yes >>"$PATH_DEBUG" 2>&1
+    exit_if_error $? $EXIT_CODE_CANNOT_RESTART_LAN_DEVICE "NetworkManager CLI: connection add $_CONNECTION_NAME failed"
+    
     debug "Disabling IPv6 in connection '$_CONNECTION_NAME'"
     $BIN_NMCLI connection modify "$_CONNECTION_NAME" ipv6.method "disabled" >>"$PATH_DEBUG" 2>&1
+    exit_if_error $? $EXIT_CODE_CANNOT_RESTART_LAN_DEVICE "NetworkManager CLI: IPv6 disable failed"
+    
     debug "Starting connection '$_CONNECTION_NAME'"
     $BIN_NMCLI connection up "$_CONNECTION_NAME" >>"$PATH_DEBUG" 2>&1
-    _EXIT_CODE=$?
-    if [ $_EXIT_CODE -gt 0 ]; then
-        print_error "Failed to start NetworkManager connection '$_CONNECTION_NAME', exit code: $_EXIT_CODE"
-        exit_script $EXIT_CODE_CANNOT_RESTART_LAN_DEVICE
-    fi
+    exit_if_error $? $EXIT_CODE_CANNOT_RESTART_LAN_DEVICE "Failed to start NetworkManager connection '$_CONNECTION_NAME'"
 }
 
 function restart_network_services() {
     _NET_DEVICE_LAN=$1
 
     $BIN_SYSTEMCTL restart systemd-resolved
-    _EXIT_CODE=$?
-    if [ $_EXIT_CODE -gt 0 ]; then
-        print_error "Failed to restart systemd-resolved, exit code: $_EXIT_CODE"
-        exit_script $EXIT_CODE_CANNOT_RESTART_RESOLVED
-    fi
+    exit_if_error $? $EXIT_CODE_CANNOT_RESTART_RESOLVED "Failed to restart systemd-resolved"
 
     $BIN_SYSTEMCTL restart dnsmasq >>"$PATH_DEBUG" 2>&1
-    _EXIT_CODE=$?
-    if [ $_EXIT_CODE -gt 0 ]; then
-        print_error "Failed to restart dnsmasq, exit code: $_EXIT_CODE"
-        exit_script $EXIT_CODE_CANNOT_RESTART_DNSMASQ
-    fi
+    exit_if_error $? $EXIT_CODE_CANNOT_RESTART_DNSMASQ "Failed to restart dnsmasq"
 
     $BIN_SYSTEMCTL restart NetworkManager.service >>"$PATH_DEBUG" 2>&1
-    _EXIT_CODE=$?
-    if [ $_EXIT_CODE -gt 0 ]; then
-        print_error "Failed to restart NetworkManager.service, exit code: $_EXIT_CODE"
-        exit_script $EXIT_CODE_CANNOT_RESTART_NM
-    fi
+    exit_if_error $? $EXIT_CODE_CANNOT_RESTART_NM "Failed to restart NetworkManager.service"
 }
 
 
