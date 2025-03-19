@@ -30,6 +30,9 @@ Example:
 
 `$ sudo ytl-linux-digabi2-examnet wlo1 eth0 1`
 
+It is also possible to run the script in GUI mode (parameter `--gui`). In this case the
+parameters are asked with Zenity.
+
 ## Removing settings
 
 Following commands should restore the system to pristine state:
