@@ -360,7 +360,7 @@ if [ -n "$IP_LAN" ]; then
 fi
 
 if [ $GUI_MODE ]; then
-    SERVER_NUMBER=$($BIN_ZENITY --entry --text="Enter server number (1-254)")
+    SERVER_NUMBER=$($BIN_ZENITY --entry --title="Server number" --text="Enter server number (1-254)")
 else
     SERVER_NUMBER=$PARAM_SERVER_NUMBER
 fi
