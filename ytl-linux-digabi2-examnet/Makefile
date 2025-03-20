@@ -15,7 +15,7 @@ deb:
 	# Script file
 	mkdir -p $(DEB_ROOT)/usr/local/sbin/
 	cp ytl-linux-digabi2-examnet $(DEB_ROOT)/usr/local/sbin/
-	chmod 750 $(DEB_ROOT)/usr/local/sbin/*
+	chmod 755 $(DEB_ROOT)/usr/local/sbin/*
 
 	# Package documentation
 	mkdir -p $(DEB_ROOT)/usr/local/share/doc/$(NAME)
