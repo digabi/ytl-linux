@@ -381,7 +381,7 @@ write_file $PATH_RESOLVED_CONF "[Resolve]\nDNSStubListener=no"
 write_file $PATH_DNSMASQ_CONF "resolv-file=/etc/resolv.conf
 interface=$NET_DEVICE_LAN
 dhcp-range=${IP_LAN_PREFIX}${SERVER_NUMBER}.10,${IP_LAN_PREFIX}${SERVER_NUMBER}.254,255.255.0.0,1h
-host-record=dns.msftncsi.com,www.msftncsi.com,${IP_LAN_PREFIX}${SERVER_NUMBER}.1
+host-record=dns.msftncsi.com,www.msftncsi.com,www.msftconnecttest.com,ipv6.msftconnecttest.com,${IP_LAN_PREFIX}${SERVER_NUMBER}.1
 "
 
 configure_networkmanager "yo-$NET_DEVICE_LAN" "$NET_DEVICE_LAN" "${IP_LAN_PREFIX}${SERVER_NUMBER}.1/16"

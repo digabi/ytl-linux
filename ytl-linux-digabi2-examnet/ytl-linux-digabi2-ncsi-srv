@@ -7,7 +7,11 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-type', 'text/plain')
         self.end_headers()
-        self.wfile.write(b'Microsoft NCSI\n')
+
+        if self.path == '/ncsi.txt':
+          self.wfile.write(b'Microsoft NCSI\n')
+        elif self.path == '/connecttest.txt':
+          self.wfile.write(b'Microsoft Connect Test')
 
 def run(server_class=HTTPServer, handler_class=SimpleHTTPRequestHandler, port=80):
     server_address = ('', port)
