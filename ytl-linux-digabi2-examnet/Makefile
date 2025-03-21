@@ -15,6 +15,10 @@ deb:
 	# Script file
 	mkdir -p $(DEB_ROOT)/usr/local/sbin/
 	cp ytl-linux-digabi2-examnet $(DEB_ROOT)/usr/local/sbin/
+	
+	# Config templates
+	mkdir -p ${DEB_ROOT}/etc/ytl-linux-digabi2-examnet/templates/
+	cp templates/* ${DEB_ROOT}/etc/ytl-linux-digabi2-examnet/templates
 
 	# NCSI server
 	cp ytl-linux-digabi2-ncsi-srv $(DEB_ROOT)/usr/local/sbin/
