@@ -25,10 +25,13 @@ readonly PARAM_SERVER_NUMBER=$3
 
 readonly NETWORK_DEVICE_FILTER_RE="^docker|^br|^veth|^lo$"
 
+readonly PATH_TEMPLATES=/etc/ytl-linux-digabi2-examnet/templates
 readonly PATH_RESOLVED=/etc/systemd/resolved.conf.d
 readonly PATH_RESOLVED_CONF=$PATH_RESOLVED/ytl-linux.conf
+readonly PATH_RESOLVED_CONF_TEMPLATE=$PATH_TEMPLATES/resolved.conf.template
 readonly PATH_DNSMASQ=/etc/dnsmasq.d
 readonly PATH_DNSMASQ_CONF=$PATH_DNSMASQ/ytl-linux.conf
+readonly PATH_DNSMASQ_CONF_TEMPLATE=$PATH_TEMPLATES/dnsmasq.conf.template
 
 readonly BIN_ECHO=/usr/bin/echo
 readonly BIN_TR=/usr/bin/tr
@@ -344,6 +347,9 @@ fi
 debug "NET_DEVICE_WAN: $NET_DEVICE_WAN"
 debug "NET_DEVICE_LAN: $NET_DEVICE_LAN"
 
+export NET_DEVICE_WAN
+export NET_DEVICE_LAN
+
 check_network_device_names "$NET_DEVICE_WAN" "$NET_DEVICE_LAN"
 
 IP_WAN=$(get_ipv4_address "$NET_DEVICE_WAN")
@@ -373,15 +379,15 @@ debug "IP_WAN: $IP_WAN"
 debug "IP_LAN: $IP_LAN"
 debug "SERVER_NUMBER: $SERVER_NUMBER"
 
+export IP_WAN
+export IP_LAN
+export SERVER_NUMBER
+
 IP_LAN_PREFIX=$(get_lan_ip_prefix "$IP_WAN")
-readonly IP_LAN_PREFIX
+export IP_LAN_PREFIX
 
-write_file $PATH_RESOLVED_CONF "[Resolve]\nDNSStubListener=no"
-
-write_file $PATH_DNSMASQ_CONF "resolv-file=/etc/resolv.conf
-interface=$NET_DEVICE_LAN
-dhcp-range=${IP_LAN_PREFIX}${SERVER_NUMBER}.10,${IP_LAN_PREFIX}${SERVER_NUMBER}.254,255.255.0.0,1h
-"
+write_file $PATH_RESOLVED_CONF "$(envsubst < $PATH_RESOLVED_CONF_TEMPLATE)"
+write_file $PATH_DNSMASQ_CONF "$(envsubst < $PATH_DNSMASQ_CONF_TEMPLATE)"
 
 configure_networkmanager "yo-$NET_DEVICE_LAN" "$NET_DEVICE_LAN" "${IP_LAN_PREFIX}${SERVER_NUMBER}.1/16"
 

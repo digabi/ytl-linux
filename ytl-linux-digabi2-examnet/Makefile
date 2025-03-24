@@ -1,5 +1,5 @@
 NAME := ytl-linux-digabi2-examnet
-VERSION := "0.0.2"
+VERSION := "0.0.3"
 
 DEPENDENCIES := \
 	--depends apt \
@@ -15,7 +15,21 @@ deb:
 	# Script file
 	mkdir -p $(DEB_ROOT)/usr/local/sbin/
 	cp ytl-linux-digabi2-examnet $(DEB_ROOT)/usr/local/sbin/
+	
+	# Config templates
+	mkdir -p ${DEB_ROOT}/etc/ytl-linux-digabi2-examnet/templates/
+	cp templates/* ${DEB_ROOT}/etc/ytl-linux-digabi2-examnet/templates
+
+	# NCSI server
+	cp ytl-linux-digabi2-ncsi-srv $(DEB_ROOT)/usr/local/sbin/
+	
 	chmod 755 $(DEB_ROOT)/usr/local/sbin/*
+
+	# systemd unit file
+	mkdir -p $(DEB_ROOT)/etc/systemd/system/
+	cp ytl-linux-digabi2-ncsi.service $(DEB_ROOT)/etc/systemd/system/
+
+	chmod 644 $(DEB_ROOT)/etc/systemd/system/*
 
 	# Package documentation
 	mkdir -p $(DEB_ROOT)/usr/local/share/doc/$(NAME)
@@ -27,4 +41,6 @@ deb:
 		 --vendor "Matriculation Examination Board" \
 		 --url "https://github.com/digabi/ytl-linux" \
 		 $(DEPENDENCIES) \
+		 --after-install after-install.sh \
+		 --before-remove before-remove.sh \
 		.
