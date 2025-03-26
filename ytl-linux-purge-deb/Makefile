@@ -31,5 +31,6 @@ deb:
 		--maintainer "abitti@ylioppilastutkinto.fi" \
 		--vendor "Matriculation Examination Board" \
 		--url "https://github.com/digabi/ytl-linux" \
+		--after-install after-install.sh \
 		$(CONFLICTS) \
 		.
