@@ -233,21 +233,6 @@ autoinstall:
     # Disable all network waits
     - curtin in-target --target=/target -- systemctl mask NetworkManager-wait-online.service
     - curtin in-target --target=/target -- systemctl mask systemd-networkd-wait-online.service
-    # Remove some unnecessary packages on next boot
-    - echo open-iscsi:iscsid.service,iscsid.socket,open-iscsi.service >>/target/etc/ytl-linux-purge-deb.conf
-    - echo networkd-dispatcher >>/target/etc/ytl-linux-purge-deb.conf
-    # Remove CUPS
-    - echo cups >>/target/etc/ytl-linux-purge-deb.conf
-    - echo cups-browsed >>/target/etc/ytl-linux-purge-deb.conf
-    - echo cups-bsd >>/target/etc/ytl-linux-purge-deb.conf
-    - echo cups-core-drivers >>/target/etc/ytl-linux-purge-deb.conf
-    - echo cups-daemon:cups.service >>/target/etc/ytl-linux-purge-deb.conf
-    - echo cups-filters >>/target/etc/ytl-linux-purge-deb.conf
-    - echo cups-filters-core-drivers >>/target/etc/ytl-linux-purge-deb.conf
-    - echo cups-ipp-utils >>/target/etc/ytl-linux-purge-deb.conf
-    - echo cups-pdf >>/target/etc/ytl-linux-purge-deb.conf
-    - echo cups-ppdc >>/target/etc/ytl-linux-purge-deb.conf
-    - echo cups-server-common >>/target/etc/ytl-linux-purge-deb.conf
     # Disable automatic updates
     - sed -i 's/APT::Periodic::Update-Package-Lists .*/APT::Periodic::Update-Package-Lists "0";/' /target/etc/apt/apt.conf.d/20auto-upgrades
     - sed -i 's/APT::Periodic::Unattended-Upgrade .*/APT::Periodic::Unattended-Upgrade "0";/' /target/etc/apt/apt.conf.d/20auto-upgrades
