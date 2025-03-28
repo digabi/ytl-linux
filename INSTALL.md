@@ -46,6 +46,9 @@ script does not have a network connection.
 ![Screenshot of the language selection menu](assets/install-no-network.png)
 
 Things to consider:
+ 1. Try alternative boot option "Alt NW" (Alternative Network Configuration).
+    It uses kernel's embedded DHCP client which may work better in your
+    environment.
  1. Make sure your network offers network settings via DHCP server to an
     unknown computer. Are you able to get an internet access if you connect
     your private laptop to this network? If so, the network probably is good.
