@@ -8,7 +8,7 @@ docker:
 	-docker rm ytl-linux-builder
 	docker build -t ytl-linux-build-img:latest -f Dockerfile.build .
 	docker run -w /app --name ytl-linux-builder ytl-linux-build-img:latest ./build-ytl-image
-	docker cp ytl-linux-builder:/app/$(IMAGE) .
+	docker cp ytl-linux-builder:/app/$(INSTALL_IMAGE) .
 
 create-vb-vm:
 	-VBoxManage controlvm "$(VM_NAME)" poweroff
