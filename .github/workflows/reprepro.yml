@@ -9,6 +9,7 @@ on:
         - 'ytl-linux-cpu-governor/**'
         - 'ytl-linux-tso-off/**'
         - 'ytl-linux-digabi2/**'
+        - 'ytl-linux-digabi2-wsl/**'
         - 'ytl-linux-digabi2-examnet/**'
         - '.github/workflows/reprepro.yml'
   workflow_dispatch:
@@ -43,6 +44,9 @@ jobs:
       - name: Build ytl-linux-digabi2 deb package
         run: |
             make -C ytl-linux-digabi2 deb
+      - name: Build ytl-linux-digabi2-wsl deb package
+        run: |
+            make -C ytl-linux-digabi2-wsl deb
       - name: Build ytl-linux-digabi2-examnet deb package
         run: |
             make -C ytl-linux-digabi2-examnet deb
