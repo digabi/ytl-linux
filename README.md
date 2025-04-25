@@ -88,13 +88,9 @@ To test the image and the install script `docs/autoinstall-config-XX/user-data`
 you can do the following:
 
  * Start a local httpd server at port 8080: `make start-httpd`
- * Edit `AUTOINSTALL_URL` in `build-ytl-image` to point to the
-   aforementioned httpd server at your local port 8080, e.g.
-   ```
-   export AUTOINSTALL_URL=http://192.168.0.62:8080/autoinstall-config-24/
-   ```
- * Run `build-ytl-image` to rebuild the test image with the test
-   URL
+ * Run `AUTOINSTALL_URL=http://<your-ip-address-here-but-not-localhost>:8080/autoinstall-config-24/ ./build-ytl-image` (or same with `make docker` for Docker)
+
+**Note:** On macOS, it is possible to get KVM working for testing, but it's probably easier to use something like https://github.com/utmapp/UTM. After building the ISO, create an x86_64 emulator VM, select the built ytl-install-24.iso, and leave all other options at default.
 
 ### Building the image with GitHub automation
 

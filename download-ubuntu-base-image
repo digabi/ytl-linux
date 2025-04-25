@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+if [[ -z "${1:-}" ]]; then
+  echo "Usage: $0 <output-image-file-name>"
+  exit 1
+fi
+
+# location of the original Ubuntu installation ISO image
+DOWNLOAD_URL=https://releases.ubuntu.com/noble/ubuntu-24.04.2-live-server-amd64.iso
+IMAGE="$1"
+
+if [ ! -e "$IMAGE" ]; then
+  wget -O "$IMAGE" $DOWNLOAD_URL
+fi

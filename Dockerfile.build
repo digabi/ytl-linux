@@ -1,7 +1,7 @@
 FROM --platform=linux/amd64 ubuntu:jammy
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get -y install wget fdisk libarchive-tools xorriso cd-boot-images-amd64
-RUN mkdir /app && wget -O /app/ubuntu.iso https://releases.ubuntu.com/noble/ubuntu-24.04.2-live-server-amd64.iso
-COPY build-ytl-image /app/
+RUN mkdir /app
+COPY build-ytl-image download-ubuntu-base-image /app/
 COPY mangle-image /app/
 COPY templates/ /app/templates/
