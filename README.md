@@ -159,3 +159,11 @@ are:
  * `/var/log/cloud-init-output.log` Output of the cloud-init part of the installation
  * `/var/log/cloud-init.log` Log of the cloud-init part of the installation
  * `/var/log/curtin/install.log` Log of the Curtin part of the installation
+
+If a package installation failed, look for the syslog identifier of the failing Subiquity task (something like `SyslogIdentifier=subiquity_log.1234`) and then grep it from `/var/log/syslog` to look for the true source of the issue:
+
+```bash
+cat /var/log/syslog | grep -i subiquity_log.1234 | less
+```
+
+This is because Subiquity outputs are not terribly helpful in these situations because they only state the exit code, not what actually broke - you need to find the output from apt in the syslog for that.
