@@ -66,8 +66,8 @@ EFI_FILE=$(mktemp).efi
 dd if="$IMAGE" bs=1 count=446 of="$MBR_FILE"
 
 # Extract EFI partition image
-skip=$(/sbin/fdisk -l "$IMAGE" | fgrep '.iso2 ' | awk '{print $2}')
-size=$(/sbin/fdisk -l "$IMAGE" | fgrep '.iso2 ' | awk '{print $4}')
+skip=$(fdisk -l "$IMAGE" | fgrep '.iso2 ' | awk '{print $2}')
+size=$(fdisk -l "$IMAGE" | fgrep '.iso2 ' | awk '{print $4}')
 dd if="$IMAGE" bs=512 skip="$skip" count="$size" of="$EFI_FILE"
 
 
