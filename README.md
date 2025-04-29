@@ -114,6 +114,8 @@ pages](https://digabi.github.io/ytl-linux/autoinstall-config/user-data)
 
 ## APT repository and deb packages
 
+Custom YTL-Linux deb packages can be found in the [packages](./packages) directory.
+
 The ytl-linux-customize deb package is built automatically by a GitHub action
 on pushes to the source code directory. The resulting package, along with any others
 in the debs/ directory (currently none) get pushed to an apt repository at
