@@ -13,6 +13,12 @@ on:
         - 'ytl-linux-digabi2-examnet/**'
         - '.github/workflows/reprepro.yml'
   workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish built images
+        type: boolean
+        required: true
+        default: false
 
 jobs:
   run-reprepro:
@@ -65,20 +71,20 @@ jobs:
             # also make signing key available on the web site
             echo "$SPUBKEY" > apt-signing-key.pub
       - name: Look up AWS credentials
-        if: ${{ github.ref == 'refs/heads/main' }}
+        if: ${{ github.ref == 'refs/heads/main' || github.event.inputs.publish == 'true' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-north-1
       - name: Copy repository to AWS S3
-        if: ${{ github.ref == 'refs/heads/main' }}
+        if: ${{ github.ref == 'refs/heads/main' || github.event.inputs.publish == 'true' }}
         run: |
           aws s3 sync --cache-control no-store reprepro/pool  s3://ytl-linux/deb/pool
           aws s3 sync --cache-control no-store reprepro/dists s3://ytl-linux/deb/dists
           aws s3 cp --cache-control no-store apt-signing-key.pub s3://ytl-linux/
       - name: Update Naksu 2 latest version
-        if: ${{ github.ref == 'refs/heads/main' }}
+        if: ${{ github.ref == 'refs/heads/main' || github.event.inputs.publish == 'true' }}
         run: |
           export NAKSU_DEB=$(find debs -name 'naksu2*.deb')
           export VERSION=$(dpkg-deb -f "$NAKSU_DEB" Version)
