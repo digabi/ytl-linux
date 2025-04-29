@@ -3,14 +3,7 @@ on:
   push:
     paths:
         - 'debs/**'
-        - 'ytl-linux-customize/**'
-        - 'ytl-linux-customize-24/**'
-        - 'ytl-linux-purge-deb/**'
-        - 'ytl-linux-cpu-governor/**'
-        - 'ytl-linux-tso-off/**'
-        - 'ytl-linux-digabi2/**'
-        - 'ytl-linux-digabi2-wsl/**'
-        - 'ytl-linux-digabi2-examnet/**'
+        - 'packages/**'
         - '.github/workflows/reprepro.yml'
   workflow_dispatch:
     inputs:
@@ -32,30 +25,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           lfs: true
-      - name: Build ytl-linux-customize deb package
+      - name: Build deb packages
         run: |
-            make -C ytl-linux-customize deb
-      - name: Build ytl-linux-customize-24 deb package
-        run: |
-            make -C ytl-linux-customize-24 deb
-      - name: Build ytl-linux-purge-deb deb package
-        run: |
-            make -C ytl-linux-purge-deb deb
-      - name: Build ytl-linux-cpu-governor deb package
-        run: |
-            make -C ytl-linux-cpu-governor deb
-      - name: Build ytl-linux-tso-off deb package
-        run: |
-            make -C ytl-linux-tso-off deb
-      - name: Build ytl-linux-digabi2 deb package
-        run: |
-            make -C ytl-linux-digabi2 deb
-      - name: Build ytl-linux-digabi2-wsl deb package
-        run: |
-            make -C ytl-linux-digabi2-wsl deb
-      - name: Build ytl-linux-digabi2-examnet deb package
-        run: |
-            make -C ytl-linux-digabi2-examnet deb
+          for package in packages/*/; do
+            make -C $package deb
+          done
       - name: Build repository
         env:
             SKEY: ${{ secrets.YTL_LINUX_PACKAGE_SIGNING_PRIVATE_KEY }}
@@ -67,7 +41,7 @@ jobs:
             echo "Signing with key 0x$keyid"
             echo "SignWith: 0x$keyid" >> reprepro/conf/distributions
             for dir in debs/ ytl-linux-customize/; do [ -d $dir ] || mkdir $dir; done
-            find debs/ ytl-linux-customize/ ytl-linux-customize-24/ ytl-linux-purge-deb/ ytl-linux-cpu-governor/ ytl-linux-tso-off/ ytl-linux-digabi2/ ytl-linux-digabi2-examnet/ -name '*.deb' | while read deb; do echo $deb; reprepro -b reprepro includedeb ytl-linux $deb; done
+            find debs/ packages/ -name '*.deb' | while read deb; do echo $deb; reprepro -b reprepro includedeb ytl-linux $deb; done
             # also make signing key available on the web site
             echo "$SPUBKEY" > apt-signing-key.pub
       - name: Look up AWS credentials
