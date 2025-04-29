@@ -35,15 +35,13 @@ parameters are asked with Zenity.
 
 ## Removing settings
 
-Following commands should restore the system to pristine state:
+Following command should restore the system to pristine state:
 
-```
-sudo rm /etc/systemd/resolved.conf.d/ytl-linux.conf /etc/dnsmasq.d/ytl-linux.conf
-sudo apt purge ytl-linux-digabi2-examnet
-sudo apt autoremove
-```
+`$ sudo ytl-linux-digabi2-examnet --remove`
 
-Finalise the removal by booting the server. Hopefully these steps will be carried by an uninstall script some day.
+It removes the settings files created by this script. It also removes all NetworkManager
+connections which have a name starting with `yo-`. This is the prefix used by the
+script to create the static connection for the local network.
 
 ## Debugging
 

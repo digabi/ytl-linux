@@ -17,6 +17,8 @@ readonly EXIT_CODE_CANNOT_RESTART_DNSMASQ=13          # Cannot restart dnsmasq
 readonly EXIT_CODE_CANNOT_RESTART_NM=14               # Cannot restart NetworkManager
 readonly EXIT_CODE_WAN_WITH_NO_IP=15                  # Given WAN device does not have an IPv4 address
 readonly EXIT_CODE_NO_GUI_FOR_ROOT=16                 # You shouldn't execute the script by root in GUI mode (use sudo instead)
+readonly EXIT_CODE_CANNOT_REMOVE_FILES=17             # The script was executed with --remove, but it could not remove settings files
+readonly EXIT_CODE_CANNOT_REMOVE_CONNECTION=18        # The script was executed with --remove, but it could not remove a connection
 
 readonly SCRIPT_PATH=$0
 readonly PARAM_NET_DEVICE_WAN=$1
@@ -34,6 +36,7 @@ readonly PATH_DNSMASQ_CONF=$PATH_DNSMASQ/ytl-linux.conf
 readonly PATH_DNSMASQ_CONF_TEMPLATE=$PATH_TEMPLATES/dnsmasq.conf.template
 
 readonly BIN_ECHO=/usr/bin/echo
+readonly BIN_GREP=/usr/bin/grep
 readonly BIN_TR=/usr/bin/tr
 readonly BIN_CUT=/usr/bin/cut
 readonly BIN_IP=/usr/sbin/ip
@@ -81,6 +84,7 @@ function print_info() {
 function print_usage() {
     $BIN_ECHO "usage: $SCRIPT_PATH wan-network-device local-network-device server-number" >&2
     $BIN_ECHO "       $SCRIPT_PATH --gui" >&2
+    $BIN_ECHO "       $SCRIPT_PATH --remove" >&2
     $BIN_ECHO "" >&2
     $BIN_ECHO "example: $SCRIPT_PATH eth0 eth1 1" >&2
 }
@@ -292,6 +296,28 @@ function configure_networkmanager() {
     exit_if_error $? $EXIT_CODE_CANNOT_RESTART_LAN_DEVICE "Failed to start NetworkManager connection '$_CONNECTION_NAME'"
 }
 
+function remove_all_settings() {
+    if [ -f $PATH_RESOLVED_CONF ]; then
+        rm -f $PATH_RESOLVED_CONF
+        exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_RESOLVED_CONF'"
+    fi
+
+    if [ -f $PATH_DNSMASQ_CONF ]; then
+        rm -f $PATH_DNSMASQ_CONF
+        exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_DNSMASQ_CONF'"
+    fi
+
+    $BIN_NMCLI -f UUID,NAME connection show | $BIN_GREP -P -v "^UUID" | $BIN_TR -s ' ' | while read -r line ; do
+        connection_uuid=$(echo "$line" | $BIN_CUT -d ' ' -f 1)
+        connection_name=$(echo "$line" | $BIN_CUT -d ' ' -f 2)
+        if [[ "$connection_name" =~ ^yo- ]]; then
+            debug "Removing connection '$connection_name', uuid: $connection_uuid"
+            $BIN_NMCLI connection delete "$connection_uuid"
+            exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_CONNECTION "Failed to remove connection '$connection_name'"
+        fi
+    done
+}
+
 function restart_network_services() {
     _NET_DEVICE_LAN=$1
 
@@ -316,6 +342,15 @@ GUI_MODE=0
 if [ ! "$(current_user_is_root)" ]; then
     print_error "You're not root"
     exit_script $EXIT_CODE_MUST_BE_ROOT
+fi
+
+if [ "$PARAM_NET_DEVICE_WAN" == "--remove" ]; then
+    remove_all_settings
+    restart_network_services
+
+    print_info "All examnet settings have been removed"
+
+    exit_script 0
 fi
 
 if [ "$PARAM_NET_DEVICE_WAN" == "--gui" ]; then
