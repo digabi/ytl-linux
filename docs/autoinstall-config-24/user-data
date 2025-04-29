@@ -188,8 +188,6 @@ autoinstall:
     - cinnamon-core
     - ytl-linux-customize-24
     - ytl-linux-purge-deb
-    - ytl-linux-digabi2
-    - ytl-linux-digabi2-examnet
     - snapd
   snaps:
     - name: firefox
