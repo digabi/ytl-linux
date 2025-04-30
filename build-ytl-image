@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
-set -e
+set -euo pipefail
 
 # This script will download a Ubuntu installation ISO image
 # and modify it so that it will boot by default to an autoinstall
@@ -8,13 +8,14 @@ set -e
 
 # Configurable settings:
 
-# location of the original Ubuntu installation ISO image
-DOWNLOAD_URL=https://releases.ubuntu.com/noble/ubuntu-24.04.2-live-server-amd64.iso
-
 # location where the clients should download the installation configuration
 # (exported for the benefit of mangle-image below)
 # "_gateway" can be used for testing
-export AUTOINSTALL_URL=https://digabi.github.io/ytl-linux/autoinstall-config-24/
+export AUTOINSTALL_URL="${AUTOINSTALL_URL:-https://digabi.github.io/ytl-linux/autoinstall-config-24/}"
+echo "Using autoinstall URL $AUTOINSTALL_URL"
+
+# Filename of the source image
+IMAGE=ubuntu.iso
 
 # Label on the modified ISO image
 ISO_LABEL="YTL Ubuntu Install CD"
@@ -37,10 +38,7 @@ done
 # Step 1: Download the original ISO image
 #########################################
 
-IMAGE=ubuntu.iso
-if [ ! -e $IMAGE ]; then
-    wget -O $IMAGE $DOWNLOAD_URL
-fi
+./download-ubuntu-base-image $IMAGE
 
 #########################################
 # Step 2: Extract the image to a work directory
@@ -68,8 +66,8 @@ EFI_FILE=$(mktemp).efi
 dd if="$IMAGE" bs=1 count=446 of="$MBR_FILE"
 
 # Extract EFI partition image
-skip=$(/sbin/fdisk -l "$IMAGE" | fgrep '.iso2 ' | awk '{print $2}')
-size=$(/sbin/fdisk -l "$IMAGE" | fgrep '.iso2 ' | awk '{print $4}')
+skip=$(fdisk -l "$IMAGE" | fgrep '.iso2 ' | awk '{print $2}')
+size=$(fdisk -l "$IMAGE" | fgrep '.iso2 ' | awk '{print $4}')
 dd if="$IMAGE" bs=512 skip="$skip" count="$size" of="$EFI_FILE"
 
 

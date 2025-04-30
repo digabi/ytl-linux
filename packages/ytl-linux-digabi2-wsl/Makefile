@@ -1,5 +1,5 @@
-NAME := ytl-linux-digabi2
-VERSION := 0.0.3
+NAME := ytl-linux-digabi2-wsl
+VERSION := 0.0.4
 
 DEPENDENCIES := --depends naksu2 --depends libnotify4 --depends libnss3 --depends xdg-utils --depends libasound2 --depends docker-ce --depends docker-ce-cli --depends ethtool --depends wslu
 DEB_ROOT := deb-root
@@ -14,11 +14,12 @@ deb:
 	cp *.md deb-root/usr/local/share/doc/$(NAME)/
 
 	fpm -C deb-root/ -s dir --name $(NAME) --architecture all -t deb --version "$(VERSION)" \
-		 --description "Digabi2 server application" \
+		 --description "Digabi2 server application (WSL version)" \
 		 --maintainer "abitti@ylioppilastutkinto.fi" \
 		 --vendor "Matriculation Examination Board" \
 		 --url "https://github.com/digabi/ytl-linux" \
 		 --deb-no-default-config-files \
-		 --after-install after-install \
+		 --before-install before-install.sh \
+		 --after-install after-install.sh \
 		 $(DEPENDENCIES) \
 		.

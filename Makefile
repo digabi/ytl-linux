@@ -2,13 +2,15 @@ INSTALL_IMAGE = ytl-install-24.iso
 VM_NAME = YTL Linux
 VM_DISK_SIZE = 51200
 VM_MEMORY_SIZE = 4096
+IMAGE = ubuntu.iso
 
 docker:
+	./download-ubuntu-base-image $(IMAGE)
 	mkdir -p bin
-	-docker rm ytl-linux-builder
+	docker rm --force --volumes ytl-linux-builder
 	docker build -t ytl-linux-build-img:latest -f Dockerfile.build .
-	docker run -w /app --name ytl-linux-builder ytl-linux-build-img:latest ./build-ytl-image
-	docker cp ytl-linux-builder:/app/$(IMAGE) .
+	docker run -w /app --name ytl-linux-builder --env AUTOINSTALL_URL --volume ./$(IMAGE):/app/$(IMAGE) ytl-linux-build-img:latest ./build-ytl-image
+	docker cp ytl-linux-builder:/app/$(INSTALL_IMAGE) .
 
 create-vb-vm:
 	-VBoxManage controlvm "$(VM_NAME)" poweroff

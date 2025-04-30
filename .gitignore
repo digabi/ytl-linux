@@ -2,27 +2,8 @@
 *.img
 *.vdi
 
-ytl-linux-customize/*.deb
-ytl-linux-customize/deb-root/
-ytl-linux-customize/deb-scripts/
-
-ytl-linux-customize-24/*.deb
-ytl-linux-customize-24/deb-root/
-ytl-linux-customize-24/deb-scripts/
-
-ytl-linux-purge-deb/*.deb
-ytl-linux-purge-deb/deb-root/
-
-ytl-linux-cpu-governor/*.deb
-ytl-linux-cpu-governor/deb-root/
-
-ytl-linux-tso-off/*.deb
-ytl-linux-tso-off/deb-root/
-
-ytl-linux-digabi2/*.deb
-ytl-linux-digabi2/deb-root/
-
-ytl-linux-digabi2-examnet/*.deb
-ytl-linux-digabi2-examnet/deb-root/
+packages/**/*.deb
+packages/**/deb-root/
+packages/**/deb-scripts/
 
 .DS_STORE

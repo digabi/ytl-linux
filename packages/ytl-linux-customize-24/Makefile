@@ -2,7 +2,7 @@ VERSION := 1.0.2
 
 # Dependencies which are not related to any code in the
 DEPENDENCIES_META := --depends virtualbox-7.1 --depends ethtool --depends exfat-fuse --depends update-manager --depends gnome-icon-theme \
-	--depends dconf-cli --depends ytl-linux-cpu-governor
+	--depends dconf-cli --depends ytl-linux-cpu-governor --depends ytl-linux-digabi2 --depends ytl-linux-digabi2-examnet
 RECOMMENDS_META := --deb-recommends digabi-usb-monster
 
 DEPENDENCIES_NAKSU := --depends wget --depends zenity

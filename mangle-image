@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
-set -e
+set -euo pipefail
 
 # This script will be called with an argument pointing to
 # an unpacked directory of the ISO image to be modified, and is free to

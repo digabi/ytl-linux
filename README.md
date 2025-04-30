@@ -88,13 +88,9 @@ To test the image and the install script `docs/autoinstall-config-XX/user-data`
 you can do the following:
 
  * Start a local httpd server at port 8080: `make start-httpd`
- * Edit `AUTOINSTALL_URL` in `build-ytl-image` to point to the
-   aforementioned httpd server at your local port 8080, e.g.
-   ```
-   export AUTOINSTALL_URL=http://192.168.0.62:8080/autoinstall-config-24/
-   ```
- * Run `build-ytl-image` to rebuild the test image with the test
-   URL
+ * Run `AUTOINSTALL_URL=http://<your-ip-address-here-but-not-localhost>:8080/autoinstall-config-24/ ./build-ytl-image` (or same with `make docker` for Docker)
+
+**Note:** On macOS, it is possible to get KVM working for testing, but it's probably easier to use something like https://github.com/utmapp/UTM. After building the ISO, create an x86_64 emulator VM, select the built ytl-install-24.iso, and leave all other options at default.
 
 ### Building the image with GitHub automation
 
@@ -117,6 +113,8 @@ it available to installers via [GitHub
 pages](https://digabi.github.io/ytl-linux/autoinstall-config/user-data)
 
 ## APT repository and deb packages
+
+Custom YTL-Linux deb packages can be found in the [packages](./packages) directory.
 
 The ytl-linux-customize deb package is built automatically by a GitHub action
 on pushes to the source code directory. The resulting package, along with any others
@@ -163,3 +161,11 @@ are:
  * `/var/log/cloud-init-output.log` Output of the cloud-init part of the installation
  * `/var/log/cloud-init.log` Log of the cloud-init part of the installation
  * `/var/log/curtin/install.log` Log of the Curtin part of the installation
+
+If a package installation failed, look for the syslog identifier of the failing Subiquity task (something like `SyslogIdentifier=subiquity_log.1234`) and then grep it from `/var/log/syslog` to look for the true source of the issue:
+
+```bash
+cat /var/log/syslog | grep -i subiquity_log.1234 | less
+```
+
+This is because Subiquity outputs are not terribly helpful in these situations because they only state the exit code, not what actually broke - you need to find the output from apt in the syslog for that.
