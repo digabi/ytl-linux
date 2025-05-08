@@ -13,6 +13,10 @@ deb:
 	mkdir -p deb-root/usr/local/share/doc/$(NAME)
 	cp *.md deb-root/usr/local/share/doc/$(NAME)/
 
+	# Docker daemon configuration file
+	mkdir -p deb-root/etc/docker/
+	cp docker/* deb-root/etc/docker/
+
 	fpm -C deb-root/ -s dir --name $(NAME) --architecture all -t deb --version "$(VERSION)" \
 		 --description "Digabi2 server application" \
 		 --maintainer "abitti@ylioppilastutkinto.fi" \
