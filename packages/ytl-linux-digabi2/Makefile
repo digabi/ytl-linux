@@ -24,5 +24,6 @@ deb:
 		 --url "https://github.com/digabi/ytl-linux" \
 		 --deb-no-default-config-files \
 		 --before-install before-install.sh \
+		 --after-install after-install.sh \
 		 $(DEPENDENCIES) \
 		.
