@@ -1,0 +1,3 @@
+{
+  "dns": ["${DOCKER_BRIDGE_NETWORK_DNS_RESOLVER_IP}"]
+}
