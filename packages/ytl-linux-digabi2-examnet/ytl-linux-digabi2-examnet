@@ -19,6 +19,7 @@ readonly EXIT_CODE_WAN_WITH_NO_IP=15                  # Given WAN device does no
 readonly EXIT_CODE_NO_GUI_FOR_ROOT=16                 # You shouldn't execute the script by root in GUI mode (use sudo instead)
 readonly EXIT_CODE_CANNOT_REMOVE_FILES=17             # The script was executed with --remove, but it could not remove settings files
 readonly EXIT_CODE_CANNOT_REMOVE_CONNECTION=18        # The script was executed with --remove, but it could not remove a connection
+readonly EXIT_CODE_CANNOT_RESTART_DOCKER=19           # Cannot restart docker
 
 readonly SCRIPT_PATH=$0
 readonly PARAM_NET_DEVICE_WAN=$1
@@ -26,6 +27,7 @@ readonly PARAM_NET_DEVICE_LAN=$2
 readonly PARAM_SERVER_NUMBER=$3
 
 readonly NETWORK_DEVICE_FILTER_RE="^docker|^br|^veth|^lo$"
+readonly DOCKER_BRIDGE_NETWORK_DNS_RESOLVER_IP="172.17.0.1"
 
 readonly PATH_TEMPLATES=/etc/ytl-linux-digabi2-examnet/templates
 readonly PATH_RESOLVED=/etc/systemd/resolved.conf.d
@@ -34,6 +36,9 @@ readonly PATH_RESOLVED_CONF_TEMPLATE=$PATH_TEMPLATES/resolved.conf.template
 readonly PATH_DNSMASQ=/etc/dnsmasq.d
 readonly PATH_DNSMASQ_CONF=$PATH_DNSMASQ/ytl-linux.conf
 readonly PATH_DNSMASQ_CONF_TEMPLATE=$PATH_TEMPLATES/dnsmasq.conf.template
+readonly PATH_DOCKER=/etc/docker
+readonly PATH_DOCKER_DAEMON_CONF=$PATH_DOCKER/daemon.json
+readonly PATH_DOCKER_DAEMON_CONF_TEMPLATE=$PATH_TEMPLATES/docker-daemon.json.template
 
 readonly BIN_ECHO=/usr/bin/echo
 readonly BIN_GREP=/usr/bin/grep
@@ -307,6 +312,11 @@ function remove_all_settings() {
         exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_DNSMASQ_CONF'"
     fi
 
+    if [ -f $PATH_DOCKER_DAEMON_CONF ]; then
+        rm -f $PATH_DOCKER_DAEMON_CONF
+        exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_DOCKER_DAEMON_CONF'"
+    fi
+
     $BIN_NMCLI -f UUID,NAME connection show | $BIN_GREP -P -v "^UUID" | $BIN_TR -s ' ' | while read -r line ; do
         connection_uuid=$(echo "$line" | $BIN_CUT -d ' ' -f 1)
         connection_name=$(echo "$line" | $BIN_CUT -d ' ' -f 2)
@@ -329,6 +339,11 @@ function restart_network_services() {
 
     $BIN_SYSTEMCTL restart NetworkManager.service >>"$PATH_DEBUG" 2>&1
     exit_if_error $? $EXIT_CODE_CANNOT_RESTART_NM "Failed to restart NetworkManager.service"
+}
+
+function restart_docker() {
+    $BIN_SYSTEMCTL restart docker
+    exit_if_error $? $EXIT_CODE_CANNOT_RESTART_DOCKER "Failed to restart docker"
 }
 
 
@@ -421,8 +436,11 @@ export SERVER_NUMBER
 IP_LAN_PREFIX=$(get_lan_ip_prefix "$IP_WAN")
 export IP_LAN_PREFIX
 
+export DOCKER_BRIDGE_NETWORK_DNS_RESOLVER_IP
+
 write_file $PATH_RESOLVED_CONF "$(envsubst < $PATH_RESOLVED_CONF_TEMPLATE)"
 write_file $PATH_DNSMASQ_CONF "$(envsubst < $PATH_DNSMASQ_CONF_TEMPLATE)"
+write_file $PATH_DOCKER_DAEMON_CONF "$(envsubst < $PATH_DOCKER_DAEMON_CONF_TEMPLATE)"
 
 configure_networkmanager "yo-$NET_DEVICE_LAN" "$NET_DEVICE_LAN" "${IP_LAN_PREFIX}${SERVER_NUMBER}.1/16"
 
@@ -433,5 +451,6 @@ if [ -f /etc/netplan/50-cloud-init.yaml ]; then
 fi
 
 restart_network_services "$NET_DEVICE_LAN"
+restart_docker
 
 print_info "Changes made successfully"

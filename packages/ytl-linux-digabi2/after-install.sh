@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
 
-# Restart Docker to recognize the new config
-systemctl restart docker
+set -euo pipefail
+
+# Remove previous faulty Docker daemon configuration
+rm -f /etc/docker/daemon.json

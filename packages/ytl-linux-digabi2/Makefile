@@ -1,5 +1,5 @@
 NAME := ytl-linux-digabi2
-VERSION := 0.0.4
+VERSION := 0.0.5
 
 DEPENDENCIES := --depends naksu2 --depends libnotify4 --depends libnss3 --depends xdg-utils --depends libasound2 --depends docker-ce --depends docker-ce-cli --depends ethtool
 DEB_ROOT := deb-root
@@ -12,10 +12,6 @@ deb:
 	# Package documentation
 	mkdir -p deb-root/usr/local/share/doc/$(NAME)
 	cp *.md deb-root/usr/local/share/doc/$(NAME)/
-
-	# Docker daemon configuration file
-	mkdir -p deb-root/etc/docker/
-	cp docker/* deb-root/etc/docker/
 
 	fpm -C deb-root/ -s dir --name $(NAME) --architecture all -t deb --version "$(VERSION)" \
 		 --description "Digabi2 server application" \
