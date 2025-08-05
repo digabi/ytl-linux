@@ -1,5 +1,5 @@
 NAME := ytl-linux-digabi2-wsl
-VERSION := 0.0.5
+VERSION := 0.0.6
 
 DEPENDENCIES := --depends naksu2 --depends libnotify4 --depends libnss3 --depends xdg-utils --depends libasound2 --depends docker-ce --depends docker-ce-cli --depends ethtool
 CONFLICTS := --conflicts wslu
