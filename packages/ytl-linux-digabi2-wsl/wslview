@@ -581,8 +581,8 @@ if [[ "$lname" != "" ]]; then
 		cmd="\"$(wslpath -w "${properfile_full_path:-$lname}" 2>/dev/null || echo "$lname")\""
 	fi
 	debug_echo "cmd: $cmd"
-	if [[ "$WSLVIEW_DEFAULT_ENGINE" == "powershell" ]]; then
-		winps_exec Start "${cmd}"
+	if [[ "$WSLVIEW_DEFAULT_ENGINE" == "" || "$WSLVIEW_DEFAULT_ENGINE" == "powershell" ]]; then
+		winps_exec explorer.exe "${cmd}"
 	elif [[ "$WSLVIEW_DEFAULT_ENGINE" == "cmd" ]]; then
 		cmd_exec start "${cmd}"
 	elif [[ "$WSLVIEW_DEFAULT_ENGINE" == "cmd_explorer" ]]; then
