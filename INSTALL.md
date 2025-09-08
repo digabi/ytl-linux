@@ -99,7 +99,7 @@ In this option you create a signature (Machine Owner Key, MOK), add it to your U
  1. In some cases the `update-secureboot-policy` is running and causing the signing process to fail. Therefore, start by terminating this process:\
    `sudo killall -TERM update-secureboot-policy`
  1. Now reconfigure the VirtualBox installation:\
-   `sudo dpkg-reconfigure virtualbox-7.0`
+   `sudo dpkg-reconfigure virtualbox-7.1`
  1. When asked, enter a short (8+) password which you need only after reboot. "secureboot" is an excellent password for the MOK.
  1. Reboot.
  1. After the reboot you will be asked whether you want to enroll your MOK. This is an example process in some Dell and HP models, but your mileage may vary:
