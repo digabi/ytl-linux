@@ -384,7 +384,7 @@ else
     NET_DEVICE_WAN=$PARAM_NET_DEVICE_WAN
 fi
 
-if [ $GUI_MODE ]; then
+if [ $GUI_MODE -gt 0 ]; then
     NET_DEVICE_LAN=$(ask_network_device "Select local (LAN) network device" "$NET_DEVICE_WAN")
     if [ -z "$NET_DEVICE_LAN" ]; then
         print_error "Missing LAN network device name"
@@ -415,7 +415,7 @@ if [ -n "$IP_LAN" ]; then
     print_info "Given local device $NET_DEVICE_LAN has already an IPv4 address $IP_LAN"
 fi
 
-if [ $GUI_MODE ]; then
+if [ $GUI_MODE -gt 0 ]; then
     SERVER_NUMBER=$($BIN_ZENITY --entry --title="Server number" --text="Enter server number (1-254)")
 else
     SERVER_NUMBER=$PARAM_SERVER_NUMBER
