@@ -14,6 +14,7 @@ deb:
 
 	# Script file
 	mkdir -p $(DEB_ROOT)/usr/local/sbin/
+	cp ytl-linux-digabi1-examnet $(DEB_ROOT)/usr/local/sbin/
 	cp ytl-linux-digabi2-examnet $(DEB_ROOT)/usr/local/sbin/
 	
 	# Config templates

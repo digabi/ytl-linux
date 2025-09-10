@@ -1,0 +1,333 @@
+#!/bin/bash
+
+# Exit codes
+readonly EXIT_CODE_MUST_BE_ROOT=1                     # The script must be executed by root or sudo
+readonly EXIT_CODE_NETWORK_DEVICE_NAME_MISSING_LAN=4  # Network device name (local network) is missing
+readonly EXIT_CODE_NETWORK_DEVICE_MISSING_LAN=5       # Given network device (local network) does not exist
+readonly EXIT_CODE_MISSING_SERVER_NUMBER=7            # Server number is missing
+readonly EXIT_CODE_ILLEGAL_SERVER_NUMBER=8            # Server number is not between 1-254 (or contains other than numbers)
+readonly EXIT_CODE_CANNOT_RESTART_LAN_DEVICE=12       # Cannot start local network device (nmcli connectip up fails)
+readonly EXIT_CODE_CANNOT_RESTART_NM=14               # Cannot restart NetworkManager
+readonly EXIT_CODE_NO_GUI_FOR_ROOT=16                 # You shouldn't execute the script by root in GUI mode (use sudo instead)
+readonly EXIT_CODE_CANNOT_REMOVE_CONNECTION=18        # The script was executed with --remove, but it could not remove a connection
+
+readonly SCRIPT_PATH=$0
+readonly PARAM_NET_DEVICE_LAN=$1
+readonly PARAM_SERVER_NUMBER=$2
+
+readonly NETWORK_DEVICE_FILTER_RE="^docker|^br|^veth|^lo$"
+
+readonly BIN_ECHO=/usr/bin/echo
+readonly BIN_GREP=/usr/bin/grep
+readonly BIN_TR=/usr/bin/tr
+readonly BIN_CUT=/usr/bin/cut
+readonly BIN_IP=/usr/sbin/ip
+readonly BIN_SYSTEMCTL=/usr/bin/systemctl
+readonly BIN_NMCLI=/usr/bin/nmcli
+readonly BIN_ZENITY=/usr/bin/zenity
+
+function debug_path() {
+    if [ -z "$DEBUG" ]; then
+        $BIN_ECHO "/dev/null"
+    else
+        $BIN_ECHO "$DEBUG"
+    fi
+}
+
+PATH_DEBUG=$(debug_path)
+readonly PATH_DEBUG
+
+function debug() {
+    _DEBUG_MESSAGE=$1
+    $BIN_ECHO "$SCRIPT_PATH DEBUG: $_DEBUG_MESSAGE" >>"$PATH_DEBUG"
+}
+
+function print_error() {
+    _ERROR_MESSAGE=$1
+    debug "ERROR: $_ERROR_MESSAGE"
+    if [ $GUI_MODE -gt 0 ]; then
+        $BIN_ZENITY --error --text="$_ERROR_MESSAGE"
+    else
+        $BIN_ECHO "$SCRIPT_PATH error: $_ERROR_MESSAGE" >&2
+    fi
+}
+
+function print_info() {
+    _INFO_MESSAGE=$1
+    debug "INFO: $_INFO_MESSAGE"
+    if [ $GUI_MODE -gt 0 ]; then
+        $BIN_ZENITY --info --text="$_INFO_MESSAGE"
+    else
+        $BIN_ECHO "$SCRIPT_PATH info: $_INFO_MESSAGE"
+    fi
+}
+
+function print_usage() {
+    $BIN_ECHO "usage: $SCRIPT_PATH local-network-device server-number" >&2
+    $BIN_ECHO "       $SCRIPT_PATH --gui" >&2
+    $BIN_ECHO "       $SCRIPT_PATH --remove" >&2
+    $BIN_ECHO "" >&2
+    $BIN_ECHO "example: $SCRIPT_PATH eth0 1" >&2
+}
+
+function exit_script() {
+    _EXIT_CODE=$1
+    debug "Exiting with code $_EXIT_CODE"
+    exit "$_EXIT_CODE"
+}
+
+function exit_if_error() {
+    _EXIT_CODE=$(($1))
+    _EXIT_CODE_IF_ERROR=$(($2))
+    _ERROR_MESSAGE_IF_ERROR=$3
+
+    if [ $_EXIT_CODE -gt 0 ]; then
+        debug "Got exit code $_EXIT_CODE"
+        print_error "$_ERROR_MESSAGE_IF_ERROR (original exit code: $_EXIT_CODE)"
+        exit_script $_EXIT_CODE_IF_ERROR
+    fi
+}
+
+function current_user_is_root () {
+    if [ "$EUID" == "0" ]; then
+        echo 1
+    fi
+}
+
+function current_user_is_sudo () {
+    if [ "$SUDO_UID" ] ; then
+        echo 1
+    fi
+}
+
+function network_enumerate_devices () {
+    for dir in /sys/class/net/*; do
+        device=$(basename "$dir")
+        if ! [[ "$device" =~ $NETWORK_DEVICE_FILTER_RE ]]; then
+            echo "$device "
+        fi
+    done
+}
+
+function network_enumerate_devices_with_information () {
+    device_to_skip=$1
+    
+    devices=$(network_enumerate_devices)
+
+    for device in $devices; do
+        if [ -n "$device_to_skip" ] && [ "$device" == "$device_to_skip" ]; then
+            continue
+        fi
+        
+        ip=$(ip addr show dev "$device" | grep "inet " | awk '{print $2}' | cut -d/ -f1)
+        if [ -z "$ip" ]; then
+            ip=-
+        fi
+
+        connect=$(ip link show dev "$device" | grep -q "state UP" && echo "Connected" || echo "Disconnected")
+        if [ -z "$connect" ]; then
+            connect=-
+        fi
+
+        echo "$device" "$ip" "$connect"
+    done
+}
+
+function ask_network_device () {
+    question=$1
+    device_to_skip=
+    
+    devices=$(network_enumerate_devices_with_information "$device_to_skip")
+
+    # shellcheck disable=SC2086
+    $BIN_ZENITY --list --title "$question" \
+        --column "Device" --column "IPv4" --column "Connection" \
+        --width=400 --height=400 \
+        $devices
+}
+
+
+function network_device_exists() {
+    _DEVICE=$1
+    $BIN_IP link show "$_DEVICE" &> /dev/null && $BIN_ECHO "1"
+}
+
+function get_ipv4_address() {
+    _DEVICE=$1
+    _IP=$($BIN_IP -oneline -4 addr show scope global "$_DEVICE" | $BIN_TR -s ' ' | $BIN_TR '/' ' ' | $BIN_CUT -f 4 -d ' ')
+    if [[ ! "$_IP" =~ "does not exist" ]]; then
+        $BIN_ECHO "$_IP"
+    fi
+}
+
+function check_network_device_name() {
+    _NET_DEVICE_LAN=$1
+
+    if [ -z "$_NET_DEVICE_LAN" ]; then
+        print_error "Network device name (local network) is missing"
+        print_usage
+        exit_script $EXIT_CODE_NETWORK_DEVICE_NAME_MISSING_LAN
+    fi
+
+    LAN_NETWORK_DEVICE_EXISTS=$(network_device_exists "$_NET_DEVICE_LAN")
+    if [ -z "$LAN_NETWORK_DEVICE_EXISTS" ]; then
+        print_error "Given network device $_NET_DEVICE_LAN (local network) does not exist"
+        print_usage
+        exit_script $EXIT_CODE_NETWORK_DEVICE_MISSING_LAN
+    fi
+}
+
+function server_number_is_valid() {
+    _SERVER_NUMBER=$1
+    if [[ "$_SERVER_NUMBER" =~ ^[0-9]+$ ]] && [ "$_SERVER_NUMBER" -ge 1 ] && [ "$_SERVER_NUMBER" -le 254 ]; then
+        $BIN_ECHO "1"
+    fi
+}
+
+function check_server_number() {
+    _SERVER_NUMBER=$1
+
+    if [ -z "$_SERVER_NUMBER" ]; then
+        print_error "Server number is missing"
+        print_usage
+        exit_script $EXIT_CODE_MISSING_SERVER_NUMBER
+    fi
+
+    if [ -z "$(server_number_is_valid "$_SERVER_NUMBER")" ]; then
+        print_error "Server number must be 1-254"
+        print_usage
+        exit_script $EXIT_CODE_ILLEGAL_SERVER_NUMBER
+    fi
+}
+
+function configure_networkmanager() {
+    _CONNECTION_NAME=$1
+    _INTERFACE_NAME=$2
+    _IP_AND_NETMASK=$3
+
+    debug "Deleting existing NetworkManager connection '$_CONNECTION_NAME'"
+    $BIN_NMCLI connection delete "$_CONNECTION_NAME" >>"$PATH_DEBUG" 2>&1
+    # We are not checking the exit code as this command fails if the connection does not exist
+    # This is quite normal if the script has been executed before
+
+    debug "Adding NetworkManager connection '$_CONNECTION_NAME'"
+    $BIN_NMCLI connection add \
+        type ethernet \
+        ifname "$_INTERFACE_NAME" \
+        con-name "$_CONNECTION_NAME" \
+        ip4 "$_IP_AND_NETMASK" \
+        autoconnect yes \
+        save yes >>"$PATH_DEBUG" 2>&1
+    exit_if_error $? $EXIT_CODE_CANNOT_RESTART_LAN_DEVICE "NetworkManager CLI: connection add $_CONNECTION_NAME failed"
+    
+    debug "Disabling IPv6 in connection '$_CONNECTION_NAME'"
+    $BIN_NMCLI connection modify "$_CONNECTION_NAME" ipv6.method "disabled" >>"$PATH_DEBUG" 2>&1
+    exit_if_error $? $EXIT_CODE_CANNOT_RESTART_LAN_DEVICE "NetworkManager CLI: IPv6 disable failed"
+    
+    debug "Starting connection '$_CONNECTION_NAME'"
+    $BIN_NMCLI connection up "$_CONNECTION_NAME" >>"$PATH_DEBUG" 2>&1
+    exit_if_error $? $EXIT_CODE_CANNOT_RESTART_LAN_DEVICE "Failed to start NetworkManager connection '$_CONNECTION_NAME'"
+}
+
+function remove_all_settings() {
+    $BIN_NMCLI -f UUID,NAME connection show | $BIN_GREP -P -v "^UUID" | $BIN_TR -s ' ' | while read -r line ; do
+        connection_uuid=$(echo "$line" | $BIN_CUT -d ' ' -f 1)
+        connection_name=$(echo "$line" | $BIN_CUT -d ' ' -f 2)
+        if [[ "$connection_name" =~ ^yo- ]]; then
+            debug "Removing connection '$connection_name', uuid: $connection_uuid"
+            $BIN_NMCLI connection delete "$connection_uuid"
+            exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_CONNECTION "Failed to remove connection '$connection_name'"
+        fi
+    done
+}
+
+function restart_networkmanager() {
+    $BIN_SYSTEMCTL restart NetworkManager.service >>"$PATH_DEBUG" 2>&1
+    exit_if_error $? $EXIT_CODE_CANNOT_RESTART_NM "Failed to restart NetworkManager.service"
+}
+
+
+if [ -z "$PARAM_NET_DEVICE_LAN" ]; then
+    print_usage
+    exit_script $EXIT_CODE_NETWORK_DEVICE_NAME_MISSING_LAN
+fi
+
+GUI_MODE=0
+
+if [ ! "$(current_user_is_root)" ]; then
+    print_error "You're not root"
+    exit_script $EXIT_CODE_MUST_BE_ROOT
+fi
+
+if [ "$PARAM_NET_DEVICE_LAN" == "--remove" ]; then
+    remove_all_settings
+    restart_networkmanager
+
+    print_info "All examnet settings have been removed"
+
+    exit_script 0
+fi
+
+if [ "$PARAM_NET_DEVICE_LAN" == "--gui" ]; then
+    if [ ! "$(current_user_is_sudo)" ]; then
+        print_error "GUI mode cannot be executed as root, since typically root does not have access to user's desktop session"
+        exit_script $EXIT_CODE_NO_GUI_FOR_ROOT
+    fi
+
+    GUI_MODE=1
+else
+    NET_DEVICE_LAN=$PARAM_NET_DEVICE_LAN
+fi
+
+if [ $GUI_MODE -gt 0 ]; then
+    NET_DEVICE_LAN=$(ask_network_device "Select local (LAN) network device")
+    if [ -z "$NET_DEVICE_LAN" ]; then
+        print_error "Missing LAN network device name"
+        exit_script $EXIT_CODE_NETWORK_DEVICE_NAME_MISSING_LAN
+    fi
+else
+    NET_DEVICE_LAN=$PARAM_NET_DEVICE_LAN
+fi
+
+debug "NET_DEVICE_LAN: $NET_DEVICE_LAN"
+
+export NET_DEVICE_LAN
+
+check_network_device_name "$NET_DEVICE_LAN"
+
+IP_LAN=$(get_ipv4_address "$NET_DEVICE_LAN")
+readonly IP_LAN
+if [ -n "$IP_LAN" ]; then
+    print_info "Given local device $NET_DEVICE_LAN has already an IPv4 address $IP_LAN"
+fi
+
+if [ $GUI_MODE -gt 0 ]; then
+    SERVER_NUMBER=$($BIN_ZENITY --entry --title="Server number" --text="Enter server number (1-254)")
+else
+    SERVER_NUMBER=$PARAM_SERVER_NUMBER
+fi
+
+debug "SERVER_NUMBER: $SERVER_NUMBER"
+
+check_server_number "$SERVER_NUMBER"
+
+debug "IP_LAN: $IP_LAN"
+debug "SERVER_NUMBER: $SERVER_NUMBER"
+
+export IP_LAN
+export SERVER_NUMBER
+
+IP_LAN_PREFIX=192.168.
+export IP_LAN_PREFIX
+
+configure_networkmanager "yo-$NET_DEVICE_LAN" "$NET_DEVICE_LAN" "${IP_LAN_PREFIX}${SERVER_NUMBER}.1/16"
+
+# Remove configuration file generated by cloud-init
+# If not removed, there might be multiple settings for built-in ethernet devices
+if [ -f /etc/netplan/50-cloud-init.yaml ]; then
+    rm /etc/netplan/50-cloud-init.yaml
+fi
+
+restart_networkmanager "$NET_DEVICE_LAN"
+
+print_info "Changes made successfully"

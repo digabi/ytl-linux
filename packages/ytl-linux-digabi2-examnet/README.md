@@ -2,6 +2,8 @@
 
 ## Purpose
 
+### ytl-linux-digabi2-examnet
+
 This is a proof-of-concept of a procedure which creates proper network settings
 for Abitti 2 exam server. The setup requires that the server has two network devices
  * A WAN device connected to the internet. At the moment this is used to get a
@@ -11,6 +13,15 @@ for Abitti 2 exam server. The setup requires that the server has two network dev
  * A LAN device connected to the closed local area network. This is an Abitti 1
    style network without any external DHCP/DNS servers. After executing the script
    the server starts working as a DHCP/DNS server for the LAN.
+
+### ytl-linux-digabi1-examnet
+
+The package contains also a script `ytl-linux-digabi1-examnet` which sets a static
+IPv4 address to given network device. This is intended to avoid problems when running
+Abitti 1 exams using a network device which tries to get network settings using DHCP.
+In some cases this causes connection problems for the device.
+
+This script follows similar usage as described below.
 
 ## Usage
 
