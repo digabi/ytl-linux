@@ -329,8 +329,6 @@ function remove_all_settings() {
 }
 
 function restart_network_services() {
-    _NET_DEVICE_LAN=$1
-
     $BIN_SYSTEMCTL restart systemd-resolved
     exit_if_error $? $EXIT_CODE_CANNOT_RESTART_RESOLVED "Failed to restart systemd-resolved"
 
@@ -450,7 +448,7 @@ if [ -f /etc/netplan/50-cloud-init.yaml ]; then
     rm /etc/netplan/50-cloud-init.yaml
 fi
 
-restart_network_services "$NET_DEVICE_LAN"
+restart_network_services
 restart_docker
 
 print_info "Changes made successfully"
