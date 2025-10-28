@@ -20,6 +20,7 @@ readonly EXIT_CODE_NO_GUI_FOR_ROOT=16                 # You shouldn't execute th
 readonly EXIT_CODE_CANNOT_REMOVE_FILES=17             # The script was executed with --remove, but it could not remove settings files
 readonly EXIT_CODE_CANNOT_REMOVE_CONNECTION=18        # The script was executed with --remove, but it could not remove a connection
 readonly EXIT_CODE_CANNOT_RESTART_DOCKER=19           # Cannot restart docker
+readonly EXIT_CODE_NO_SAN_FOR_SERVER_NUMBER=20        # Obtained certificate did not contain a valid domain for this server number
 
 readonly SCRIPT_PATH=$0
 readonly PARAM_NET_DEVICE_WAN=$1
@@ -36,9 +37,15 @@ readonly PATH_RESOLVED_CONF_TEMPLATE=$PATH_TEMPLATES/resolved.conf.template
 readonly PATH_DNSMASQ=/etc/dnsmasq.d
 readonly PATH_DNSMASQ_CONF=$PATH_DNSMASQ/ytl-linux.conf
 readonly PATH_DNSMASQ_CONF_TEMPLATE=$PATH_TEMPLATES/dnsmasq.conf.template
+readonly PATH_DNSMASQ_STATIC_DNS_CONF=$PATH_DNSMASQ/ytl-linux-static-dns-records.conf
 readonly PATH_DOCKER=/etc/docker
 readonly PATH_DOCKER_DAEMON_CONF=$PATH_DOCKER/daemon.json
 readonly PATH_DOCKER_DAEMON_CONF_TEMPLATE=$PATH_TEMPLATES/docker-daemon.json.template
+readonly PATH_NAKSU2_WORKDIR="/home/school/.local/share/digabi/naksu2"
+readonly PATH_NAKSU2_CERTS_DIR="$PATH_NAKSU2_WORKDIR/certs"
+readonly PATH_NAKSU2_CERT="$PATH_NAKSU2_CERTS_DIR/cert.pem"
+readonly PATH_NAKSU2_DOMAIN="$PATH_NAKSU2_CERTS_DIR/domain.txt"
+readonly PATH_NAKSU2_CONFIG="$PATH_NAKSU2_WORKDIR/naksu2-config.json"
 
 readonly BIN_ECHO=/usr/bin/echo
 readonly BIN_GREP=/usr/bin/grep
@@ -49,6 +56,9 @@ readonly BIN_MKDIR=/usr/bin/mkdir
 readonly BIN_SYSTEMCTL=/usr/bin/systemctl
 readonly BIN_NMCLI=/usr/bin/nmcli
 readonly BIN_ZENITY=/usr/bin/zenity
+readonly BIN_SED=/usr/bin/sed
+readonly BIN_XARGS=/usr/bin/xargs
+readonly BIN_OPENSSL=/usr/bin/openssl
 
 function debug_path() {
     if [ -z "$DEBUG" ]; then
@@ -87,8 +97,8 @@ function print_info() {
 }
 
 function print_usage() {
-    $BIN_ECHO "usage: $SCRIPT_PATH wan-network-device local-network-device server-number" >&2
-    $BIN_ECHO "       $SCRIPT_PATH --gui" >&2
+    $BIN_ECHO "usage: $SCRIPT_PATH wan-network-device local-network-device server-number [--experimental-use-static-local-dns]" >&2
+    $BIN_ECHO "       $SCRIPT_PATH --gui [--experimental-use-static-local-dns]" >&2
     $BIN_ECHO "       $SCRIPT_PATH --remove" >&2
     $BIN_ECHO "" >&2
     $BIN_ECHO "example: $SCRIPT_PATH eth0 eth1 1" >&2
@@ -301,21 +311,30 @@ function configure_networkmanager() {
     exit_if_error $? $EXIT_CODE_CANNOT_RESTART_LAN_DEVICE "Failed to start NetworkManager connection '$_CONNECTION_NAME'"
 }
 
+function remove_dnsmasq_settings() {
+    if [ -f $PATH_DNSMASQ_CONF ]; then
+        rm -f $PATH_DNSMASQ_CONF
+        exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_DNSMASQ_CONF'"
+    fi
+
+    if [ -f $PATH_DNSMASQ_STATIC_DNS_CONF ]; then
+        rm -f $PATH_DNSMASQ_STATIC_DNS_CONF
+        exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_DNSMASQ_STATIC_DNS_CONF'"
+    fi
+}
+
 function remove_all_settings() {
     if [ -f $PATH_RESOLVED_CONF ]; then
         rm -f $PATH_RESOLVED_CONF
         exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_RESOLVED_CONF'"
     fi
 
-    if [ -f $PATH_DNSMASQ_CONF ]; then
-        rm -f $PATH_DNSMASQ_CONF
-        exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_DNSMASQ_CONF'"
-    fi
-
     if [ -f $PATH_DOCKER_DAEMON_CONF ]; then
         rm -f $PATH_DOCKER_DAEMON_CONF
         exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_DOCKER_DAEMON_CONF'"
     fi
+
+    remove_dnsmasq_settings
 
     $BIN_NMCLI -f UUID,NAME connection show | $BIN_GREP -P -v "^UUID" | $BIN_TR -s ' ' | while read -r line ; do
         connection_uuid=$(echo "$line" | $BIN_CUT -d ' ' -f 1)
@@ -344,6 +363,84 @@ function restart_docker() {
     exit_if_error $? $EXIT_CODE_CANNOT_RESTART_DOCKER "Failed to restart docker"
 }
 
+function request_api_key_manually() {
+  print_error "Naksu 2 has not completed initial setup; API key cannot be automatically retrieved for certificate obtainment."
+  read -rp "Please enter the API key manually: " _API_KEY
+  $BIN_ECHO "$_API_KEY"
+}
+
+# FIXME: Temporary reimplementation of logic that already exists in Naksu 2, since we cannot fit examnet logic into Naksu easily right now (27.10.2025)
+function retrieve_naksu2_api_key() {
+    if [ ! -f $PATH_NAKSU2_CONFIG ]; then
+        _API_KEY="$(request_api_key_manually)"
+    else
+        _API_KEY="$(jq -r '.apiKey | select(.)' $PATH_NAKSU2_CONFIG)"
+
+        if [ "$_API_KEY" == "" ]; then
+            _API_KEY="$(request_api_key_manually)"
+        fi
+    fi
+
+    $BIN_ECHO "$_API_KEY"
+}
+
+function download_static_cert() {
+    debug "Downloading static certificate"
+    _API_KEY="$(retrieve_naksu2_api_key)"
+    # TODO: Implement lambda call
+}
+
+function configure_static_dns_records() {
+    _SERVER_NUMBER=$1
+
+    debug "Configuring static DNS records"
+    debug "Parsing domains from certificate in $PATH_NAKSU2_CERT"
+
+    # Parse out SANs from certificate; only include server subdomains (e.g. ktp1.1000.koe.abitti.net), not the "root subdomain"
+    # (e.g. 1000.koe.abitti.net) since we cannot reasonably ascribe DNS names to these
+    DOMAINS="$(
+        $BIN_OPENSSL x509 -in "$PATH_NAKSU2_CERT" -text -noout |\
+        $BIN_GREP DNS: |\
+        $BIN_XARGS |\
+        $BIN_SED 's/DNS://g' |\
+        $BIN_SED 's/, /\n/g' |\
+        $BIN_GREP -E '(.+\..+){4}'
+    )"
+
+    debug "Configuring static DNS records for the following domains:"
+    debug "$DOMAINS"
+
+    DNS_RECORDS=()
+    THIS_SERVER_DOMAIN=""
+
+    for DOMAIN in $DOMAINS; do
+        debug "Generating DNS record for domain: $DOMAIN"
+
+        SERVER_NUMBER="$($BIN_ECHO "$DOMAIN" | $BIN_CUT -d '.' -f1 | $BIN_TR -dc '[:digit:]')"
+
+        if [ "$SERVER_NUMBER" == "$_SERVER_NUMBER" ]; then
+            THIS_SERVER_DOMAIN=$DOMAIN
+        fi
+
+        debug "Server number of domain $DOMAIN is: $SERVER_NUMBER"
+        DNS_RECORDS+=("host-record=$DOMAIN,${IP_LAN_PREFIX}${SERVER_NUMBER}.1")
+    done
+
+    if [ "$THIS_SERVER_DOMAIN" == "" ]; then
+        print_error "Certificate did not contain a valid domain for this server number"
+        exit_script $EXIT_CODE_NO_SAN_FOR_SERVER_NUMBER
+    fi
+
+    debug "Generated DNS records: ${DNS_RECORDS[*]}"
+    write_file $PATH_DNSMASQ_STATIC_DNS_CONF "$(IFS=$'\n'; $BIN_ECHO "${DNS_RECORDS[*]}")"
+
+    debug "Configuring domain for KTP"
+    debug "This server's domain based on server number ($SERVER_NUMBER) is: $THIS_SERVER_DOMAIN"
+    write_file $PATH_NAKSU2_DOMAIN "$THIS_SERVER_DOMAIN"
+}
+
+
+# ---------- Main script logic starts here ---------- #
 
 if [ -z "$PARAM_NET_DEVICE_WAN" ]; then
     print_usage
@@ -357,7 +454,7 @@ if [ ! "$(current_user_is_root)" ]; then
     exit_script $EXIT_CODE_MUST_BE_ROOT
 fi
 
-if [ "$PARAM_NET_DEVICE_WAN" == "--remove" ]; then
+if [[ $* == *--remove* ]]; then
     remove_all_settings
     restart_network_services
 
@@ -366,7 +463,13 @@ if [ "$PARAM_NET_DEVICE_WAN" == "--remove" ]; then
     exit_script 0
 fi
 
-if [ "$PARAM_NET_DEVICE_WAN" == "--gui" ]; then
+USE_EXPERIMENTAL_STATIC_LOCAL_DNS=0
+
+if [[ $* == *--experimental-use-static-local-dns* ]]; then
+    USE_EXPERIMENTAL_STATIC_LOCAL_DNS=1
+fi
+
+if [[ $* == *--gui* ]]; then
     if [ ! "$(current_user_is_sudo)" ]; then
         print_error "GUI mode cannot be executed as root, since typically root does not have access to user's desktop session"
         exit_script $EXIT_CODE_NO_GUI_FOR_ROOT
@@ -436,9 +539,19 @@ export IP_LAN_PREFIX
 
 export DOCKER_BRIDGE_NETWORK_DNS_RESOLVER_IP
 
+if [ $USE_EXPERIMENTAL_STATIC_LOCAL_DNS -gt 0 ]; then
+    download_static_cert
+fi
+
 write_file $PATH_RESOLVED_CONF "$(envsubst < $PATH_RESOLVED_CONF_TEMPLATE)"
-write_file $PATH_DNSMASQ_CONF "$(envsubst < $PATH_DNSMASQ_CONF_TEMPLATE)"
 write_file $PATH_DOCKER_DAEMON_CONF "$(envsubst < $PATH_DOCKER_DAEMON_CONF_TEMPLATE)"
+
+remove_dnsmasq_settings
+write_file $PATH_DNSMASQ_CONF "$(envsubst < $PATH_DNSMASQ_CONF_TEMPLATE)"
+
+if [ $USE_EXPERIMENTAL_STATIC_LOCAL_DNS -gt 0 ]; then
+    configure_static_dns_records "$SERVER_NUMBER"
+fi
 
 configure_networkmanager "yo-$NET_DEVICE_LAN" "$NET_DEVICE_LAN" "${IP_LAN_PREFIX}${SERVER_NUMBER}.1/16"
 

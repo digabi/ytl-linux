@@ -1,6 +1,25 @@
-resolv-file=/etc/resolv.conf
+# Bind to LAN device and Docker bridge interfaces
 interface=${NET_DEVICE_LAN}
 interface=docker0
 interface=ytl0
+
+# Tell clients to use this server as DHCP and DNS
 dhcp-range=${IP_LAN_PREFIX}${SERVER_NUMBER}.10,${IP_LAN_PREFIX}${SERVER_NUMBER}.254,255.255.0.0,1h
+dhcp-option=6,${IP_LAN_PREFIX}${SERVER_NUMBER}.1
+
+# Redirect requests for Windows Network Connection Status Indicator (NCSI) to our local NCSI spoofer (ytl-linux-digabi2-ncsi-srv)
 host-record=dns.msftncsi.com,www.msftncsi.com,www.msftconnecttest.com,ipv6.msftconnecttest.com,${IP_LAN_PREFIX}${SERVER_NUMBER}.1
+
+# Use WAN device nameservers as upstream
+resolv-file=/etc/resolv.conf
+
+# Forward requests for koe.abitti.net to upstream
+# This is for compatibility with practice exams that use a generated domain name in public DNS, as opposed to
+# examination networks, where the host records are local and static. Public DNS returns a private IP, but we
+# need DNS to tell student computers where to go
+server=/koe.abitti.net/#
+
+# Null-route all other traffic
+# This prevents software on the student computer from getting confused by when DNS queries work, but the TCP
+# request stalls (since this is not a router) for however long the client timeout is set to; possibly Infinity
+address=/#/0.0.0.0
