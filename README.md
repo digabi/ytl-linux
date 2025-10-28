@@ -146,11 +146,36 @@ from GitHub. This can be changed by modifying the build script.
 
 ### Testing with VirtualBox
 
-`make create-vb-vm`
+This option requires VirtualBox to be installed (`sudo apt install virtualbox`). **Note:** VirtualBox is not supported on macOS, as it cannot do x86 emulation on ARM.
+
+```bash
+make create-vb-vm
+```
+
+VM parameters can be customized; see top of [Makefile](./Makefile) for all available options. E.g.:
+
+```bash
+make create-vb-vm VM_CPUS=8 VM_MEMORY_SIZE=8192
+```
+
+The repo folder is automatically mounted into the VirtualBox VM as a shared folder. To access it and build the debs for testing inside the VM, run the following commands:
+
+```
+sudo apt install virtualbox-guest-utils ruby-dev build-essential
+sudo gem i -f fpm
+sudo usermod -aG vboxsf $USER
+sudo reboot now
+```
+
+Debs can then be created with `make deb` and installed with `sudo apt install --reinstall ./ytl-linux-(...).deb`.
 
 ### Testing with KVM
 
-`make create-kvm-vm`
+```bash
+make create-kvm-vm
+```
+
+**Note:** The KVM setup does not currently support automatically mounting the repo into the VM as a shared folder for testing.
 
 ## Debugging failing installations
 
