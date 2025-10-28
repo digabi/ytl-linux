@@ -19,5 +19,8 @@ build-backend = "hatchling.build"
 [tool.hatch.version]
 path = "src/digabi2_examnet_bouncer/__init__.py"
 
+[tool.hatch.envs.packaging]
+dependencies = ["pyinstaller==6.16.0"]
+
 [tool.pyright]
 typeCheckingMode =  "basic"
