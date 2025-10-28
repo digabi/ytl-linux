@@ -311,12 +311,7 @@ function configure_networkmanager() {
     exit_if_error $? $EXIT_CODE_CANNOT_RESTART_LAN_DEVICE "Failed to start NetworkManager connection '$_CONNECTION_NAME'"
 }
 
-function remove_all_settings() {
-    if [ -f $PATH_RESOLVED_CONF ]; then
-        rm -f $PATH_RESOLVED_CONF
-        exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_RESOLVED_CONF'"
-    fi
-
+function remove_dnsmasq_settings() {
     if [ -f $PATH_DNSMASQ_CONF ]; then
         rm -f $PATH_DNSMASQ_CONF
         exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_DNSMASQ_CONF'"
@@ -326,11 +321,20 @@ function remove_all_settings() {
         rm -f $PATH_DNSMASQ_STATIC_DNS_CONF
         exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_DNSMASQ_STATIC_DNS_CONF'"
     fi
+}
+
+function remove_all_settings() {
+    if [ -f $PATH_RESOLVED_CONF ]; then
+        rm -f $PATH_RESOLVED_CONF
+        exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_RESOLVED_CONF'"
+    fi
 
     if [ -f $PATH_DOCKER_DAEMON_CONF ]; then
         rm -f $PATH_DOCKER_DAEMON_CONF
         exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_DOCKER_DAEMON_CONF'"
     fi
+
+    remove_dnsmasq_settings
 
     $BIN_NMCLI -f UUID,NAME connection show | $BIN_GREP -P -v "^UUID" | $BIN_TR -s ' ' | while read -r line ; do
         connection_uuid=$(echo "$line" | $BIN_CUT -d ' ' -f 1)
@@ -540,8 +544,10 @@ if [ $USE_EXPERIMENTAL_STATIC_LOCAL_DNS -gt 0 ]; then
 fi
 
 write_file $PATH_RESOLVED_CONF "$(envsubst < $PATH_RESOLVED_CONF_TEMPLATE)"
-write_file $PATH_DNSMASQ_CONF "$(envsubst < $PATH_DNSMASQ_CONF_TEMPLATE)"
 write_file $PATH_DOCKER_DAEMON_CONF "$(envsubst < $PATH_DOCKER_DAEMON_CONF_TEMPLATE)"
+
+remove_dnsmasq_settings
+write_file $PATH_DNSMASQ_CONF "$(envsubst < $PATH_DNSMASQ_CONF_TEMPLATE)"
 
 if [ $USE_EXPERIMENTAL_STATIC_LOCAL_DNS -gt 0 ]; then
     configure_static_dns_records "$SERVER_NUMBER"
