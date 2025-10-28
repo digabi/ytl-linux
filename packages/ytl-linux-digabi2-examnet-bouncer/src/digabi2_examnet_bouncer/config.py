@@ -1,28 +1,40 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from urllib.parse import urlparse
+
+import validators
 
 
 @dataclass(frozen=True)
 class Config:
-    canonical_url: str
+    canonical_host: str
     friendly_name: str
     ipv4_address: str
     bouncer_port: int
     extra_ncsi_hosts: list[str]
 
+    @property
+    def canonical_url(self):
+        port = "" if ":" in self.canonical_host else ":8010"
+        return f"https://{self.canonical_host}{port}/"
+
     def __post_init__(self):
-        scheme, netloc, path, params, query, fragment = urlparse(self.canonical_url)
-        checks = {
-            "URL must be an HTTPS URL":         scheme == "https",
-            "URL must be absolute":             netloc != "",
-            "URL must not have a path":         path in ("/", ""),
-            "URL must not have extra params":   params == "",
-            "URL must not have a query string": query == "",
-            "URL must not have a fragment":     fragment == "",
-        }
-        for check in checks:
-            if checks[check]:
-                continue
-            raise ValueError(check)
+        validations = [
+            validators.hostname(
+                self.canonical_host,
+                skip_ipv4_addr=True,
+                skip_ipv6_addr=True,
+                may_have_port=True,
+                maybe_simple=True,
+            ),
+            validators.slug(self.friendly_name),
+            validators.ipv4(
+                self.ipv4_address,
+                cidr=False,
+                private=True,
+            ),
+            *(validators.hostname(host) for host in self.extra_ncsi_hosts)
+        ]
+        for result in validations:
+            if isinstance(result, validators.ValidationError):
+                raise result

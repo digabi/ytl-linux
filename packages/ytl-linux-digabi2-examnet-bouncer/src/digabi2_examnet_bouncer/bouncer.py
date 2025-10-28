@@ -7,7 +7,6 @@ from wsgiref.types import StartResponse, WSGIEnvironment
 from werkzeug import Request, Response
 from werkzeug.exceptions import HTTPException, NotFound
 from werkzeug.routing import Map, Rule
-from werkzeug.utils import redirect
 
 from .config import Config
 
@@ -48,12 +47,12 @@ class Bouncer:
         ncsi_hosts = set(format_hosts(port, NCSI_HOSTS + self.config.extra_ncsi_hosts))
         ncsi_rules = [ncsi_template(host=host) for host in ncsi_hosts]
 
-        mdns_template = functools.partial(Rule, endpoint=self.redirect, methods=["GET"])
+        mdns_routes = [("/", ["GET"]), ("/ktp/hello", ["POST"])]
         mdns_hosts = set(format_hosts(port, [friendly_hostname]))
         mdns_rules = [
-            mdns_template(path, host=host)
+            Rule(route, endpoint=self.redirect, methods=methods, host=host)
+            for route, methods in mdns_routes
             for host in mdns_hosts
-            for path in ("/", "/<path:path>")
         ]
 
         self.url_map = Map([*ncsi_rules, *mdns_rules], host_matching=True)
@@ -79,6 +78,9 @@ class Bouncer:
             raise NotFound()
         return Response(response, 200, content_type="text/plain")
 
-    def redirect(self, request: Request, **_: str):
-        url = urljoin(self.config.canonical_url, request.full_path)
-        return redirect(url, 303)
+    def redirect(self, request: Request):
+        headers = {
+            "Access-Control-Allow-Origin": "*",
+            "Location": urljoin(self.config.canonical_url, request.full_path),
+        }
+        return Response(status=307, headers=headers)
