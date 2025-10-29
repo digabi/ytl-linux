@@ -33,10 +33,10 @@ deb:
 			. \
 		&& \
 		docker run \
-			--rm -it \
+			--rm \
 			--mount type=bind,src=$(shell pwd)/$(DEB_ROOT)/usr/local/sbin/,dst=/dist \
 			registry.invalid/digabi2-examnet-bouncer-build \
-				hatch --verbose run \
+				hatch --no-interactive --verbose run \
 					packaging:pyinstaller --onefile digabi2-examnet-bouncer \
 		)
 
