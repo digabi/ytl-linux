@@ -34,10 +34,9 @@ deb:
 		&& \
 		docker run \
 			--rm \
-			--mount type=bind,src=$(shell pwd)/$(DEB_ROOT)/usr/local/sbin/,dst=/dist \
+			--mount type=bind,src=$(shell pwd)/$(DEB_ROOT)/usr/local/sbin/,dst=/out \
 			registry.invalid/digabi2-examnet-bouncer-build \
-				hatch --no-interactive --verbose run \
-					packaging:pyinstaller --onefile digabi2-examnet-bouncer \
+				install -o 1001 /dist/digabi2-examnet-bouncer /out \
 		)
 
 	chmod 755 $(DEB_ROOT)/usr/local/sbin/*
