@@ -11,7 +11,7 @@ class Config:
     friendly_name: str
     ipv4_address: str
     bouncer_port: int
-    extra_ncsi_hosts: list[str]
+    ncsi_hosts: list[str]
 
     @property
     def canonical_url(self):
@@ -33,7 +33,7 @@ class Config:
                 cidr=False,
                 private=True,
             ),
-            *(validators.hostname(host) for host in self.extra_ncsi_hosts)
+            *(validators.hostname(host) for host in self.ncsi_hosts)
         ]
         for result in validations:
             if isinstance(result, validators.ValidationError):

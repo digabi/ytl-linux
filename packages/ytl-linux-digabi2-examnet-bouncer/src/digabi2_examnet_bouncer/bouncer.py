@@ -11,13 +11,6 @@ from werkzeug.routing import Map, Rule
 from .config import Config
 
 
-NCSI_HOSTS = [
-    "dns.msftncsi.com",
-    "www.msftncsi.com",
-    "www.msftconnecttest.com",
-    "ipv6.msftconnecttest.com",
-]
-
 NCSI_RESPONSES = {
     "connecttest.txt": "Microsoft Connect Test",
     "ncsi.txt": "Microsoft NCSI",
@@ -44,7 +37,7 @@ class Bouncer:
         port = config.bouncer_port
 
         ncsi_template = functools.partial(Rule, "/<name>", endpoint=self.ncsi, methods=["GET"])
-        ncsi_hosts = set(format_hosts(port, NCSI_HOSTS + self.config.extra_ncsi_hosts))
+        ncsi_hosts = set(format_hosts(port, self.config.ncsi_hosts))
         ncsi_rules = [ncsi_template(host=host) for host in ncsi_hosts]
 
         mdns_routes = [("/", ["GET"]), ("/ktp/hello", ["POST"])]
