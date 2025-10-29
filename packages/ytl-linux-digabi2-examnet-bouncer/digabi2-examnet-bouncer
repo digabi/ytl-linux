@@ -1,6 +1,91 @@
 #!/usr/bin/env python3
 
-from digabi2_examnet_bouncer.main import main
+import argparse
+import pathlib
+
+from digabi2_examnet_bouncer.announcer import Announcer
+from digabi2_examnet_bouncer.bouncer import Bouncer
+from digabi2_examnet_bouncer.config import Config
+from werkzeug.serving import make_server
+
+
+parser = argparse.ArgumentParser(
+    pathlib.Path(__file__).stem,
+    """
+    --friendly-name[-file] ...
+    --dns-hostname[-file] ...
+    --dns-hostname[-file] ...
+    --bind-addr ...
+    --bind-port ...
+    [--ncsi-hostnames[-file] ...]
+    [--mdns-hostname-output-file ...]
+    """,
+    description="Network services for the digabi2 exam system",
+)
+
+mdns_group = parser.add_argument_group(
+    "mDNS",
+    "Server name for the candidate app landing page.")
+friendly_name = mdns_group.add_mutually_exclusive_group()
+_ = friendly_name.add_argument("--friendly-name-file", type=pathlib.Path)
+_ = friendly_name.add_argument("--friendly-name", type=str)
+
+dns_group = parser.add_argument_group(
+    "DNS",
+    "DNS name of the exam server.")
+dns_hostname = dns_group.add_mutually_exclusive_group(required=True)
+_ = dns_hostname.add_argument("--dns-hostname-file", type=pathlib.Path)
+_ = dns_hostname.add_argument("--dns-hostname", type=str)
+
+ncsi_group = parser.add_argument_group(
+    "NCSI",
+    "Tricks Windows clients into believing they are connected to the internet.")
+ncsi_hostnames = ncsi_group.add_mutually_exclusive_group()
+_ = ncsi_hostnames.add_argument("--ncsi-hostnames-file", type=pathlib.Path)
+_ = ncsi_hostnames.add_argument("--ncsi-hostnames", type=str)
+
+_ = parser.add_argument("--bind-addr", type=str, required=True)
+_ = parser.add_argument("--bind-port", type=int, default=80)
+
+output_group = parser.add_argument_group("output")
+_ = output_group.add_argument("--mdns-hostname-output-file", type=pathlib.Path)
+
+
+def path_or_string(path: pathlib.Path | None, string: str | None):
+    if path is not None:
+        return path.read_text().strip()
+    if string is not None:
+        return string
+
+
+def main():
+    args = parser.parse_args()
+    friendly_name = path_or_string(args.friendly_name_file, args.friendly_name)
+    dns_hostname = path_or_string(args.dns_hostname_file, args.dns_hostname)
+    ncsi_hostnames = path_or_string(args.ncsi_hostnames_file, args.ncsi_hostnames)
+    ncsi_hostnames = [x.strip() for x in (ncsi_hostnames or "").split(",") if x]
+
+    output_file: pathlib.Path | None = args.mdns_hostname_output_file
+
+    bind_addr: str = args.bind_addr
+    bind_port: int = args.bind_port
+
+    config = Config(
+        canonical_host=dns_hostname,  # pyright: ignore[reportArgumentType]
+        friendly_name=friendly_name,  # pyright: ignore[reportArgumentType]
+        ipv4_address=bind_addr,
+        bouncer_port=bind_port,
+        ncsi_hosts=ncsi_hostnames,
+    )
+
+    with Announcer(config).start() as info:
+        assert info.server is not None
+        if output_file is not None:
+            _ = output_file.write_text(info.server)
+        bouncer = Bouncer(config, info.server)
+        srv = make_server(config.ipv4_address, config.bouncer_port, bouncer)
+        srv.serve_forever()
+
 
 if __name__ == "__main__":
     main()
