@@ -24,8 +24,21 @@ deb:
 	cp ytl-linux-digabi2-ncsi-srv $(DEB_ROOT)/usr/local/sbin/
 
 	# Bouncer
-	(cd digabi2-examnet-bouncer; hatch run packaging:pyinstaller --onefile digabi2-examnet-bouncer)
-	cp digabi2-examnet-bouncer/dist/digabi2-examnet-bouncer deb-root/usr/local/bin/
+	(cd digabi2-examnet-bouncer \
+		&& \
+		docker build \
+			-f Dockerfile.build \
+			--platform linux/amd64 \
+			-t registry.invalid/digabi2-examnet-bouncer-build \
+			. \
+		&& \
+		docker run \
+			--rm -it \
+			--mount type=bind,src=$(shell pwd)/$(DEB_ROOT)/usr/local/sbin/,dst=/dist \
+			registry.invalid/digabi2-examnet-bouncer-build \
+				hatch --verbose run \
+					packaging:pyinstaller --onefile digabi2-examnet-bouncer \
+		)
 
 	chmod 755 $(DEB_ROOT)/usr/local/sbin/*
 
@@ -39,7 +52,7 @@ deb:
 	mkdir -p $(DEB_ROOT)/usr/local/share/doc/$(NAME)
 	cp *.md $(DEB_ROOT)/usr/local/share/doc/$(NAME)/
 
-	fpm -C $(DEB_ROOT)/ -s dir --name $(NAME) --architecture native -t deb --version "$(VERSION)" \
+	fpm -C $(DEB_ROOT)/ -s dir --name $(NAME) --architecture amd64 -t deb --version "$(VERSION)" \
 		 --description "Digabi2 exam network setup tool (PoC)" \
 		 --maintainer "abitti@ylioppilastutkinto.fi" \
 		 --vendor "Matriculation Examination Board" \
