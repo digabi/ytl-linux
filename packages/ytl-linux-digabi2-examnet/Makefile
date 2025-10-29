@@ -1,5 +1,5 @@
 NAME := ytl-linux-digabi2-examnet
-VERSION := 0.0.6
+VERSION := 0.0.7
 
 DEPENDENCIES := \
 	--depends apt \
@@ -15,14 +15,18 @@ deb:
 	# Script file
 	mkdir -p $(DEB_ROOT)/usr/local/sbin/
 	cp ytl-linux-digabi2-examnet $(DEB_ROOT)/usr/local/sbin/
-	
+
 	# Config templates
 	mkdir -p ${DEB_ROOT}/etc/ytl-linux-digabi2-examnet/templates/
 	cp templates/* ${DEB_ROOT}/etc/ytl-linux-digabi2-examnet/templates
 
 	# NCSI server
 	cp ytl-linux-digabi2-ncsi-srv $(DEB_ROOT)/usr/local/sbin/
-	
+
+	# Bouncer
+	(cd digabi2-examnet-bouncer; hatch run packaging:pyinstaller --onefile digabi2-examnet-bouncer)
+	cp digabi2-examnet-bouncer/dist/digabi2-examnet-bouncer deb-root/usr/local/bin/
+
 	chmod 755 $(DEB_ROOT)/usr/local/sbin/*
 
 	# systemd unit file
@@ -35,7 +39,7 @@ deb:
 	mkdir -p $(DEB_ROOT)/usr/local/share/doc/$(NAME)
 	cp *.md $(DEB_ROOT)/usr/local/share/doc/$(NAME)/
 
-	fpm -C $(DEB_ROOT)/ -s dir --name $(NAME) --architecture all -t deb --version "$(VERSION)" \
+	fpm -C $(DEB_ROOT)/ -s dir --name $(NAME) --architecture native -t deb --version "$(VERSION)" \
 		 --description "Digabi2 exam network setup tool (PoC)" \
 		 --maintainer "abitti@ylioppilastutkinto.fi" \
 		 --vendor "Matriculation Examination Board" \
