@@ -1,8 +1,8 @@
 [Unit]
-Description=Digabi 2 HTTPD/NCSI Server
+Description=Digabi 2 examnet background services
 
 [Service]
-ExecStart=/usr/bin/python3 /usr/local/sbin/ytl-linux-digabi2-ncsi-srv
+ExecStart=/usr/local/sbin/digabi2-examnet-bouncer # (...)
 WorkingDirectory=/tmp
 StandardOutput=append:/dev/null
 StandardError=append:/dev/null

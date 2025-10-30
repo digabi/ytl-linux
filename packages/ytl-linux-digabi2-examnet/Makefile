@@ -20,9 +20,6 @@ deb:
 	mkdir -p ${DEB_ROOT}/etc/ytl-linux-digabi2-examnet/templates/
 	cp templates/* ${DEB_ROOT}/etc/ytl-linux-digabi2-examnet/templates
 
-	# NCSI server
-	cp ytl-linux-digabi2-ncsi-srv $(DEB_ROOT)/usr/local/sbin/
-
 	# Bouncer
 	(cd digabi2-examnet-bouncer \
 		&& \
@@ -43,7 +40,7 @@ deb:
 
 	# systemd unit file
 	mkdir -p $(DEB_ROOT)/etc/systemd/system/
-	cp ytl-linux-digabi2-ncsi.service $(DEB_ROOT)/etc/systemd/system/
+	cp ytl-linux-digabi2-examnet.service $(DEB_ROOT)/etc/systemd/system/
 
 	chmod 644 $(DEB_ROOT)/etc/systemd/system/*
 
