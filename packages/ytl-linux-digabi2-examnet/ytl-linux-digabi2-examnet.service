@@ -2,7 +2,7 @@
 Description=Digabi 2 examnet background services
 
 [Service]
-ExecStart=/usr/local/sbin/digabi2-examnet-bouncer # (...)
+ExecStart=/usr/local/sbin/digabi2-examnet-bouncer --daemon
 WorkingDirectory=/tmp
 StandardOutput=append:/dev/null
 StandardError=append:/dev/null

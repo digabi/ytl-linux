@@ -21,6 +21,7 @@ readonly EXIT_CODE_CANNOT_REMOVE_FILES=17             # The script was executed 
 readonly EXIT_CODE_CANNOT_REMOVE_CONNECTION=18        # The script was executed with --remove, but it could not remove a connection
 readonly EXIT_CODE_CANNOT_RESTART_DOCKER=19           # Cannot restart docker
 readonly EXIT_CODE_NO_SAN_FOR_SERVER_NUMBER=20        # Obtained certificate did not contain a valid domain for this server number
+readonly EXIT_CODE_CANNOT_START_DAEMON=21             # Cannot start daemon due to e.g. no network device configured by examnet
 
 readonly SCRIPT_PATH=$0
 readonly PARAM_NET_DEVICE_WAN=$1
@@ -46,6 +47,9 @@ readonly PATH_NAKSU2_CERTS_DIR="$PATH_NAKSU2_WORKDIR/certs"
 readonly PATH_NAKSU2_CERT="$PATH_NAKSU2_CERTS_DIR/cert.pem"
 readonly PATH_NAKSU2_DOMAIN="$PATH_NAKSU2_CERTS_DIR/domain.txt"
 readonly PATH_NAKSU2_CONFIG="$PATH_NAKSU2_WORKDIR/naksu2-config.json"
+readonly PATH_EXAMNET_CONFIG=/etc/ytl-linux-digabi2-examnet/conf
+readonly PATH_SERVER_FRIENDLY_NAME_CONF=$PATH_EXAMNET_CONFIG/server-friendly-name
+readonly PATH_NET_DEVICE_LAN_CONF=$PATH_EXAMNET_CONFIG/net-device-lan
 
 readonly BIN_ECHO=/usr/bin/echo
 readonly BIN_GREP=/usr/bin/grep
@@ -59,6 +63,7 @@ readonly BIN_ZENITY=/usr/bin/zenity
 readonly BIN_SED=/usr/bin/sed
 readonly BIN_XARGS=/usr/bin/xargs
 readonly BIN_OPENSSL=/usr/bin/openssl
+readonly BIN_DIGABI2_EXAMNET_BOUNCER=/usr/local/sbin/digabi2-examnet-bouncer
 
 readonly CONST_MIN_SERVER_NUMBER=1
 readonly CONST_MAX_SERVER_NUMBER=24
@@ -103,6 +108,7 @@ function print_info() {
 function print_usage() {
     $BIN_ECHO "usage: $SCRIPT_PATH wan-network-device local-network-device server-number [--experimental-use-static-local-dns]" >&2
     $BIN_ECHO "       $SCRIPT_PATH --gui [--experimental-use-static-local-dns]" >&2
+    $BIN_ECHO "       $SCRIPT_PATH --daemon" >&2
     $BIN_ECHO "       $SCRIPT_PATH --remove" >&2
     $BIN_ECHO "" >&2
     $BIN_ECHO "example: $SCRIPT_PATH eth0 eth1 1" >&2
@@ -443,7 +449,6 @@ function configure_static_dns_records() {
     write_file $PATH_NAKSU2_DOMAIN "$THIS_SERVER_DOMAIN"
 }
 
-
 # ---------- Main script logic starts here ---------- #
 
 if [ -z "$PARAM_NET_DEVICE_WAN" ]; then
@@ -456,6 +461,30 @@ GUI_MODE=0
 if [ ! "$(current_user_is_root)" ]; then
     print_error "You're not root"
     exit_script $EXIT_CODE_MUST_BE_ROOT
+fi
+
+if [[ $* == *--daemon* ]]; then
+    print_info "Starting in daemon mode"
+
+    if [[ ! -f $PATH_NET_DEVICE_LAN_CONF || ! -f $PATH_SERVER_FRIENDLY_NAME_CONF ]]; then
+        print_error "Examnet is not configured, daemon cannot start"
+        exit_script $EXIT_CODE_CANNOT_START_DAEMON
+    fi
+
+    _LAN_DEVICE_IP=$(get_ipv4_address "$(cat $PATH_NET_DEVICE_LAN_CONF)")
+
+    if [ -z "$_LAN_DEVICE_IP" ]; then
+        print_error "Could not find an IPv4 address for the LAN network device as configured by examnet, daemon cannot start"
+        exit_script $EXIT_CODE_CANNOT_START_DAEMON
+    fi
+
+    $BIN_DIGABI2_EXAMNET_BOUNCER \
+        --friendly-name-file $PATH_SERVER_FRIENDLY_NAME_CONF \
+        --dns-hostname-file $PATH_NAKSU2_CONFIG/certs/domain.txt \
+        --ncsi-hostnames-file $PATH_EXAMNET_CONFIG/ncsi-hostnames \
+        --mdns-hostname-output-file $PATH_EXAMNET_CONFIG/mdns-hostname-output \
+        --bind-addr "$_LAN_DEVICE_IP" \
+        --bind-port 80
 fi
 
 if [[ $* == *--remove* ]]; then
@@ -502,10 +531,13 @@ fi
 debug "NET_DEVICE_WAN: $NET_DEVICE_WAN"
 debug "NET_DEVICE_LAN: $NET_DEVICE_LAN"
 
+check_network_device_names "$NET_DEVICE_WAN" "$NET_DEVICE_LAN"
+
+write_file $PATH_EXAMNET_CONFIG/net-device-lan "$NET_DEVICE_LAN"
+write_file $PATH_EXAMNET_CONFIG/net-device-wan "$NET_DEVICE_WAN"
+
 export NET_DEVICE_WAN
 export NET_DEVICE_LAN
-
-check_network_device_names "$NET_DEVICE_WAN" "$NET_DEVICE_LAN"
 
 IP_WAN=$(get_ipv4_address "$NET_DEVICE_WAN")
 readonly IP_WAN
@@ -559,6 +591,10 @@ debug "DHCP_RANGE_END: $DHCP_RANGE_END"
 
 export DHCP_RANGE_START
 export DHCP_RANGE_END
+
+NCSI_HOSTNAMES_LIST=$(cat $PATH_EXAMNET_CONFIG/ncsi-hostnames | tr '\n' ',')
+debug "NCSI_HOSTNAMES_LIST: $NCSI_HOSTNAMES_LIST"
+export NCSI_HOSTNAMES_LIST
 
 if [ $USE_EXPERIMENTAL_STATIC_LOCAL_DNS -gt 0 ]; then
     download_static_cert
