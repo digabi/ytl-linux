@@ -22,11 +22,13 @@ readonly EXIT_CODE_CANNOT_REMOVE_CONNECTION=18        # The script was executed 
 readonly EXIT_CODE_CANNOT_RESTART_DOCKER=19           # Cannot restart docker
 readonly EXIT_CODE_NO_SAN_FOR_SERVER_NUMBER=20        # Obtained certificate did not contain a valid domain for this server number
 readonly EXIT_CODE_CANNOT_START_DAEMON=21             # Cannot start daemon due to e.g. no network device configured by examnet
+readonly EXIT_CODE_CANNOT_RESTART_DAEMON=22           # Cannot restart daemon systemd service
 
 readonly SCRIPT_PATH=$0
 readonly PARAM_NET_DEVICE_WAN=$1
 readonly PARAM_NET_DEVICE_LAN=$2
 readonly PARAM_SERVER_NUMBER=$3
+readonly PARAM_SERVER_FRIENDLY_NAME=$4
 
 readonly NETWORK_DEVICE_FILTER_RE="^docker|^br|^veth|^lo$"
 readonly DOCKER_BRIDGE_NETWORK_DNS_RESOLVER_IP="172.17.0.1"
@@ -106,7 +108,7 @@ function print_info() {
 }
 
 function print_usage() {
-    $BIN_ECHO "usage: $SCRIPT_PATH wan-network-device local-network-device server-number [--experimental-use-static-local-dns]" >&2
+    $BIN_ECHO "usage: $SCRIPT_PATH wan-network-device local-network-device server-number [custom-server-name] [--experimental-use-static-local-dns]" >&2
     $BIN_ECHO "       $SCRIPT_PATH --gui [--experimental-use-static-local-dns]" >&2
     $BIN_ECHO "       $SCRIPT_PATH --daemon" >&2
     $BIN_ECHO "       $SCRIPT_PATH --remove" >&2
@@ -366,6 +368,9 @@ function restart_network_services() {
 
     $BIN_SYSTEMCTL restart NetworkManager.service >>"$PATH_DEBUG" 2>&1
     exit_if_error $? $EXIT_CODE_CANNOT_RESTART_NM "Failed to restart NetworkManager.service"
+
+    $BIN_SYSTEMCTL restart ytl-linux-digabi2-examnet.service >>"$PATH_DEBUG" 2>&1
+    exit_if_error $? $EXIT_CODE_CANNOT_RESTART_DAEMON "Failed to restart ytl-linux-digabi2-examnet.service"
 }
 
 function restart_docker() {
@@ -530,8 +535,16 @@ fi
 
 debug "NET_DEVICE_WAN: $NET_DEVICE_WAN"
 debug "NET_DEVICE_LAN: $NET_DEVICE_LAN"
-
 check_network_device_names "$NET_DEVICE_WAN" "$NET_DEVICE_LAN"
+
+if [ $GUI_MODE -gt 0 ]; then
+    SERVER_NUMBER=$($BIN_ZENITY --entry --title="Server number" --text="Enter server number ($CONST_MIN_SERVER_NUMBER-$CONST_MAX_SERVER_NUMBER)")
+else
+    SERVER_NUMBER=$PARAM_SERVER_NUMBER
+fi
+
+debug "SERVER_NUMBER: $SERVER_NUMBER"
+check_server_number "$SERVER_NUMBER"
 
 write_file $PATH_EXAMNET_CONFIG/net-device-lan "$NET_DEVICE_LAN"
 write_file $PATH_EXAMNET_CONFIG/net-device-wan "$NET_DEVICE_WAN"
@@ -551,16 +564,6 @@ readonly IP_LAN
 if [ -n "$IP_LAN" ]; then
     print_info "Given local device $NET_DEVICE_LAN has already an IPv4 address $IP_LAN"
 fi
-
-if [ $GUI_MODE -gt 0 ]; then
-    SERVER_NUMBER=$($BIN_ZENITY --entry --title="Server number" --text="Enter server number ($CONST_MIN_SERVER_NUMBER-$CONST_MAX_SERVER_NUMBER)")
-else
-    SERVER_NUMBER=$PARAM_SERVER_NUMBER
-fi
-
-debug "SERVER_NUMBER: $SERVER_NUMBER"
-check_server_number "$SERVER_NUMBER"
-
 debug "IP_WAN: $IP_WAN"
 debug "IP_LAN: $IP_LAN"
 
@@ -609,6 +612,26 @@ write_file $PATH_DNSMASQ_CONF "$(envsubst < $PATH_DNSMASQ_CONF_TEMPLATE)"
 if [ $USE_EXPERIMENTAL_STATIC_LOCAL_DNS -gt 0 ]; then
     configure_static_dns_records "$SERVER_NUMBER"
 fi
+
+if [[ $GUI_MODE -gt 0 ]]; then
+        SERVER_FRIENDLY_NAME=$($BIN_ZENITY --entry --title="Custom server name" --text="Enter custom name for this server, e.g. 'classroom' (leave empty for no custom name)")
+else
+    if [[ ! $PARAM_SERVER_FRIENDLY_NAME =~ ^--.+$ ]]; then
+        SERVER_FRIENDLY_NAME=$PARAM_SERVER_FRIENDLY_NAME
+    else
+        SERVER_FRIENDLY_NAME=""
+    fi
+fi
+
+if [ -z "$SERVER_FRIENDLY_NAME" ]; then
+    debug "User did not provide friendly name, falling back to static DNS name"
+    # Fallback to use server's static DNS name
+    SERVER_FRIENDLY_NAME=$(cat $PATH_NAKSU2_DOMAIN | sed 's/.koe.abitti.net//')
+fi
+
+debug "SERVER_FRIENDLY_NAME: $SERVER_FRIENDLY_NAME"
+
+write_file $PATH_EXAMNET_CONFIG/server-friendly-name "$SERVER_FRIENDLY_NAME"
 
 configure_networkmanager "yo-$NET_DEVICE_LAN" "$NET_DEVICE_LAN" "$SERVER_OWN_IP/16"
 
