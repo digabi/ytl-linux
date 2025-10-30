@@ -10,7 +10,7 @@ DEB_ROOT := deb-root
 
 deb:
 	if [ -d $(DEB_ROOT) ]; then rm -fR $(DEB_ROOT)/; fi
-	if [ -f $(NAME)_$(VERSION)_all.deb ]; then rm $(NAME)_$(VERSION)_all.deb; fi
+	if [ -f $(NAME)_$(VERSION)_amd64.deb ]; then rm $(NAME)_$(VERSION)_amd64.deb; fi
 
 	# Script file
 	mkdir -p $(DEB_ROOT)/usr/local/sbin/
