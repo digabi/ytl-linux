@@ -78,6 +78,8 @@ def main():
         ncsi_hosts=ncsi_hostnames,
     )
 
+    print("Starting digabi2-examnet-bouncer with config:", config)
+
     with Announcer(config).start() as info:
         assert info.server is not None
         if output_file is not None:
