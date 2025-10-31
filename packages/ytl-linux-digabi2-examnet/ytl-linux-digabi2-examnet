@@ -21,8 +21,7 @@ readonly EXIT_CODE_CANNOT_REMOVE_FILES=17             # The script was executed 
 readonly EXIT_CODE_CANNOT_REMOVE_CONNECTION=18        # The script was executed with --remove, but it could not remove a connection
 readonly EXIT_CODE_CANNOT_RESTART_DOCKER=19           # Cannot restart docker
 readonly EXIT_CODE_NO_SAN_FOR_SERVER_NUMBER=20        # Obtained certificate did not contain a valid domain for this server number
-readonly EXIT_CODE_CANNOT_START_DAEMON=21             # Cannot start daemon due to e.g. no network device configured by examnet
-readonly EXIT_CODE_CANNOT_RESTART_DAEMON=22           # Cannot restart daemon systemd service
+readonly EXIT_CODE_CANNOT_CONTROL_DAEMON=21           # Cannot start, restart or stop daemon due to e.g. no network device configured by examnet
 
 readonly SCRIPT_PATH=$0
 readonly PARAM_NET_DEVICE_WAN=$1
@@ -337,6 +336,8 @@ function remove_dnsmasq_settings() {
 }
 
 function remove_all_settings() {
+    stop_examnet_daemon
+
     if [ -f $PATH_RESOLVED_CONF ]; then
         rm -f $PATH_RESOLVED_CONF
         exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_RESOLVED_CONF'"
@@ -386,7 +387,12 @@ function restart_network_services() {
     exit_if_error $? $EXIT_CODE_CANNOT_RESTART_NM "Failed to restart NetworkManager.service"
 
     $BIN_SYSTEMCTL restart ytl-linux-digabi2-examnet.service >>"$PATH_DEBUG" 2>&1
-    exit_if_error $? $EXIT_CODE_CANNOT_RESTART_DAEMON "Failed to restart ytl-linux-digabi2-examnet.service"
+    exit_if_error $? $EXIT_CODE_CANNOT_CONTROL_DAEMON "Failed to restart ytl-linux-digabi2-examnet.service"
+}
+
+function stop_examnet_daemon() {
+    $BIN_SYSTEMCTL stop ytl-linux-digabi2-examnet.service >>"$PATH_DEBUG" 2>&1
+    exit_if_error $? $EXIT_CODE_CANNOT_CONTROL_DAEMON "Failed to stop ytl-linux-digabi2-examnet.service"
 }
 
 function restart_docker() {
@@ -489,14 +495,14 @@ if [[ $* == *--daemon* ]]; then
 
     if [[ ! -f $PATH_NET_DEVICE_LAN_CONF || ! -f $PATH_SERVER_FRIENDLY_NAME_CONF ]]; then
         print_error "Examnet is not configured, daemon cannot start"
-        exit_script $EXIT_CODE_CANNOT_START_DAEMON
+        exit_script $EXIT_CODE_CANNOT_CONTROL_DAEMON
     fi
 
     _LAN_DEVICE_IP=$(get_ipv4_address "$(cat $PATH_NET_DEVICE_LAN_CONF)")
 
     if [ -z "$_LAN_DEVICE_IP" ]; then
         print_error "Could not find an IPv4 address for the LAN network device as configured by examnet, daemon cannot start"
-        exit_script $EXIT_CODE_CANNOT_START_DAEMON
+        exit_script $EXIT_CODE_CANNOT_CONTROL_DAEMON
     fi
 
     $BIN_DIGABI2_EXAMNET_BOUNCER \
