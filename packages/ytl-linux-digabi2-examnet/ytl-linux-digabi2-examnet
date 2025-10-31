@@ -22,6 +22,7 @@ readonly EXIT_CODE_CANNOT_REMOVE_CONNECTION=18        # The script was executed 
 readonly EXIT_CODE_CANNOT_RESTART_DOCKER=19           # Cannot restart docker
 readonly EXIT_CODE_NO_SAN_FOR_SERVER_NUMBER=20        # Obtained certificate did not contain a valid domain for this server number
 readonly EXIT_CODE_CANNOT_CONTROL_DAEMON=21           # Cannot start, restart or stop daemon due to e.g. no network device configured by examnet
+readonly EXIT_CODE_DAEMON_EXITED_UNEXPECTEDLY=22      # Daemon exited unexpectedly
 
 readonly SCRIPT_PATH=$0
 readonly PARAM_NET_DEVICE_WAN=$1
@@ -512,6 +513,9 @@ if [[ $* == *--daemon* ]]; then
         --mdns-hostname-output-file $PATH_EXAMNET_CONFIG/mdns-hostname-output \
         --bind-addr "$_LAN_DEVICE_IP" \
         --bind-port 80
+
+    # We're not supposed to get here, so this would indicate the daemon process exited
+    exit_script $EXIT_CODE_DAEMON_EXITED_UNEXPECTEDLY
 fi
 
 if [[ $* == *--remove* ]]; then
