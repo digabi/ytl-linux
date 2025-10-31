@@ -337,7 +337,7 @@ function remove_dnsmasq_settings() {
 }
 
 function remove_all_settings() {
-    stop_examnet_daemon
+    disable_examnet_daemon
 
     if [ -f $PATH_RESOLVED_CONF ]; then
         rm -f $PATH_RESOLVED_CONF
@@ -387,12 +387,19 @@ function restart_network_services() {
     $BIN_SYSTEMCTL restart NetworkManager.service >>"$PATH_DEBUG" 2>&1
     exit_if_error $? $EXIT_CODE_CANNOT_RESTART_NM "Failed to restart NetworkManager.service"
 
-    $BIN_SYSTEMCTL restart ytl-linux-digabi2-examnet.service >>"$PATH_DEBUG" 2>&1
-    exit_if_error $? $EXIT_CODE_CANNOT_CONTROL_DAEMON "Failed to restart ytl-linux-digabi2-examnet.service"
+    if [[ "$(systemctl is-enabled ytl-linux-digabi2-examnet.service)" == "enabled" ]]; then
+        $BIN_SYSTEMCTL restart ytl-linux-digabi2-examnet.service >>"$PATH_DEBUG" 2>&1
+        exit_if_error $? $EXIT_CODE_CANNOT_CONTROL_DAEMON "Failed to restart ytl-linux-digabi2-examnet.service"
+    fi
 }
 
-function stop_examnet_daemon() {
-    $BIN_SYSTEMCTL stop ytl-linux-digabi2-examnet.service >>"$PATH_DEBUG" 2>&1
+function enable_examnet_daemon() {
+    $BIN_SYSTEMCTL enable ytl-linux-digabi2-examnet.service >>"$PATH_DEBUG" 2>&1
+    exit_if_error $? $EXIT_CODE_CANNOT_CONTROL_DAEMON "Failed to enable ytl-linux-digabi2-examnet.service"
+}
+
+function disable_examnet_daemon() {
+    $BIN_SYSTEMCTL disable --now ytl-linux-digabi2-examnet.service >>"$PATH_DEBUG" 2>&1
     exit_if_error $? $EXIT_CODE_CANNOT_CONTROL_DAEMON "Failed to stop ytl-linux-digabi2-examnet.service"
 }
 
@@ -667,6 +674,7 @@ if [ -f /etc/netplan/50-cloud-init.yaml ]; then
     rm /etc/netplan/50-cloud-init.yaml
 fi
 
+enable_examnet_daemon
 restart_network_services
 restart_docker
 
