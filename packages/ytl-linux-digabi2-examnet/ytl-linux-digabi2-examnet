@@ -52,6 +52,7 @@ readonly PATH_NAKSU2_CONFIG="$PATH_NAKSU2_WORKDIR/naksu2-config.json"
 readonly PATH_EXAMNET_CONFIG=/etc/ytl-linux-digabi2-examnet/conf
 readonly PATH_SERVER_FRIENDLY_NAME_CONF=$PATH_EXAMNET_CONFIG/server-friendly-name
 readonly PATH_NET_DEVICE_LAN_CONF=$PATH_EXAMNET_CONFIG/net-device-lan
+readonly PATH_NET_DEVICE_WAN_CONF=$PATH_EXAMNET_CONFIG/net-device-wan
 
 readonly BIN_ECHO=/usr/bin/echo
 readonly BIN_GREP=/usr/bin/grep
@@ -344,6 +345,21 @@ function remove_all_settings() {
     if [ -f $PATH_DOCKER_DAEMON_CONF ]; then
         rm -f $PATH_DOCKER_DAEMON_CONF
         exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_DOCKER_DAEMON_CONF'"
+    fi
+
+    if [ -f $PATH_NET_DEVICE_WAN_CONF ]; then
+        rm -f $PATH_NET_DEVICE_WAN_CONF
+        exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_NET_DEVICE_WAN_CONF'"
+    fi
+
+    if [ -f $PATH_NET_DEVICE_LAN_CONF ]; then
+        rm -f $PATH_NET_DEVICE_LAN_CONF
+        exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_NET_DEVICE_LAN_CONF'"
+    fi
+
+    if [ -f $PATH_SERVER_FRIENDLY_NAME_CONF ]; then
+        rm -f $PATH_SERVER_FRIENDLY_NAME_CONF
+        exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_SERVER_FRIENDLY_NAME_CONF'"
     fi
 
     remove_dnsmasq_settings
