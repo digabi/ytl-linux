@@ -37,7 +37,7 @@ deb:
 			--rm \
 			--mount type=bind,src=$(shell pwd)/$(DEB_ROOT)/usr/local/sbin/,dst=/out \
 			registry.invalid/digabi2-examnet-bouncer-build \
-				install -o 1001 /dist/digabi2-examnet-bouncer /out \
+				install -o $(shell id -u) /dist/digabi2-examnet-bouncer /out \
 		)
 
 	chmod 755 $(DEB_ROOT)/usr/local/sbin/*
