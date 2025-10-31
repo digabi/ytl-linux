@@ -8,7 +8,7 @@ if [[ -z "${1:-}" ]]; then
 fi
 
 # location of the original Ubuntu installation ISO image
-DOWNLOAD_URL=https://releases.ubuntu.com/noble/ubuntu-24.04.2-live-server-amd64.iso
+DOWNLOAD_URL=https://releases.ubuntu.com/noble/ubuntu-24.04.3-live-server-amd64.iso
 IMAGE="$1"
 
 if [ ! -e "$IMAGE" ]; then
