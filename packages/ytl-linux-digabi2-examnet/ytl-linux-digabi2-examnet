@@ -508,7 +508,7 @@ if [[ $* == *--daemon* ]]; then
 
     $BIN_DIGABI2_EXAMNET_BOUNCER \
         --friendly-name-file $PATH_SERVER_FRIENDLY_NAME_CONF \
-        --dns-hostname-file $PATH_NAKSU2_CONFIG/certs/domain.txt \
+        --dns-hostname-file $PATH_NAKSU2_CERTS_DIR/domain.txt \
         --ncsi-hostnames-file $PATH_EXAMNET_CONFIG/ncsi-hostnames \
         --mdns-hostname-output-file $PATH_EXAMNET_CONFIG/mdns-hostname-output \
         --bind-addr "$_LAN_DEVICE_IP" \
@@ -621,7 +621,7 @@ debug "DHCP_RANGE_END: $DHCP_RANGE_END"
 export DHCP_RANGE_START
 export DHCP_RANGE_END
 
-NCSI_HOSTNAMES_LIST=$(cat $PATH_EXAMNET_CONFIG/ncsi-hostnames | tr '\n' ',')
+NCSI_HOSTNAMES_LIST=$(cat $PATH_EXAMNET_CONFIG/ncsi-hostnames)
 debug "NCSI_HOSTNAMES_LIST: $NCSI_HOSTNAMES_LIST"
 export NCSI_HOSTNAMES_LIST
 
@@ -651,8 +651,8 @@ fi
 
 if [ -z "$SERVER_FRIENDLY_NAME" ]; then
     debug "User did not provide friendly name, falling back to static DNS name"
-    # Fallback to use server's static DNS name
-    SERVER_FRIENDLY_NAME=$(cat $PATH_NAKSU2_DOMAIN | sed 's/.koe.abitti.net//')
+    # Fallback to use server's static DNS name (e.g. ktp1)
+    SERVER_FRIENDLY_NAME=$(cat $PATH_NAKSU2_DOMAIN | cut -d '.' -f1)
 fi
 
 debug "SERVER_FRIENDLY_NAME: $SERVER_FRIENDLY_NAME"
