@@ -3,6 +3,9 @@ Description=Digabi 2 examnet background services
 
 [Service]
 Environment="DEBUG=/var/log/ytl-linux-digabi2-examnet-daemon.log"
+After=network-online.target
+Requires=network-online.target
+ExecStartPre=/usr/bin/nm-online -s -q --timeout=60
 ExecStart=/usr/local/sbin/ytl-linux-digabi2-examnet --daemon
 WorkingDirectory=/tmp
 StandardOutput=append:/dev/null
