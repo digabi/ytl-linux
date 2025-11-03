@@ -21,8 +21,9 @@ readonly EXIT_CODE_CANNOT_REMOVE_FILES=17             # The script was executed 
 readonly EXIT_CODE_CANNOT_REMOVE_CONNECTION=18        # The script was executed with --remove, but it could not remove a connection
 readonly EXIT_CODE_CANNOT_RESTART_DOCKER=19           # Cannot restart docker
 readonly EXIT_CODE_NO_SAN_FOR_SERVER_NUMBER=20        # Obtained certificate did not contain a valid domain for this server number
-readonly EXIT_CODE_CANNOT_CONTROL_DAEMON=21           # Cannot start, restart or stop daemon due to e.g. no network device configured by examnet
+readonly EXIT_CODE_CANNOT_START_DAEMON=21             # Cannot start daemon due to e.g. no network device configured by examnet, no domain in Naksu 2 workdir, etc.
 readonly EXIT_CODE_DAEMON_EXITED_UNEXPECTEDLY=22      # Daemon exited unexpectedly
+readonly EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE=23     # Cannot change service state (e.g. enable/disable/restart) due to systemd failure
 
 readonly SCRIPT_PATH=$0
 readonly PARAM_NET_DEVICE_WAN=$1
@@ -389,18 +390,18 @@ function restart_network_services() {
 
     if [[ "$(systemctl is-enabled ytl-linux-digabi2-examnet.service)" == "enabled" ]]; then
         $BIN_SYSTEMCTL restart ytl-linux-digabi2-examnet.service >>"$PATH_DEBUG" 2>&1
-        exit_if_error $? $EXIT_CODE_CANNOT_CONTROL_DAEMON "Failed to restart ytl-linux-digabi2-examnet.service"
+        exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to restart ytl-linux-digabi2-examnet.service"
     fi
 }
 
 function enable_examnet_daemon() {
     $BIN_SYSTEMCTL enable ytl-linux-digabi2-examnet.service >>"$PATH_DEBUG" 2>&1
-    exit_if_error $? $EXIT_CODE_CANNOT_CONTROL_DAEMON "Failed to enable ytl-linux-digabi2-examnet.service"
+    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to enable ytl-linux-digabi2-examnet.service"
 }
 
 function disable_examnet_daemon() {
     $BIN_SYSTEMCTL disable --now ytl-linux-digabi2-examnet.service >>"$PATH_DEBUG" 2>&1
-    exit_if_error $? $EXIT_CODE_CANNOT_CONTROL_DAEMON "Failed to stop ytl-linux-digabi2-examnet.service"
+    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to stop ytl-linux-digabi2-examnet.service"
 }
 
 function restart_docker() {
@@ -503,19 +504,24 @@ if [[ $* == *--daemon* ]]; then
 
     if [[ ! -f $PATH_NET_DEVICE_LAN_CONF || ! -f $PATH_SERVER_FRIENDLY_NAME_CONF ]]; then
         print_error "Examnet is not configured, daemon cannot start"
-        exit_script $EXIT_CODE_CANNOT_CONTROL_DAEMON
+        exit_script $EXIT_CODE_CANNOT_START_DAEMON
     fi
 
     _LAN_DEVICE_IP=$(get_ipv4_address "$(cat $PATH_NET_DEVICE_LAN_CONF)")
 
     if [ -z "$_LAN_DEVICE_IP" ]; then
         print_error "Could not find an IPv4 address for the LAN network device as configured by examnet, daemon cannot start"
-        exit_script $EXIT_CODE_CANNOT_CONTROL_DAEMON
+        exit_script $EXIT_CODE_CANNOT_START_DAEMON
+    fi
+
+    if [[ ! $PATH_NAKSU2_WORKDIR || ! -f $PATH_NAKSU2_DOMAIN ]]; then
+        print_error "Abitti 2 server is not configured (missing Naksu 2 workdir and/or domain.txt), daemon cannot start"
+        exit_script $EXIT_CODE_CANNOT_START_DAEMON
     fi
 
     $BIN_DIGABI2_EXAMNET_BOUNCER \
         --friendly-name-file $PATH_SERVER_FRIENDLY_NAME_CONF \
-        --dns-hostname-file $PATH_NAKSU2_CERTS_DIR/domain.txt \
+        --dns-hostname-file $PATH_NAKSU2_DOMAIN \
         --ncsi-hostnames-file $PATH_EXAMNET_CONFIG/ncsi-hostnames \
         --mdns-hostname-output-file $PATH_EXAMNET_CONFIG/mdns-hostname-output \
         --bind-addr "$_LAN_DEVICE_IP" \
