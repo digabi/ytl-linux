@@ -7,8 +7,8 @@ interface=ytl0
 dhcp-range=${DHCP_RANGE_START},${DHCP_RANGE_END},255.255.0.0,1h
 dhcp-option=6,${SERVER_OWN_IP}
 
-# Redirect requests for Windows Network Connection Status Indicator (NCSI) to our local NCSI spoofer (ytl-linux-digabi2-ncsi-srv)
-host-record=dns.msftncsi.com,www.msftncsi.com,www.msftconnecttest.com,ipv6.msftconnecttest.com,${SERVER_OWN_IP}
+# Redirect requests for Windows Network Connection Status Indicator (NCSI) to our local NCSI spoofer (digabi2-examnet-bouncer)
+host-record=${NCSI_HOSTNAMES_LIST},${SERVER_OWN_IP}
 
 # Use WAN device nameservers as upstream
 resolv-file=/etc/resolv.conf

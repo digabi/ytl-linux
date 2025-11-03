@@ -21,11 +21,15 @@ readonly EXIT_CODE_CANNOT_REMOVE_FILES=17             # The script was executed 
 readonly EXIT_CODE_CANNOT_REMOVE_CONNECTION=18        # The script was executed with --remove, but it could not remove a connection
 readonly EXIT_CODE_CANNOT_RESTART_DOCKER=19           # Cannot restart docker
 readonly EXIT_CODE_NO_SAN_FOR_SERVER_NUMBER=20        # Obtained certificate did not contain a valid domain for this server number
+readonly EXIT_CODE_CANNOT_START_DAEMON=21             # Cannot start daemon due to e.g. no network device configured by examnet, no domain in Naksu 2 workdir, etc.
+readonly EXIT_CODE_DAEMON_EXITED_UNEXPECTEDLY=22      # Daemon exited unexpectedly
+readonly EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE=23     # Cannot change service state (e.g. enable/disable/restart) due to systemd failure
 
 readonly SCRIPT_PATH=$0
 readonly PARAM_NET_DEVICE_WAN=$1
 readonly PARAM_NET_DEVICE_LAN=$2
 readonly PARAM_SERVER_NUMBER=$3
+readonly PARAM_SERVER_FRIENDLY_NAME=$4
 
 readonly NETWORK_DEVICE_FILTER_RE="^docker|^br|^veth|^lo$"
 readonly DOCKER_BRIDGE_NETWORK_DNS_RESOLVER_IP="172.17.0.1"
@@ -46,6 +50,10 @@ readonly PATH_NAKSU2_CERTS_DIR="$PATH_NAKSU2_WORKDIR/certs"
 readonly PATH_NAKSU2_CERT="$PATH_NAKSU2_CERTS_DIR/cert.pem"
 readonly PATH_NAKSU2_DOMAIN="$PATH_NAKSU2_CERTS_DIR/domain.txt"
 readonly PATH_NAKSU2_CONFIG="$PATH_NAKSU2_WORKDIR/naksu2-config.json"
+readonly PATH_EXAMNET_CONFIG=/etc/ytl-linux-digabi2-examnet/conf
+readonly PATH_SERVER_FRIENDLY_NAME_CONF=$PATH_EXAMNET_CONFIG/server-friendly-name
+readonly PATH_NET_DEVICE_LAN_CONF=$PATH_EXAMNET_CONFIG/net-device-lan
+readonly PATH_NET_DEVICE_WAN_CONF=$PATH_EXAMNET_CONFIG/net-device-wan
 
 readonly BIN_ECHO=/usr/bin/echo
 readonly BIN_GREP=/usr/bin/grep
@@ -59,6 +67,7 @@ readonly BIN_ZENITY=/usr/bin/zenity
 readonly BIN_SED=/usr/bin/sed
 readonly BIN_XARGS=/usr/bin/xargs
 readonly BIN_OPENSSL=/usr/bin/openssl
+readonly BIN_DIGABI2_EXAMNET_BOUNCER=/usr/local/sbin/digabi2-examnet-bouncer
 
 readonly CONST_MIN_SERVER_NUMBER=1
 readonly CONST_MAX_SERVER_NUMBER=24
@@ -101,8 +110,9 @@ function print_info() {
 }
 
 function print_usage() {
-    $BIN_ECHO "usage: $SCRIPT_PATH wan-network-device local-network-device server-number [--experimental-use-static-local-dns]" >&2
+    $BIN_ECHO "usage: $SCRIPT_PATH wan-network-device local-network-device server-number [custom-server-name] [--experimental-use-static-local-dns]" >&2
     $BIN_ECHO "       $SCRIPT_PATH --gui [--experimental-use-static-local-dns]" >&2
+    $BIN_ECHO "       $SCRIPT_PATH --daemon" >&2
     $BIN_ECHO "       $SCRIPT_PATH --remove" >&2
     $BIN_ECHO "" >&2
     $BIN_ECHO "example: $SCRIPT_PATH eth0 eth1 1" >&2
@@ -328,6 +338,8 @@ function remove_dnsmasq_settings() {
 }
 
 function remove_all_settings() {
+    disable_examnet_daemon
+
     if [ -f $PATH_RESOLVED_CONF ]; then
         rm -f $PATH_RESOLVED_CONF
         exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_RESOLVED_CONF'"
@@ -336,6 +348,21 @@ function remove_all_settings() {
     if [ -f $PATH_DOCKER_DAEMON_CONF ]; then
         rm -f $PATH_DOCKER_DAEMON_CONF
         exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_DOCKER_DAEMON_CONF'"
+    fi
+
+    if [ -f $PATH_NET_DEVICE_WAN_CONF ]; then
+        rm -f $PATH_NET_DEVICE_WAN_CONF
+        exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_NET_DEVICE_WAN_CONF'"
+    fi
+
+    if [ -f $PATH_NET_DEVICE_LAN_CONF ]; then
+        rm -f $PATH_NET_DEVICE_LAN_CONF
+        exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_NET_DEVICE_LAN_CONF'"
+    fi
+
+    if [ -f $PATH_SERVER_FRIENDLY_NAME_CONF ]; then
+        rm -f $PATH_SERVER_FRIENDLY_NAME_CONF
+        exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_SERVER_FRIENDLY_NAME_CONF'"
     fi
 
     remove_dnsmasq_settings
@@ -360,6 +387,21 @@ function restart_network_services() {
 
     $BIN_SYSTEMCTL restart NetworkManager.service >>"$PATH_DEBUG" 2>&1
     exit_if_error $? $EXIT_CODE_CANNOT_RESTART_NM "Failed to restart NetworkManager.service"
+
+    if [[ "$(systemctl is-enabled ytl-linux-digabi2-examnet.service)" == "enabled" ]]; then
+        $BIN_SYSTEMCTL restart ytl-linux-digabi2-examnet.service >>"$PATH_DEBUG" 2>&1
+        exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to restart ytl-linux-digabi2-examnet.service"
+    fi
+}
+
+function enable_examnet_daemon() {
+    $BIN_SYSTEMCTL enable ytl-linux-digabi2-examnet.service >>"$PATH_DEBUG" 2>&1
+    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to enable ytl-linux-digabi2-examnet.service"
+}
+
+function disable_examnet_daemon() {
+    $BIN_SYSTEMCTL disable --now ytl-linux-digabi2-examnet.service >>"$PATH_DEBUG" 2>&1
+    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to stop ytl-linux-digabi2-examnet.service"
 }
 
 function restart_docker() {
@@ -443,7 +485,6 @@ function configure_static_dns_records() {
     write_file $PATH_NAKSU2_DOMAIN "$THIS_SERVER_DOMAIN"
 }
 
-
 # ---------- Main script logic starts here ---------- #
 
 if [ -z "$PARAM_NET_DEVICE_WAN" ]; then
@@ -456,6 +497,38 @@ GUI_MODE=0
 if [ ! "$(current_user_is_root)" ]; then
     print_error "You're not root"
     exit_script $EXIT_CODE_MUST_BE_ROOT
+fi
+
+if [[ $* == *--daemon* ]]; then
+    print_info "Starting in daemon mode"
+
+    if [[ ! -f $PATH_NET_DEVICE_LAN_CONF || ! -f $PATH_SERVER_FRIENDLY_NAME_CONF ]]; then
+        print_error "Examnet is not configured, daemon cannot start"
+        exit_script $EXIT_CODE_CANNOT_START_DAEMON
+    fi
+
+    _LAN_DEVICE_IP=$(get_ipv4_address "$(cat $PATH_NET_DEVICE_LAN_CONF)")
+
+    if [ -z "$_LAN_DEVICE_IP" ]; then
+        print_error "Could not find an IPv4 address for the LAN network device as configured by examnet, daemon cannot start"
+        exit_script $EXIT_CODE_CANNOT_START_DAEMON
+    fi
+
+    if [[ ! $PATH_NAKSU2_WORKDIR || ! -f $PATH_NAKSU2_DOMAIN ]]; then
+        print_error "Abitti 2 server is not configured (missing Naksu 2 workdir and/or domain.txt), daemon cannot start"
+        exit_script $EXIT_CODE_CANNOT_START_DAEMON
+    fi
+
+    $BIN_DIGABI2_EXAMNET_BOUNCER \
+        --friendly-name-file $PATH_SERVER_FRIENDLY_NAME_CONF \
+        --dns-hostname-file $PATH_NAKSU2_DOMAIN \
+        --ncsi-hostnames-file $PATH_EXAMNET_CONFIG/ncsi-hostnames \
+        --mdns-hostname-output-file $PATH_EXAMNET_CONFIG/mdns-hostname-output \
+        --bind-addr "$_LAN_DEVICE_IP" \
+        --bind-port 80
+
+    # We're not supposed to get here, so this would indicate the daemon process exited
+    exit_script $EXIT_CODE_DAEMON_EXITED_UNEXPECTEDLY
 fi
 
 if [[ $* == *--remove* ]]; then
@@ -501,11 +574,22 @@ fi
 
 debug "NET_DEVICE_WAN: $NET_DEVICE_WAN"
 debug "NET_DEVICE_LAN: $NET_DEVICE_LAN"
+check_network_device_names "$NET_DEVICE_WAN" "$NET_DEVICE_LAN"
+
+if [ $GUI_MODE -gt 0 ]; then
+    SERVER_NUMBER=$($BIN_ZENITY --entry --title="Server number" --text="Enter server number ($CONST_MIN_SERVER_NUMBER-$CONST_MAX_SERVER_NUMBER)")
+else
+    SERVER_NUMBER=$PARAM_SERVER_NUMBER
+fi
+
+debug "SERVER_NUMBER: $SERVER_NUMBER"
+check_server_number "$SERVER_NUMBER"
+
+write_file $PATH_EXAMNET_CONFIG/net-device-lan "$NET_DEVICE_LAN"
+write_file $PATH_EXAMNET_CONFIG/net-device-wan "$NET_DEVICE_WAN"
 
 export NET_DEVICE_WAN
 export NET_DEVICE_LAN
-
-check_network_device_names "$NET_DEVICE_WAN" "$NET_DEVICE_LAN"
 
 IP_WAN=$(get_ipv4_address "$NET_DEVICE_WAN")
 readonly IP_WAN
@@ -519,16 +603,6 @@ readonly IP_LAN
 if [ -n "$IP_LAN" ]; then
     print_info "Given local device $NET_DEVICE_LAN has already an IPv4 address $IP_LAN"
 fi
-
-if [ $GUI_MODE -gt 0 ]; then
-    SERVER_NUMBER=$($BIN_ZENITY --entry --title="Server number" --text="Enter server number ($CONST_MIN_SERVER_NUMBER-$CONST_MAX_SERVER_NUMBER)")
-else
-    SERVER_NUMBER=$PARAM_SERVER_NUMBER
-fi
-
-debug "SERVER_NUMBER: $SERVER_NUMBER"
-check_server_number "$SERVER_NUMBER"
-
 debug "IP_WAN: $IP_WAN"
 debug "IP_LAN: $IP_LAN"
 
@@ -560,6 +634,10 @@ debug "DHCP_RANGE_END: $DHCP_RANGE_END"
 export DHCP_RANGE_START
 export DHCP_RANGE_END
 
+NCSI_HOSTNAMES_LIST=$(cat $PATH_EXAMNET_CONFIG/ncsi-hostnames)
+debug "NCSI_HOSTNAMES_LIST: $NCSI_HOSTNAMES_LIST"
+export NCSI_HOSTNAMES_LIST
+
 if [ $USE_EXPERIMENTAL_STATIC_LOCAL_DNS -gt 0 ]; then
     download_static_cert
 fi
@@ -574,6 +652,26 @@ if [ $USE_EXPERIMENTAL_STATIC_LOCAL_DNS -gt 0 ]; then
     configure_static_dns_records "$SERVER_NUMBER"
 fi
 
+if [[ $GUI_MODE -gt 0 ]]; then
+        SERVER_FRIENDLY_NAME=$($BIN_ZENITY --entry --title="Custom server name" --text="Enter custom name for this server, e.g. 'classroom' (leave empty for no custom name)")
+else
+    if [[ ! $PARAM_SERVER_FRIENDLY_NAME =~ ^--.+$ ]]; then
+        SERVER_FRIENDLY_NAME=$PARAM_SERVER_FRIENDLY_NAME
+    else
+        SERVER_FRIENDLY_NAME=""
+    fi
+fi
+
+if [ -z "$SERVER_FRIENDLY_NAME" ]; then
+    debug "User did not provide friendly name, falling back to static DNS name"
+    # Fallback to use server's static DNS name (e.g. ktp1)
+    SERVER_FRIENDLY_NAME=$(cat $PATH_NAKSU2_DOMAIN | cut -d '.' -f1)
+fi
+
+debug "SERVER_FRIENDLY_NAME: $SERVER_FRIENDLY_NAME"
+
+write_file $PATH_EXAMNET_CONFIG/server-friendly-name "$SERVER_FRIENDLY_NAME"
+
 configure_networkmanager "yo-$NET_DEVICE_LAN" "$NET_DEVICE_LAN" "$SERVER_OWN_IP/16"
 
 # Remove configuration file generated by cloud-init
@@ -582,6 +680,7 @@ if [ -f /etc/netplan/50-cloud-init.yaml ]; then
     rm /etc/netplan/50-cloud-init.yaml
 fi
 
+enable_examnet_daemon
 restart_network_services
 restart_docker
 

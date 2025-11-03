@@ -1,5 +1,5 @@
 NAME := ytl-linux-digabi2-examnet
-VERSION := 0.0.7
+VERSION := 0.0.8
 
 DEPENDENCIES := \
 	--depends apt \
@@ -20,8 +20,9 @@ deb:
 	mkdir -p ${DEB_ROOT}/etc/ytl-linux-digabi2-examnet/templates/
 	cp templates/* ${DEB_ROOT}/etc/ytl-linux-digabi2-examnet/templates
 
-	# NCSI server
-	cp ytl-linux-digabi2-ncsi-srv $(DEB_ROOT)/usr/local/sbin/
+	# Examnet configs
+	mkdir -p $(DEB_ROOT)/etc/ytl-linux-digabi2-examnet/conf/
+	cp conf/* $(DEB_ROOT)/etc/ytl-linux-digabi2-examnet/conf/
 
 	# Bouncer
 	(cd digabi2-examnet-bouncer \
@@ -36,14 +37,14 @@ deb:
 			--rm \
 			--mount type=bind,src=$(shell pwd)/$(DEB_ROOT)/usr/local/sbin/,dst=/out \
 			registry.invalid/digabi2-examnet-bouncer-build \
-				install -o 1001 /dist/digabi2-examnet-bouncer /out \
+				install -o $(shell id -u) /dist/digabi2-examnet-bouncer /out \
 		)
 
 	chmod 755 $(DEB_ROOT)/usr/local/sbin/*
 
 	# systemd unit file
 	mkdir -p $(DEB_ROOT)/etc/systemd/system/
-	cp ytl-linux-digabi2-ncsi.service $(DEB_ROOT)/etc/systemd/system/
+	cp ytl-linux-digabi2-examnet.service $(DEB_ROOT)/etc/systemd/system/
 
 	chmod 644 $(DEB_ROOT)/etc/systemd/system/*
 
