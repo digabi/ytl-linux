@@ -48,12 +48,16 @@ readonly PATH_DOCKER_DAEMON_CONF_TEMPLATE=$PATH_TEMPLATES/docker-daemon.json.tem
 readonly PATH_NAKSU2_WORKDIR="/home/school/.local/share/digabi/naksu2"
 readonly PATH_NAKSU2_CERTS_DIR="$PATH_NAKSU2_WORKDIR/certs"
 readonly PATH_NAKSU2_CERT="$PATH_NAKSU2_CERTS_DIR/cert.pem"
+readonly PATH_NAKSU2_KEY="$PATH_NAKSU2_CERTS_DIR/key.pem"
+readonly PATH_NAKSU2_CHAIN="$PATH_NAKSU2_CERTS_DIR/chain.pem"
 readonly PATH_NAKSU2_DOMAIN="$PATH_NAKSU2_CERTS_DIR/domain.txt"
 readonly PATH_NAKSU2_CONFIG="$PATH_NAKSU2_WORKDIR/naksu2-config.json"
 readonly PATH_EXAMNET_CONFIG=/etc/ytl-linux-digabi2-examnet/conf
 readonly PATH_SERVER_FRIENDLY_NAME_CONF=$PATH_EXAMNET_CONFIG/server-friendly-name
 readonly PATH_NET_DEVICE_LAN_CONF=$PATH_EXAMNET_CONFIG/net-device-lan
 readonly PATH_NET_DEVICE_WAN_CONF=$PATH_EXAMNET_CONFIG/net-device-wan
+
+readonly GET_SCHOOL_CERTIFICATE_URL="https://sayo.production.yo-prod.ylioppilastutkinto.fi/get-school-certificate"
 
 readonly BIN_ECHO=/usr/bin/echo
 readonly BIN_GREP=/usr/bin/grep
@@ -433,7 +437,28 @@ function retrieve_naksu2_api_key() {
 function download_static_cert() {
     debug "Downloading static certificate"
     _API_KEY="$(retrieve_naksu2_api_key)"
-    # TODO: Implement lambda call
+    CERTIFICATE=$(curl --silent --show-error --fail "$GET_SCHOOL_CERTIFICATE_URL" -H "X-API-Key: $_API_KEY")
+    CURL_EXIT_CODE=$?
+    if [ $CURL_EXIT_CODE -ne 0 ] || [ -z "$CERTIFICATE" ]; then
+        print_error "Failed to download certificate"
+        exit_script $EXIT_CODE_CANNOT_WRITE
+    fi
+    SCHOOL_NUMBER=$(printf '%s' "$CERTIFICATE" | jq -r .schoolNumber)
+    if [ $SCHOOL_NUMBER == "null" ] || [ -z "$SCHOOL_NUMBER" ]; then
+        print_error "Downloaded certificate has no schoolNumber"
+        exit_script $EXIT_CODE_CANNOT_WRITE
+    fi
+    CERTIFICATE_VALID_UNTIL=$(printf '%s' "$CERTIFICATE" | jq -r .certificateValidUntil)
+    if [ $CERTIFICATE_VALID_UNTIL == "null" ] || [ -z "$CERTIFICATE_VALID_UNTIL" ]; then
+        print_error "Downloaded certificate has no certificateValidUntil date"
+        exit_script $EXIT_CODE_CANNOT_WRITE
+    fi
+    debug "School $SCHOOL_NUMBER got certificate that is valid until $CERTIFICATE_VALID_UNTIL"
+
+    printf '%s' "$CERTIFICATE" | jq -r .cert > $PATH_NAKSU2_CERT
+    printf '%s' "$CERTIFICATE" | jq -r .key > $PATH_NAKSU2_KEY
+    printf '%s' "$CERTIFICATE" | jq -r .chain > $PATH_NAKSU2_CHAIN
+    debug "Stored certificates in directory $PATH_NAKSU2_CERTS_DIR"
 }
 
 function configure_static_dns_records() {
@@ -670,7 +695,7 @@ fi
 
 debug "SERVER_FRIENDLY_NAME: $SERVER_FRIENDLY_NAME"
 
-write_file $PATH_EXAMNET_CONFIG/server-friendly-name "$SERVER_FRIENDLY_NAME"
+write_file $PATH_SERVER_FRIENDLY_NAME_CONF "$SERVER_FRIENDLY_NAME"
 
 configure_networkmanager "yo-$NET_DEVICE_LAN" "$NET_DEVICE_LAN" "$SERVER_OWN_IP/16"
 
