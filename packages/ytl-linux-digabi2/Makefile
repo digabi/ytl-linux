@@ -26,6 +26,11 @@ deb:
 	mkdir -p deb-root/etc/apt/preferences.d
 	cp apt-prefs/* deb-root/etc/apt/preferences.d/
 
+	# Systemd service to downgrade Docker if needed
+	mkdir -p deb-root/etc/systemd/system/ deb-root/usr/local/sbin/
+	cp downgrade-docker.service deb-root/etc/systemd/system/
+	cp downgrade-docker.sh deb-root/usr/local/sbin/
+
 	fpm -C deb-root/ -s dir --name $(NAME) --architecture all -t deb --version "$(VERSION)" \
 		 --description "Digabi2 server application" \
 		 --maintainer "abitti@ylioppilastutkinto.fi" \
