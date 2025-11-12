@@ -36,6 +36,11 @@ deb:
 	mkdir -p deb-root/usr/local/share/doc/$(NAME)
 	cp *.md deb-root/usr/local/share/doc/$(NAME)/
 
+	# Systemd service to downgrade Docker if needed
+	mkdir -p deb-root/etc/systemd/system/ deb-root/usr/local/sbin/
+	cp downgrade-docker.service deb-root/etc/systemd/system/
+	cp downgrade-docker.sh deb-root/usr/local/sbin/
+
 	fpm -C deb-root/ -s dir --name $(NAME) --architecture all -t deb --version "$(VERSION)" \
 		 --description "Digabi2 server application (WSL version)" \
 		 --maintainer "abitti@ylioppilastutkinto.fi" \
