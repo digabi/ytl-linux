@@ -9,4 +9,4 @@ fi
 
 echo "Starting service that downgrades docker..."
 systemctl daemon-reload
-systemctl start downgrade-docker.service || true
+(systemctl start downgrade-docker.service || true) &
