@@ -1,5 +1,5 @@
 NAME := ytl-linux-digabi2
-VERSION := 0.0.7
+VERSION := 0.1.0
 
 DEPENDENCIES := \
 	--depends naksu2 \
