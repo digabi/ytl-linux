@@ -11,12 +11,6 @@ DEPENDENCIES := \
 	--depends docker-ce-cli \
 	--depends ethtool
 
-# Docker dependencies are temporarily pinned to Docker Engine v28 since Abitti 2 breaks on v29
-CONFLICTS := \
-	--conflicts 'docker-ce >= 5:29' \
-	--conflicts 'docker-ce-cli >= 5:29' \
-	--conflicts 'containerd.io >= 2'
-
 DEB_ROOT := deb-root
 
 deb:
@@ -41,5 +35,4 @@ deb:
 		 --before-install before-install.sh \
 		 --after-install after-install.sh \
 		 $(DEPENDENCIES) \
-		 $(CONFLICTS) \
 		.
