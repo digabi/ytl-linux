@@ -5,6 +5,19 @@ set -euo pipefail
 ## This script is used when installing digabi2 server on Ubuntu
 ## Current location: https://static.abitti.fi/abitti-2-test/init-digabi2-package-repositories.sh
 
+## Pin containerd and docker to specific versions to avoid broken updates
+sudo tee /etc/apt/preferences.d/ytl-linux-pin-containerd-to-v1 << 'EOF'
+Package: containerd.io
+Pin: version 1.7.28-1*
+Pin-Priority: 999
+EOF
+
+sudo tee /etc/apt/preferences.d/ytl-linux-pin-docker-to-v28 << 'EOF'
+Package: docker-ce docker-ce-cli
+Pin: version 5:28.5.2-1*
+Pin-Priority: 999
+EOF
+
 ## Init Docker apt repository if not found (https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository)
 if ! test -f /etc/apt/sources.list.d/docker.list; then
   echo "Docker apt repository not initialized, initializing now"
