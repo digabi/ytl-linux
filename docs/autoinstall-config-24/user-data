@@ -8,6 +8,16 @@ autoinstall:
       primary:
           - arches: [default]
             uri: http://mirrors.nic.funet.fi/ubuntu/
+      preferences:
+        - package: "containerd.io"
+          pin: "version 1.7.28-1*"
+          pin-priority: 999
+        - package: "docker-ce"
+          pin: "version 5:28.5.2-1*"
+          pin-priority: 999
+        - package: "docker-ce-cli"
+          pin: "version 5:28.5.2-1*"
+          pin-priority: 999
       sources:
           ytl-linux.list:
             source: "deb [arch=amd64] https://linux.abitti.fi/deb ytl-linux main"
