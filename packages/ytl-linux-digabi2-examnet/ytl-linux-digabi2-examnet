@@ -50,6 +50,7 @@ readonly PATH_NAKSU2_CERTS_DIR="$PATH_NAKSU2_WORKDIR/certs"
 readonly PATH_NAKSU2_CERT="$PATH_NAKSU2_CERTS_DIR/cert.pem"
 readonly PATH_NAKSU2_KEY="$PATH_NAKSU2_CERTS_DIR/key.pem"
 readonly PATH_NAKSU2_CHAIN="$PATH_NAKSU2_CERTS_DIR/chain.pem"
+readonly PATH_NAKSU2_FULLCHAIN="$PATH_NAKSU2_CERTS_DIR/fullchain.pem"
 readonly PATH_NAKSU2_DOMAIN="$PATH_NAKSU2_CERTS_DIR/domain.txt"
 readonly PATH_NAKSU2_CONFIG="$PATH_NAKSU2_WORKDIR/naksu2-config.json"
 readonly PATH_EXAMNET_CONFIG=/etc/ytl-linux-digabi2-examnet/conf
@@ -458,6 +459,7 @@ function download_static_cert() {
     printf '%s' "$CERTIFICATE" | jq -r .cert > $PATH_NAKSU2_CERT
     printf '%s' "$CERTIFICATE" | jq -r .key > $PATH_NAKSU2_KEY
     printf '%s' "$CERTIFICATE" | jq -r .chain > $PATH_NAKSU2_CHAIN
+    printf '%s' "$CERTIFICATE" | jq -r .cert,.chain > $PATH_NAKSU2_FULLCHAIN
     debug "Stored certificates in directory $PATH_NAKSU2_CERTS_DIR"
 }
 
