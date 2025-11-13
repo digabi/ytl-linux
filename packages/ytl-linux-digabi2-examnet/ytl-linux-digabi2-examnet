@@ -484,6 +484,7 @@ function configure_static_dns_records() {
     debug "$DOMAINS"
 
     DNS_RECORDS=()
+    ETC_HOSTS=()
     THIS_SERVER_DOMAIN=""
 
     for DOMAIN in $DOMAINS; do
@@ -496,7 +497,9 @@ function configure_static_dns_records() {
         fi
 
         debug "Server number of domain $DOMAIN is: $SERVER_NUMBER"
-        DNS_RECORDS+=("host-record=$DOMAIN,${IP_LAN_PREFIX}$((SERVER_NUMBER * CONST_SUBNETS_PER_SERVER)).1")
+        IP="${IP_LAN_PREFIX}$((SERVER_NUMBER * CONST_SUBNETS_PER_SERVER)).1"
+        DNS_RECORDS+=("host-record=$DOMAIN,$IP")
+        ETC_HOSTS+=("$IP $DOMAIN")
     done
 
     if [ "$THIS_SERVER_DOMAIN" == "" ]; then
@@ -506,6 +509,17 @@ function configure_static_dns_records() {
 
     debug "Generated DNS records: ${DNS_RECORDS[*]}"
     write_file $PATH_DNSMASQ_STATIC_DNS_CONF "$(IFS=$'\n'; $BIN_ECHO "${DNS_RECORDS[*]}")"
+
+    debug "Generated /etc/hosts entries: ${ETC_HOSTS[*]}"
+
+    # Clean up old entries
+    $BIN_SED -i '/^# BEGIN SCHOOL DOMAIN ENTRIES$/,/^# END SCHOOL DOMAIN ENTRIES$/d' /etc/hosts
+
+    {
+    echo "# BEGIN SCHOOL DOMAIN ENTRIES"
+    printf '%s\n' "${ETC_HOSTS[@]}"
+    echo "# END SCHOOL DOMAIN ENTRIES"
+    } | sudo tee -a /etc/hosts > /dev/null
 
     debug "Configuring domain for KTP"
     debug "This server's domain based on server number ($SERVER_NUMBER) is: $THIS_SERVER_DOMAIN"
