@@ -1,0 +1,13 @@
+[Unit]
+Description=Run one-time setup script after package install
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/downgrade-docker.sh
+TimeoutStartSec=300
+RemainAfterExit=no
+
+[Install]
+WantedBy=multi-user.target

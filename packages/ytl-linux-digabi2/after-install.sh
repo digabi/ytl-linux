@@ -7,4 +7,6 @@ if [[ -f /etc/docker/daemon.json ]]; then
   rm -f /etc/docker/daemon.json
 fi
 
-systemctl restart docker
+echo "Starting service that downgrades docker..."
+systemctl daemon-reload
+(systemctl start downgrade-docker.service || true) &
