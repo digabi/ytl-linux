@@ -24,6 +24,7 @@ readonly EXIT_CODE_NO_SAN_FOR_SERVER_NUMBER=20        # Obtained certificate did
 readonly EXIT_CODE_CANNOT_START_DAEMON=21             # Cannot start daemon due to e.g. no network device configured by examnet, no domain in Naksu 2 workdir, etc.
 readonly EXIT_CODE_DAEMON_EXITED_UNEXPECTEDLY=22      # Daemon exited unexpectedly
 readonly EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE=23     # Cannot change service state (e.g. enable/disable/restart) due to systemd failure
+readonly EXIT_CODE_MISSING_CERTIFICATE=24             # Cannot find certificate (e.g. download failure, missing file, invalid API key)
 
 readonly SCRIPT_PATH=$0
 readonly PARAM_NET_DEVICE_WAN=$1
@@ -115,7 +116,7 @@ function print_info() {
 }
 
 function print_usage() {
-    $BIN_ECHO "usage: $SCRIPT_PATH wan-network-device local-network-device server-number [custom-server-name] [--download-certificate] [--experimental-use-static-local-dns]" >&2
+    $BIN_ECHO "usage: $SCRIPT_PATH wan-network-device local-network-device server-number [custom-server-name] [--download-certificate] [--use-static-local-dns]" >&2
     $BIN_ECHO "       $SCRIPT_PATH --gui" >&2
     $BIN_ECHO "       $SCRIPT_PATH --daemon" >&2
     $BIN_ECHO "       $SCRIPT_PATH --remove" >&2
@@ -466,6 +467,11 @@ function download_static_cert() {
 function configure_static_dns_records() {
     _SERVER_NUMBER=$1
 
+    if [ ! -f "$PATH_NAKSU2_CERT" ]; then
+        print_error "Certificate file $PATH_NAKSU2_CERT does not exist, cannot configure static DNS records"
+        exit_script $EXIT_CODE_MISSING_CERTIFICATE
+    fi
+
     debug "Configuring static DNS records"
     debug "Parsing domains from certificate in $PATH_NAKSU2_CERT"
 
@@ -587,10 +593,10 @@ if [[ $* == *--download-certificate* ]]; then
     DOWNLOAD_CERTIFICATE=1
 fi
 
-USE_EXPERIMENTAL_STATIC_LOCAL_DNS=0
+USE_STATIC_LOCAL_DNS=0
 
-if [[ $* == *--experimental-use-static-local-dns* ]]; then
-    USE_EXPERIMENTAL_STATIC_LOCAL_DNS=1
+if [[ $* == *--use-static-local-dns* ]]; then
+    USE_STATIC_LOCAL_DNS=1
 fi
 
 if [[ $* == *--gui* ]]; then
@@ -695,7 +701,7 @@ write_file $PATH_DOCKER_DAEMON_CONF "$(envsubst < $PATH_DOCKER_DAEMON_CONF_TEMPL
 remove_dnsmasq_settings
 write_file $PATH_DNSMASQ_CONF "$(envsubst < $PATH_DNSMASQ_CONF_TEMPLATE)"
 
-if [ $USE_EXPERIMENTAL_STATIC_LOCAL_DNS -gt 0 ]; then
+if [ $USE_STATIC_LOCAL_DNS -gt 0 ]; then
     configure_static_dns_records "$SERVER_NUMBER"
 fi
 
