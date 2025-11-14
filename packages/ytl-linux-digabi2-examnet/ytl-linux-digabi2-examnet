@@ -50,6 +50,7 @@ readonly PATH_NAKSU2_CERTS_DIR="$PATH_NAKSU2_WORKDIR/certs"
 readonly PATH_NAKSU2_CERT="$PATH_NAKSU2_CERTS_DIR/cert.pem"
 readonly PATH_NAKSU2_KEY="$PATH_NAKSU2_CERTS_DIR/key.pem"
 readonly PATH_NAKSU2_CHAIN="$PATH_NAKSU2_CERTS_DIR/chain.pem"
+readonly PATH_NAKSU2_FULLCHAIN="$PATH_NAKSU2_CERTS_DIR/fullchain.pem"
 readonly PATH_NAKSU2_DOMAIN="$PATH_NAKSU2_CERTS_DIR/domain.txt"
 readonly PATH_NAKSU2_CONFIG="$PATH_NAKSU2_WORKDIR/naksu2-config.json"
 readonly PATH_EXAMNET_CONFIG=/etc/ytl-linux-digabi2-examnet/conf
@@ -444,12 +445,12 @@ function download_static_cert() {
         exit_script $EXIT_CODE_CANNOT_WRITE
     fi
     SCHOOL_NUMBER=$(printf '%s' "$CERTIFICATE" | jq -r .schoolNumber)
-    if [ $SCHOOL_NUMBER == "null" ] || [ -z "$SCHOOL_NUMBER" ]; then
+    if [ "$SCHOOL_NUMBER" == "null" ] || [ -z "$SCHOOL_NUMBER" ]; then
         print_error "Downloaded certificate has no schoolNumber"
         exit_script $EXIT_CODE_CANNOT_WRITE
     fi
     CERTIFICATE_VALID_UNTIL=$(printf '%s' "$CERTIFICATE" | jq -r .certificateValidUntil)
-    if [ $CERTIFICATE_VALID_UNTIL == "null" ] || [ -z "$CERTIFICATE_VALID_UNTIL" ]; then
+    if [ "$CERTIFICATE_VALID_UNTIL" == "null" ] || [ -z "$CERTIFICATE_VALID_UNTIL" ]; then
         print_error "Downloaded certificate has no certificateValidUntil date"
         exit_script $EXIT_CODE_CANNOT_WRITE
     fi
@@ -458,6 +459,7 @@ function download_static_cert() {
     printf '%s' "$CERTIFICATE" | jq -r .cert > $PATH_NAKSU2_CERT
     printf '%s' "$CERTIFICATE" | jq -r .key > $PATH_NAKSU2_KEY
     printf '%s' "$CERTIFICATE" | jq -r .chain > $PATH_NAKSU2_CHAIN
+    printf '%s' "$CERTIFICATE" | jq -r .cert,.chain > $PATH_NAKSU2_FULLCHAIN
     debug "Stored certificates in directory $PATH_NAKSU2_CERTS_DIR"
 }
 
@@ -482,6 +484,7 @@ function configure_static_dns_records() {
     debug "$DOMAINS"
 
     DNS_RECORDS=()
+    ETC_HOSTS=()
     THIS_SERVER_DOMAIN=""
 
     for DOMAIN in $DOMAINS; do
@@ -494,7 +497,9 @@ function configure_static_dns_records() {
         fi
 
         debug "Server number of domain $DOMAIN is: $SERVER_NUMBER"
-        DNS_RECORDS+=("host-record=$DOMAIN,${IP_LAN_PREFIX}$((SERVER_NUMBER * CONST_SUBNETS_PER_SERVER)).1")
+        IP="${IP_LAN_PREFIX}$((SERVER_NUMBER * CONST_SUBNETS_PER_SERVER)).1"
+        DNS_RECORDS+=("host-record=$DOMAIN,$IP")
+        ETC_HOSTS+=("$IP $DOMAIN")
     done
 
     if [ "$THIS_SERVER_DOMAIN" == "" ]; then
@@ -504,6 +509,17 @@ function configure_static_dns_records() {
 
     debug "Generated DNS records: ${DNS_RECORDS[*]}"
     write_file $PATH_DNSMASQ_STATIC_DNS_CONF "$(IFS=$'\n'; $BIN_ECHO "${DNS_RECORDS[*]}")"
+
+    debug "Generated /etc/hosts entries: ${ETC_HOSTS[*]}"
+
+    # Clean up old entries
+    $BIN_SED -i '/^# BEGIN SCHOOL DOMAIN ENTRIES$/,/^# END SCHOOL DOMAIN ENTRIES$/d' /etc/hosts
+
+    {
+    echo "# BEGIN SCHOOL DOMAIN ENTRIES"
+    printf '%s\n' "${ETC_HOSTS[@]}"
+    echo "# END SCHOOL DOMAIN ENTRIES"
+    } | sudo tee -a /etc/hosts > /dev/null
 
     debug "Configuring domain for KTP"
     debug "This server's domain based on server number ($SERVER_NUMBER) is: $THIS_SERVER_DOMAIN"
