@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Disable man-db updates
-        run: sudo rm /var/lib/man-db/auto-update
+        run: sudo rm -f /var/lib/man-db/auto-update
       - name: Install prerequisite packages
         run: |
             sudo apt -y install reprepro gnupg ruby ruby-dev rubygems build-essential
