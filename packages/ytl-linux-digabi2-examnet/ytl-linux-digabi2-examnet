@@ -115,8 +115,8 @@ function print_info() {
 }
 
 function print_usage() {
-    $BIN_ECHO "usage: $SCRIPT_PATH wan-network-device local-network-device server-number [custom-server-name] [--experimental-use-static-local-dns]" >&2
-    $BIN_ECHO "       $SCRIPT_PATH --gui [--experimental-use-static-local-dns]" >&2
+    $BIN_ECHO "usage: $SCRIPT_PATH wan-network-device local-network-device server-number [custom-server-name] [--download-certificate] [--experimental-use-static-local-dns]" >&2
+    $BIN_ECHO "       $SCRIPT_PATH --gui" >&2
     $BIN_ECHO "       $SCRIPT_PATH --daemon" >&2
     $BIN_ECHO "       $SCRIPT_PATH --remove" >&2
     $BIN_ECHO "" >&2
@@ -581,6 +581,12 @@ if [[ $* == *--remove* ]]; then
     exit_script 0
 fi
 
+DOWNLOAD_CERTIFICATE=0
+
+if [[ $* == *--download-certificate* ]]; then
+    DOWNLOAD_CERTIFICATE=1
+fi
+
 USE_EXPERIMENTAL_STATIC_LOCAL_DNS=0
 
 if [[ $* == *--experimental-use-static-local-dns* ]]; then
@@ -679,7 +685,7 @@ NCSI_HOSTNAMES_LIST=$(cat $PATH_EXAMNET_CONFIG/ncsi-hostnames)
 debug "NCSI_HOSTNAMES_LIST: $NCSI_HOSTNAMES_LIST"
 export NCSI_HOSTNAMES_LIST
 
-if [ $USE_EXPERIMENTAL_STATIC_LOCAL_DNS -gt 0 ]; then
+if [ $DOWNLOAD_CERTIFICATE -gt 0 ]; then
     download_static_cert
 fi
 
