@@ -25,6 +25,7 @@ readonly EXIT_CODE_CANNOT_START_DAEMON=21             # Cannot start daemon due 
 readonly EXIT_CODE_DAEMON_EXITED_UNEXPECTEDLY=22      # Daemon exited unexpectedly
 readonly EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE=23     # Cannot change service state (e.g. enable/disable/restart) due to systemd failure
 readonly EXIT_CODE_MISSING_CERTIFICATE=24             # Cannot find certificate (e.g. download failure, missing file, invalid API key)
+readonly EXIT_CODE_INVALID_FRIENDLY_NAME=25           # Friendly name contains illegal characters
 
 readonly SCRIPT_PATH=$0
 readonly PARAM_NET_DEVICE_WAN=$1
@@ -712,6 +713,13 @@ else
         SERVER_FRIENDLY_NAME=$PARAM_SERVER_FRIENDLY_NAME
     else
         SERVER_FRIENDLY_NAME=""
+    fi
+fi
+
+if [ -n "$SERVER_FRIENDLY_NAME" ]; then
+    if ! [[ "$SERVER_FRIENDLY_NAME" =~ ^[a-z0-9]+$ ]]; then
+        print_error "Custom server name may only contain lowercase letters a-z and digits 0-9"
+        exit_script $EXIT_CODE_INVALID_FRIENDLY_NAME
     fi
 fi
 
