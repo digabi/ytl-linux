@@ -25,6 +25,7 @@ readonly EXIT_CODE_CANNOT_START_DAEMON=21             # Cannot start daemon due 
 readonly EXIT_CODE_DAEMON_EXITED_UNEXPECTEDLY=22      # Daemon exited unexpectedly
 readonly EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE=23     # Cannot change service state (e.g. enable/disable/restart) due to systemd failure
 readonly EXIT_CODE_MISSING_CERTIFICATE=24             # Cannot find certificate (e.g. download failure, missing file, invalid API key)
+readonly EXIT_CODE_INVALID_FRIENDLY_NAME=25           # Friendly name contains characters outside what is accepted for a slug
 
 readonly SCRIPT_PATH=$0
 readonly PARAM_NET_DEVICE_WAN=$1
@@ -722,6 +723,11 @@ if [ -z "$SERVER_FRIENDLY_NAME" ]; then
 fi
 
 debug "SERVER_FRIENDLY_NAME: $SERVER_FRIENDLY_NAME"
+
+if [[ ! $SERVER_FRIENDLY_NAME =~ ^[a-z0-9_-]+$ ]]; then
+    print_error "Friendly name must only contain characters a-z, 0-9, hyphen or underscore"
+    exit_script $EXIT_CODE_INVALID_FRIENDLY_NAME
+fi
 
 write_file $PATH_SERVER_FRIENDLY_NAME_CONF "$SERVER_FRIENDLY_NAME"
 
