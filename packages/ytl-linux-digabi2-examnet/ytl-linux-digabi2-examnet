@@ -639,8 +639,8 @@ fi
 debug "SERVER_NUMBER: $SERVER_NUMBER"
 check_server_number "$SERVER_NUMBER"
 
-write_file $PATH_EXAMNET_CONFIG/net-device-lan "$NET_DEVICE_LAN"
-write_file $PATH_EXAMNET_CONFIG/net-device-wan "$NET_DEVICE_WAN"
+write_file $PATH_NET_DEVICE_LAN_CONF "$NET_DEVICE_LAN"
+write_file $PATH_NET_DEVICE_WAN_CONF "$NET_DEVICE_WAN"
 
 export NET_DEVICE_WAN
 export NET_DEVICE_LAN
