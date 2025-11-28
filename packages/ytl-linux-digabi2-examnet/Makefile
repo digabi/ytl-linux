@@ -1,5 +1,5 @@
 NAME := ytl-linux-digabi2-examnet
-VERSION := 0.0.8
+VERSION := 0.0.9
 
 DEPENDENCIES := \
 	--depends apt \
@@ -21,8 +21,8 @@ deb:
 	cp templates/* ${DEB_ROOT}/etc/ytl-linux-digabi2-examnet/templates
 
 	# Examnet configs
-	mkdir -p $(DEB_ROOT)/home/school/.local/share/digabi/naksu2/examnet/
-	cp conf/* $(DEB_ROOT)/home/school/.local/share/digabi/naksu2/examnet/
+	mkdir -p $(DEB_ROOT)/etc/ytl-linux-digabi2-examnet/config/
+	cp conf/* $(DEB_ROOT)/etc/ytl-linux-digabi2-examnet/config/
 
 	# Bouncer
 	(cd digabi2-examnet-bouncer \
