@@ -59,6 +59,7 @@ readonly PATH_EXAMNET_CONFIG=/etc/ytl-linux-digabi2-examnet/config/
 readonly PATH_SERVER_FRIENDLY_NAME_CONF=$PATH_EXAMNET_CONFIG/server-friendly-name
 readonly PATH_NET_DEVICE_LAN_CONF=$PATH_EXAMNET_CONFIG/net-device-lan
 readonly PATH_NET_DEVICE_WAN_CONF=$PATH_EXAMNET_CONFIG/net-device-wan
+readonly PATH_SERVER_OWN_IP=$PATH_EXAMNET_CONFIG/server-own-ip
 
 readonly GET_SCHOOL_CERTIFICATE_URL="https://sayo.production.yo-prod.ylioppilastutkinto.fi/get-school-certificate"
 
@@ -639,8 +640,8 @@ fi
 debug "SERVER_NUMBER: $SERVER_NUMBER"
 check_server_number "$SERVER_NUMBER"
 
-write_file $PATH_EXAMNET_CONFIG/net-device-lan "$NET_DEVICE_LAN"
-write_file $PATH_EXAMNET_CONFIG/net-device-wan "$NET_DEVICE_WAN"
+write_file $PATH_NET_DEVICE_LAN_CONF "$NET_DEVICE_LAN"
+write_file $PATH_NET_DEVICE_WAN_CONF "$NET_DEVICE_WAN"
 
 export NET_DEVICE_WAN
 export NET_DEVICE_LAN
@@ -676,6 +677,7 @@ debug "SERVER_HOST_NUMBER: $SERVER_HOST_NUMBER"
 
 SERVER_OWN_IP="$IP_LAN_PREFIX$SERVER_HOST_NUMBER.1"
 debug "SERVER_OWN_IP: $SERVER_OWN_IP"
+write_file $PATH_SERVER_OWN_IP "$SERVER_OWN_IP"
 
 export SERVER_OWN_IP
 
