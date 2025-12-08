@@ -1,5 +1,5 @@
 NAME := ytl-linux-digabi2-examnet
-VERSION := 0.0.10
+VERSION := 0.0.11
 
 DEPENDENCIES := \
 	--depends apt \
@@ -47,6 +47,10 @@ deb:
 	cp ytl-linux-digabi2-examnet.service $(DEB_ROOT)/etc/systemd/system/
 
 	chmod 644 $(DEB_ROOT)/etc/systemd/system/*
+
+	# Polkit policy
+	mkdir -p $(DEB_ROOT)/usr/share/polkit-1/actions/
+	cp ytl-linux-digabi2-examnet.policy $(DEB_ROOT)/usr/share/polkit-1/actions/
 
 	# Package documentation
 	mkdir -p $(DEB_ROOT)/usr/local/share/doc/$(NAME)

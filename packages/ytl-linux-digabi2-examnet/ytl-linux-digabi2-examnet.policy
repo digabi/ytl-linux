@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN" "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+  <vendor>Matriculation Examination Board</vendor>
+  <vendor_url>http://github.com/digabi/ytl-linux/</vendor_url>
+  <action id="fi.ylioppilastutkinto.fi.ytl-linux-digabi2-examnet">
+    <message>Naksu 2 needs permission to save network settings. Enter your computer password.</message>
+    <message xml:lang="fi">Naksu 2 tarvitsee luvan tallentaa verkkoasetukset. Kirjoita tietokoneen salasana.</message>
+    <message xml:lang="sv">Naksu 2 behöver tillstånd för att spara nätverksinställningarna. Mata in datorns lösenord.</message>
+    <description>Support GUI authentication when running ytl-linux-digabi2-examnet from e.g. within Naksu 2</description>
+    <defaults>
+     <allow_any>auth_admin</allow_any>
+     <allow_inactive>auth_admin</allow_inactive>
+     <allow_active>auth_admin</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/local/sbin/ytl-linux-digabi2-examnet</annotate>
+  </action>
+</policyconfig>
