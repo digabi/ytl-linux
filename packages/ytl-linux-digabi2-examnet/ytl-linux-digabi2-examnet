@@ -445,7 +445,7 @@ function download_static_cert() {
     CURL_EXIT_CODE=$?
     if [ $CURL_EXIT_CODE -ne 0 ] || [ -z "$CERTIFICATE" ]; then
         print_error "Failed to download certificate"
-        exit_script $EXIT_CODE_CANNOT_WRITE
+        exit_script $EXIT_CODE_MISSING_CERTIFICATE
     fi
     SCHOOL_NUMBER=$(printf '%s' "$CERTIFICATE" | jq -r .schoolNumber)
     if [ "$SCHOOL_NUMBER" == "null" ] || [ -z "$SCHOOL_NUMBER" ]; then
