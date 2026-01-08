@@ -26,6 +26,7 @@ readonly EXIT_CODE_DAEMON_EXITED_UNEXPECTEDLY=22      # Daemon exited unexpected
 readonly EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE=23     # Cannot change service state (e.g. enable/disable/restart) due to systemd failure
 readonly EXIT_CODE_MISSING_CERTIFICATE=24             # Cannot find certificate (e.g. download failure, missing file, invalid API key)
 readonly EXIT_CODE_INVALID_FRIENDLY_NAME=25           # Friendly name contains illegal characters
+readonly EXIT_CODE_INVALID_CERTIFICATE=26             # Invalid certificate (e.g. expired, missing school number)
 
 readonly SCRIPT_PATH=$0
 readonly PARAM_NET_DEVICE_WAN=$1
@@ -450,12 +451,12 @@ function download_static_cert() {
     SCHOOL_NUMBER=$(printf '%s' "$CERTIFICATE" | jq -r .schoolNumber)
     if [ "$SCHOOL_NUMBER" == "null" ] || [ -z "$SCHOOL_NUMBER" ]; then
         print_error "Downloaded certificate has no schoolNumber"
-        exit_script $EXIT_CODE_CANNOT_WRITE
+        exit_script $EXIT_CODE_INVALID_CERTIFICATE
     fi
     CERTIFICATE_VALID_UNTIL=$(printf '%s' "$CERTIFICATE" | jq -r .certificateValidUntil)
     if [ "$CERTIFICATE_VALID_UNTIL" == "null" ] || [ -z "$CERTIFICATE_VALID_UNTIL" ]; then
         print_error "Downloaded certificate has no certificateValidUntil date"
-        exit_script $EXIT_CODE_CANNOT_WRITE
+        exit_script $EXIT_CODE_INVALID_CERTIFICATE
     fi
     debug "School $SCHOOL_NUMBER got certificate that is valid until $CERTIFICATE_VALID_UNTIL"
 
