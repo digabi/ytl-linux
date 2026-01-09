@@ -11,4 +11,9 @@ if [[ -f /etc/systemd/system/ytl-linux-digabi2-ncsi.service ]]; then
     rm -f /etc/systemd/system/ytl-linux-digabi2-ncsi.service
 fi
 
+# Ensure dnsmasq remains stopped until network settings are configured, but don't turn it off if it's in use
+if [[ ! -f /etc/dnsmasq.d/ytl-linux.conf ]]; then
+    systemctl disable --now dnsmasq
+fi
+
 systemctl enable ytl-linux-digabi2-examnet
