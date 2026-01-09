@@ -347,7 +347,7 @@ function remove_dnsmasq_settings() {
 }
 
 function remove_all_settings() {
-    disable_examnet_daemon
+    disable_systemd_services
 
     if [ -f $PATH_RESOLVED_CONF ]; then
         rm -f $PATH_RESOLVED_CONF
@@ -396,8 +396,10 @@ function restart_network_services() {
     $BIN_SYSTEMCTL restart systemd-resolved
     exit_if_error $? $EXIT_CODE_CANNOT_RESTART_RESOLVED "Failed to restart systemd-resolved"
 
-    $BIN_SYSTEMCTL restart dnsmasq >>"$PATH_DEBUG" 2>&1
-    exit_if_error $? $EXIT_CODE_CANNOT_RESTART_DNSMASQ "Failed to restart dnsmasq"
+    if [[ "$(systemctl is-enabled dnsmasq.service)" == "enabled" ]]; then
+        $BIN_SYSTEMCTL restart dnsmasq.service >>"$PATH_DEBUG" 2>&1
+        exit_if_error $? $EXIT_CODE_CANNOT_RESTART_DNSMASQ "Failed to restart dnsmasq.service"
+    fi
 
     $BIN_SYSTEMCTL restart NetworkManager.service >>"$PATH_DEBUG" 2>&1
     exit_if_error $? $EXIT_CODE_CANNOT_RESTART_NM "Failed to restart NetworkManager.service"
@@ -408,14 +410,20 @@ function restart_network_services() {
     fi
 }
 
-function enable_examnet_daemon() {
+function enable_systemd_services() {
     $BIN_SYSTEMCTL enable ytl-linux-digabi2-examnet.service >>"$PATH_DEBUG" 2>&1
     exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to enable ytl-linux-digabi2-examnet.service"
+
+    $BIN_SYSTEMCTL enable dnsmasq.service >>"$PATH_DEBUG" 2>&1
+    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to enable dnsmasq.service"
 }
 
-function disable_examnet_daemon() {
+function disable_systemd_services() {
     $BIN_SYSTEMCTL disable --now ytl-linux-digabi2-examnet.service >>"$PATH_DEBUG" 2>&1
-    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to stop ytl-linux-digabi2-examnet.service"
+    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to disable ytl-linux-digabi2-examnet.service"
+
+    $BIN_SYSTEMCTL disable --now dnsmasq.service >>"$PATH_DEBUG" 2>&1
+    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to disable dnsmasq.service"
 }
 
 function restart_docker() {
@@ -749,7 +757,7 @@ if [ -f /etc/netplan/50-cloud-init.yaml ]; then
     rm /etc/netplan/50-cloud-init.yaml
 fi
 
-enable_examnet_daemon
+enable_systemd_services
 restart_network_services
 restart_docker
 
