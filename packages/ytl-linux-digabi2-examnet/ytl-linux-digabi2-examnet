@@ -373,6 +373,11 @@ function remove_all_settings() {
         rm -f $PATH_SERVER_FRIENDLY_NAME_CONF
         exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_SERVER_FRIENDLY_NAME_CONF'"
     fi
+    
+    if [ -f $PATH_SERVER_OWN_IP ]; then
+        rm -f $PATH_SERVER_OWN_IP
+        exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_SERVER_OWN_IP'"
+    fi
 
     remove_dnsmasq_settings
 
