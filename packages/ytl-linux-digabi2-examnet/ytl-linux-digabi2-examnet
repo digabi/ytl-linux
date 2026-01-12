@@ -382,6 +382,7 @@ function remove_all_settings() {
     fi
 
     remove_dnsmasq_settings
+    remove_school_host_entries
 
     $BIN_NMCLI -f UUID,NAME connection show | $BIN_GREP -P -v "^UUID" | $BIN_TR -s ' ' | while read -r line ; do
         connection_uuid=$(echo "$line" | $BIN_CUT -d ' ' -f 1)
@@ -556,8 +557,7 @@ function configure_static_dns_records() {
 
     debug "Generated /etc/hosts entries: ${ETC_HOSTS[*]}"
 
-    # Clean up old entries
-    $BIN_SED -i '/^# BEGIN SCHOOL DOMAIN ENTRIES$/,/^# END SCHOOL DOMAIN ENTRIES$/d' /etc/hosts
+    remove_school_host_entries
 
     {
     echo "# BEGIN SCHOOL DOMAIN ENTRIES"
@@ -568,6 +568,10 @@ function configure_static_dns_records() {
     debug "Configuring domain for KTP"
     debug "This server's domain based on server number ($SERVER_NUMBER) is: $THIS_SERVER_DOMAIN"
     write_file $PATH_NAKSU2_DOMAIN "$THIS_SERVER_DOMAIN"
+}
+
+function remove_school_host_entries() {
+    $BIN_SED -i '/^# BEGIN SCHOOL DOMAIN ENTRIES$/,/^# END SCHOOL DOMAIN ENTRIES$/d' /etc/hosts
 }
 
 # ---------- Main script logic starts here ---------- #
