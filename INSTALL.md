@@ -32,7 +32,7 @@ YTL Linux installs:
  1. Take some screenshots (again, your mobile phone is your friend here):
    * The screen where the installation finished.
    * Press Alt+F2 > enter command \
-     `cat /var/log/curtin/install.log` \
+     `cat /var/log/installer/subiquity-server-info.log` \
      and take a screenshot.
    * Send these screenshots and your contact information to Abitti support.
 
