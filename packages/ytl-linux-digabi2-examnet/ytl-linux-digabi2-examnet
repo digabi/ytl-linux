@@ -494,10 +494,11 @@ function download_static_cert() {
     fi
     debug "School $SCHOOL_NUMBER got certificate that is valid until $CERTIFICATE_VALID_UNTIL"
 
-    printf '%s' "$CERTIFICATE" | jq -r .cert > $PATH_NAKSU2_CERT
-    printf '%s' "$CERTIFICATE" | jq -r .key > $PATH_NAKSU2_KEY
-    printf '%s' "$CERTIFICATE" | jq -r .chain > $PATH_NAKSU2_CHAIN
-    printf '%s' "$CERTIFICATE" | jq -r .cert,.chain > $PATH_NAKSU2_FULLCHAIN
+    write_file $PATH_NAKSU2_CERT "$(printf '%s' "$CERTIFICATE" | jq -r .cert)"
+    write_file $PATH_NAKSU2_KEY "$(printf '%s' "$CERTIFICATE" | jq -r .key)"
+    write_file $PATH_NAKSU2_CHAIN "$(printf '%s' "$CERTIFICATE" | jq -r .chain)"
+    write_file $PATH_NAKSU2_FULLCHAIN "$(printf '%s' "$CERTIFICATE" | jq -r .cert,.chain)"
+
     debug "Stored certificates in directory $PATH_NAKSU2_CERTS_DIR"
 }
 
