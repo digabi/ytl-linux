@@ -65,7 +65,11 @@ Run `sudo apt update` and make sure the legacy keyring warning has disappeared.
 
 ## Naksu 2
 
-Install and set up [git-lfs](https://git-lfs.com). Run `scripts/update-naksu2.sh` to download the latest version of the Naksu 2 deb from GitHub Releases.
+Install and set up [git-lfs](https://git-lfs.com). 
+1. Run `scripts/update-naksu2.sh` to download the latest version of the Naksu 2 deb from GitHub Releases.
+2. Make a commit named 'Update Naksu 2 to x.x.x"
+3. `git push`
+4. That's it. Naksu will read the latest version from [https://linux.abitti.fi/meta/naksu2-latest-version.json](https://linux.abitti.fi/meta/naksu2-latest-version.json)
 
 ## Building the image
 
