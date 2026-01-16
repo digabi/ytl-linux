@@ -767,15 +767,6 @@ if [ $DOWNLOAD_CERTIFICATE -gt 0 ]; then
     download_static_cert
 fi
 
-if [ -z "$SERVER_FRIENDLY_NAME" ]; then
-    debug "User did not provide friendly name, falling back to static DNS name"
-    # Fallback to use server's static DNS name (e.g. ktp1)
-    SERVER_FRIENDLY_NAME=$(cat $PATH_NAKSU2_DOMAIN | cut -d '.' -f1)
-fi
-
-debug "SERVER_FRIENDLY_NAME: $SERVER_FRIENDLY_NAME"
-
-write_file $PATH_SERVER_FRIENDLY_NAME_CONF "$SERVER_FRIENDLY_NAME"
 
 write_file $PATH_RESOLVED_CONF "$(envsubst < $PATH_RESOLVED_CONF_TEMPLATE)"
 write_file $PATH_DOCKER_DAEMON_CONF "$(envsubst < $PATH_DOCKER_DAEMON_CONF_TEMPLATE)"
@@ -786,6 +777,16 @@ write_file $PATH_DNSMASQ_CONF "$(envsubst < $PATH_DNSMASQ_CONF_TEMPLATE)"
 if [ $USE_STATIC_LOCAL_DNS -gt 0 ]; then
     configure_static_dns_records "$SERVER_NUMBER"
 fi
+
+if [ -z "$SERVER_FRIENDLY_NAME" ]; then
+    debug "User did not provide friendly name, falling back to static DNS name"
+    # Fallback to use server's static DNS name (e.g. ktp1)
+    SERVER_FRIENDLY_NAME=$(cat $PATH_NAKSU2_DOMAIN | cut -d '.' -f1)
+fi
+
+debug "SERVER_FRIENDLY_NAME: $SERVER_FRIENDLY_NAME"
+
+write_file $PATH_SERVER_FRIENDLY_NAME_CONF "$SERVER_FRIENDLY_NAME"
 
 enable_systemd_services
 restart_systemd_resolved
