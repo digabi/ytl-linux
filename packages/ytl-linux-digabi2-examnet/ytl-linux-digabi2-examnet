@@ -623,6 +623,7 @@ fi
 if [[ $* == *--remove* ]]; then
     remove_all_settings
     restart_network_services
+    restart_docker
 
     print_info "All examnet settings have been removed"
 
