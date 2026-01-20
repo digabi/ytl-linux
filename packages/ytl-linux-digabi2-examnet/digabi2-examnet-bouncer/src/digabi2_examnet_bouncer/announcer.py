@@ -29,7 +29,7 @@ class Announcer:
 
     @contextmanager
     def start(self, attempts: int = 9) -> Generator[ServiceInfo]:
-        zeroconf = Zeroconf(ip_version=IPVersion.V4Only)
+        zeroconf = Zeroconf(interfaces=[self.config.ipv4_address])
 
         def suffixes():
             yield ""
