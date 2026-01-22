@@ -19,11 +19,10 @@ resolv-file=/etc/resolv.conf
 # need DNS to tell student computers where to go
 server=/koe.abitti.net/#
 
-# Explicit DNS record for the multicast DNS friendly name (.local domain)
+# Don't forward friendly name (.local) queries - return NXDOMAIN so Windows falls back to mDNS
 # Windows sends unicast DNS queries for .local domains (in addition to mDNS), which would
-# otherwise hit the null-route below and return 0.0.0.0. This explicit record ensures
-# Windows clients can resolve the friendly name correctly via DNS.
-host-record=${SERVER_FRIENDLY_NAME}.local,${SERVER_OWN_IP}
+# otherwise hit the null-route below and return 0.0.0.0.
+server=/local/
 
 # Null-route all other traffic
 # This prevents software on the student computer from getting confused by when DNS queries work, but the TCP
