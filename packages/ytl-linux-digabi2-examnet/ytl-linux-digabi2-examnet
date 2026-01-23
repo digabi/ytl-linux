@@ -773,6 +773,7 @@ write_file $PATH_RESOLVED_CONF "$(envsubst < $PATH_RESOLVED_CONF_TEMPLATE)"
 write_file $PATH_DOCKER_DAEMON_CONF "$(envsubst < $PATH_DOCKER_DAEMON_CONF_TEMPLATE)"
 
 remove_dnsmasq_settings
+write_file $PATH_DNSMASQ_CONF "$(envsubst < $PATH_DNSMASQ_CONF_TEMPLATE)"
 
 if [ $USE_STATIC_LOCAL_DNS -gt 0 ]; then
     configure_static_dns_records "$SERVER_NUMBER"
@@ -785,9 +786,6 @@ if [ -z "$SERVER_FRIENDLY_NAME" ]; then
 fi
 
 debug "SERVER_FRIENDLY_NAME: $SERVER_FRIENDLY_NAME"
-export SERVER_FRIENDLY_NAME
-
-write_file $PATH_DNSMASQ_CONF "$(envsubst < $PATH_DNSMASQ_CONF_TEMPLATE)"
 
 write_file $PATH_SERVER_FRIENDLY_NAME_CONF "$SERVER_FRIENDLY_NAME"
 
