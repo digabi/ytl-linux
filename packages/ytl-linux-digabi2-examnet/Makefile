@@ -1,5 +1,5 @@
 NAME := ytl-linux-digabi2-examnet
-VERSION := 0.0.14
+VERSION := 0.0.15
 
 DEPENDENCIES := \
 	--depends apt \

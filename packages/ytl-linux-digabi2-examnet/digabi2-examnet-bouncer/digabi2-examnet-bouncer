@@ -6,7 +6,7 @@ import pathlib
 from digabi2_examnet_bouncer.announcer import Announcer
 from digabi2_examnet_bouncer.bouncer import Bouncer
 from digabi2_examnet_bouncer.config import Config
-from werkzeug.serving import make_server
+from waitress import serve
 
 
 parser = argparse.ArgumentParser(
@@ -85,8 +85,7 @@ def main():
         if output_file is not None:
             _ = output_file.write_text(info.server)
         bouncer = Bouncer(config, info.server)
-        srv = make_server(config.ipv4_address, config.bouncer_port, bouncer)
-        srv.serve_forever()
+        serve(bouncer, host=config.ipv4_address, port=config.bouncer_port)
 
 
 if __name__ == "__main__":
