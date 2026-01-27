@@ -1,4 +1,4 @@
 FROM docker.io/python:3
 RUN pip install hatch
 COPY . .
-RUN hatch --no-interactive --verbose run packaging:pyinstaller --onefile digabi2-examnet-bouncer
+RUN hatch --no-interactive --verbose run packaging:pyinstaller --onefile --python-option u digabi2-examnet-bouncer
