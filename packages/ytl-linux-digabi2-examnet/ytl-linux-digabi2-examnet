@@ -26,7 +26,6 @@ readonly EXIT_CODE_DAEMON_EXITED_UNEXPECTEDLY=22      # Daemon exited unexpected
 readonly EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE=23     # Cannot change service state (e.g. enable/disable/restart) due to systemd failure
 readonly EXIT_CODE_MISSING_CERTIFICATE=24             # Cannot find certificate (e.g. download failure, missing file, invalid API key)
 readonly EXIT_CODE_INVALID_FRIENDLY_NAME=25           # Friendly name contains illegal characters
-readonly EXIT_CODE_INVALID_CERTIFICATE=26             # Invalid certificate (e.g. expired, missing school number)
 readonly EXIT_CODE_NETWORK_NOT_ONLINE=27              # Network did not come up within timeout
 
 readonly SCRIPT_PATH=$0
@@ -52,18 +51,12 @@ readonly PATH_DOCKER_DAEMON_CONF_TEMPLATE=$PATH_TEMPLATES/docker-daemon.json.tem
 readonly PATH_NAKSU2_WORKDIR="${NAKSU2_WORKDIR:-/home/school/.local/share/digabi/naksu2}"
 readonly PATH_NAKSU2_CERTS_DIR="$PATH_NAKSU2_WORKDIR/certs"
 readonly PATH_NAKSU2_CERT="$PATH_NAKSU2_CERTS_DIR/cert.pem"
-readonly PATH_NAKSU2_KEY="$PATH_NAKSU2_CERTS_DIR/key.pem"
-readonly PATH_NAKSU2_CHAIN="$PATH_NAKSU2_CERTS_DIR/chain.pem"
-readonly PATH_NAKSU2_FULLCHAIN="$PATH_NAKSU2_CERTS_DIR/fullchain.pem"
 readonly PATH_NAKSU2_DOMAIN="$PATH_NAKSU2_CERTS_DIR/domain.txt"
-readonly PATH_NAKSU2_CONFIG="$PATH_NAKSU2_WORKDIR/naksu2-config.json"
 readonly PATH_EXAMNET_CONFIG=/etc/ytl-linux-digabi2-examnet/config/
 readonly PATH_SERVER_FRIENDLY_NAME_CONF=$PATH_EXAMNET_CONFIG/server-friendly-name
 readonly PATH_NET_DEVICE_LAN_CONF=$PATH_EXAMNET_CONFIG/net-device-lan
 readonly PATH_NET_DEVICE_WAN_CONF=$PATH_EXAMNET_CONFIG/net-device-wan
 readonly PATH_SERVER_OWN_IP=$PATH_EXAMNET_CONFIG/server-own-ip
-
-readonly GET_SCHOOL_CERTIFICATE_URL="https://sayo.production.yo-prod.ylioppilastutkinto.fi/get-school-certificate"
 
 readonly BIN_ECHO=/usr/bin/echo
 readonly BIN_GREP=/usr/bin/grep
@@ -132,7 +125,7 @@ function print_info() {
 }
 
 function print_usage() {
-    $BIN_ECHO "usage: $SCRIPT_PATH wan-network-device local-network-device server-number [custom-server-name] [--download-certificate] [--use-static-local-dns]" >&2
+    $BIN_ECHO "usage: $SCRIPT_PATH wan-network-device local-network-device server-number [custom-server-name] [--use-static-local-dns]" >&2
     $BIN_ECHO "       $SCRIPT_PATH --gui" >&2
     $BIN_ECHO "       $SCRIPT_PATH --daemon" >&2
     $BIN_ECHO "       $SCRIPT_PATH --remove" >&2
@@ -478,56 +471,6 @@ function restart_docker() {
     exit_if_error $? $EXIT_CODE_CANNOT_RESTART_DOCKER "Failed to restart docker"
 }
 
-function request_api_key_manually() {
-  print_error "Naksu 2 has not completed initial setup; API key cannot be automatically retrieved for certificate obtainment."
-  read -rp "Please enter the API key manually: " _API_KEY
-  $BIN_ECHO "$_API_KEY"
-}
-
-# FIXME: Temporary reimplementation of logic that already exists in Naksu 2, since we cannot fit examnet logic into Naksu easily right now (27.10.2025)
-function retrieve_naksu2_api_key() {
-    if [ ! -f $PATH_NAKSU2_CONFIG ]; then
-        _API_KEY="$(request_api_key_manually)"
-    else
-        _API_KEY="$(jq -r '.apiKey | select(.)' $PATH_NAKSU2_CONFIG)"
-
-        if [ "$_API_KEY" == "" ]; then
-            _API_KEY="$(request_api_key_manually)"
-        fi
-    fi
-
-    $BIN_ECHO "$_API_KEY"
-}
-
-function download_static_cert() {
-    debug "Downloading static certificate"
-    _API_KEY="$(retrieve_naksu2_api_key)"
-    CERTIFICATE=$(curl --silent --show-error --fail "$GET_SCHOOL_CERTIFICATE_URL" -H "X-API-Key: $_API_KEY")
-    CURL_EXIT_CODE=$?
-    if [ $CURL_EXIT_CODE -ne 0 ] || [ -z "$CERTIFICATE" ]; then
-        print_error "Failed to download certificate"
-        exit_script $EXIT_CODE_MISSING_CERTIFICATE
-    fi
-    SCHOOL_NUMBER=$(printf '%s' "$CERTIFICATE" | jq -r .schoolNumber)
-    if [ "$SCHOOL_NUMBER" == "null" ] || [ -z "$SCHOOL_NUMBER" ]; then
-        print_error "Downloaded certificate has no schoolNumber"
-        exit_script $EXIT_CODE_INVALID_CERTIFICATE
-    fi
-    CERTIFICATE_VALID_UNTIL=$(printf '%s' "$CERTIFICATE" | jq -r .certificateValidUntil)
-    if [ "$CERTIFICATE_VALID_UNTIL" == "null" ] || [ -z "$CERTIFICATE_VALID_UNTIL" ]; then
-        print_error "Downloaded certificate has no certificateValidUntil date"
-        exit_script $EXIT_CODE_INVALID_CERTIFICATE
-    fi
-    debug "School $SCHOOL_NUMBER got certificate that is valid until $CERTIFICATE_VALID_UNTIL"
-
-    write_file $PATH_NAKSU2_CERT "$(printf '%s' "$CERTIFICATE" | jq -r .cert)" "$NAKSU2_WORKDIR_OWNER"
-    write_file $PATH_NAKSU2_KEY "$(printf '%s' "$CERTIFICATE" | jq -r .key)" "$NAKSU2_WORKDIR_OWNER"
-    write_file $PATH_NAKSU2_CHAIN "$(printf '%s' "$CERTIFICATE" | jq -r .chain)" "$NAKSU2_WORKDIR_OWNER"
-    write_file $PATH_NAKSU2_FULLCHAIN "$(printf '%s' "$CERTIFICATE" | jq -r .cert,.chain)" "$NAKSU2_WORKDIR_OWNER"
-
-    debug "Stored certificates in directory $PATH_NAKSU2_CERTS_DIR"
-}
-
 function configure_static_dns_records() {
     _SERVER_NUMBER=$1
 
@@ -661,12 +604,6 @@ if [[ $* == *--remove* ]]; then
     exit_script 0
 fi
 
-DOWNLOAD_CERTIFICATE=0
-
-if [[ $* == *--download-certificate* ]]; then
-    DOWNLOAD_CERTIFICATE=1
-fi
-
 USE_STATIC_LOCAL_DNS=0
 
 if [[ $* == *--use-static-local-dns* ]]; then
@@ -794,11 +731,6 @@ fi
 
 restart_networkmanager
 wait_for_network_online
-
-if [ $DOWNLOAD_CERTIFICATE -gt 0 ]; then
-    download_static_cert
-fi
-
 
 write_file $PATH_RESOLVED_CONF "$(envsubst < $PATH_RESOLVED_CONF_TEMPLATE)"
 write_file $PATH_DOCKER_DAEMON_CONF "$(envsubst < $PATH_DOCKER_DAEMON_CONF_TEMPLATE)"
