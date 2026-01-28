@@ -79,10 +79,21 @@ readonly BIN_SED=/usr/bin/sed
 readonly BIN_XARGS=/usr/bin/xargs
 readonly BIN_OPENSSL=/usr/bin/openssl
 readonly BIN_DIGABI2_EXAMNET_BOUNCER=/usr/local/sbin/digabi2-examnet-bouncer
+readonly BIN_STAT=/usr/bin/stat
+readonly BIN_CHOWN=/usr/bin/chown
 
 readonly CONST_MIN_SERVER_NUMBER=1
 readonly CONST_MAX_SERVER_NUMBER=24
 readonly CONST_SUBNETS_PER_SERVER=10
+
+function get_dir_owner() {
+    _DIR=$1
+    if [ -d "$_DIR" ]; then
+        $BIN_STAT -c '%U:%G' "$_DIR"
+    fi
+}
+
+readonly NAKSU2_WORKDIR_OWNER=$(get_dir_owner "$PATH_NAKSU2_WORKDIR")
 
 function debug_path() {
     if [ -z "$DEBUG" ]; then
@@ -292,12 +303,16 @@ function get_lan_ip_prefix() {
 function write_file() {
     _FILE_FILENAME=$1
     _FILE_CONTENT=$2
+    _FILE_OWNER=$3  # Optional: owner in format 'user:group'
 
     _FILE_PATH=$(dirname "$_FILE_FILENAME")
     if [ ! -d "$_FILE_PATH" ]; then
         debug "Path $_FILE_PATH is missing, creating"
         $BIN_MKDIR -p "$_FILE_PATH"
         exit_if_error $? $EXIT_CODE_BAD_FILE_PATH "Failed to create directory $_FILE_PATH"
+        if [ -n "$_FILE_OWNER" ]; then
+            $BIN_CHOWN "$_FILE_OWNER" "$_FILE_PATH"
+        fi
     else
         debug "Path $_FILE_PATH exists"
     fi
@@ -305,6 +320,10 @@ function write_file() {
     debug "$_FILE_FILENAME: $_FILE_CONTENT"
     $BIN_ECHO -e "$_FILE_CONTENT" >"$_FILE_FILENAME"
     exit_if_error $? $EXIT_CODE_CANNOT_WRITE "Failed to write to $_FILE_FILENAME"
+
+    if [ -n "$_FILE_OWNER" ]; then
+        $BIN_CHOWN "$_FILE_OWNER" "$_FILE_FILENAME"
+    fi
 }
 
 function configure_networkmanager() {
@@ -495,10 +514,10 @@ function download_static_cert() {
     fi
     debug "School $SCHOOL_NUMBER got certificate that is valid until $CERTIFICATE_VALID_UNTIL"
 
-    write_file $PATH_NAKSU2_CERT "$(printf '%s' "$CERTIFICATE" | jq -r .cert)"
-    write_file $PATH_NAKSU2_KEY "$(printf '%s' "$CERTIFICATE" | jq -r .key)"
-    write_file $PATH_NAKSU2_CHAIN "$(printf '%s' "$CERTIFICATE" | jq -r .chain)"
-    write_file $PATH_NAKSU2_FULLCHAIN "$(printf '%s' "$CERTIFICATE" | jq -r .cert,.chain)"
+    write_file $PATH_NAKSU2_CERT "$(printf '%s' "$CERTIFICATE" | jq -r .cert)" "$NAKSU2_WORKDIR_OWNER"
+    write_file $PATH_NAKSU2_KEY "$(printf '%s' "$CERTIFICATE" | jq -r .key)" "$NAKSU2_WORKDIR_OWNER"
+    write_file $PATH_NAKSU2_CHAIN "$(printf '%s' "$CERTIFICATE" | jq -r .chain)" "$NAKSU2_WORKDIR_OWNER"
+    write_file $PATH_NAKSU2_FULLCHAIN "$(printf '%s' "$CERTIFICATE" | jq -r .cert,.chain)" "$NAKSU2_WORKDIR_OWNER"
 
     debug "Stored certificates in directory $PATH_NAKSU2_CERTS_DIR"
 }
@@ -567,7 +586,7 @@ function configure_static_dns_records() {
 
     debug "Configuring domain for KTP"
     debug "This server's domain based on server number ($SERVER_NUMBER) is: $THIS_SERVER_DOMAIN"
-    write_file $PATH_NAKSU2_DOMAIN "$THIS_SERVER_DOMAIN"
+    write_file $PATH_NAKSU2_DOMAIN "$THIS_SERVER_DOMAIN" "$NAKSU2_WORKDIR_OWNER"
 }
 
 function remove_school_host_entries() {
