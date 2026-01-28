@@ -199,6 +199,9 @@ autoinstall:
     - ytl-linux-customize-24
     - ytl-linux-purge-deb
     - snapd
+    # Required for in-place JSON file editing
+    - jq
+    - moreutils
   snaps:
     - name: firefox
   storage:
@@ -213,6 +216,30 @@ autoinstall:
           groups: sudo,adm,cdrom,dip,plugdev,lxd,docker
           lock_passwd: false
           shell: /bin/bash
+      write_files:
+        # Add default Firefox settings
+        - path: /etc/firefox/policies/policies.json
+          content: |
+            {
+              "policies": {
+                "DownloadDirectory": "/home/school/ktp-jako",
+                "Homepage": {
+                  "URL": "https://oma.abitti.fi/",
+                  "StartPage": "homepage"
+                },
+                "NewTabPage": false,
+                "OverrideFirstRunPage": "",
+                "OverridePostUpdatePage": "",
+                "TranslateEnabled": false,
+                "Preferences": {
+                  "dom.input.fallbackUploadDir": "/home/school/ktp-jako"
+                }
+              }
+            }
+          permissions: '0644'
+      runcmd:
+        # Disable keyboard and mouse integration notification popups in VirtualBox
+        - su - school -c 'VBoxManage setextradata global GUI/SuppressMessages remindAboutMouseIntegration,remindAboutAutoCapture'
   ssh:
       install-server: no
   late-commands:
@@ -243,3 +270,7 @@ autoinstall:
     # Set hostname (cannot be set in identity section as we use user-data to create the user)
     # Tried using hostnamectl set-hostname, but it doesn't properly work in curtin for some unexplained reason, so good ol' echo it is
     - echo ktp > /target/etc/hostname
+    # Unpin the non-existing pinned by default Firefox (non-snap) from the taskbar
+    - curtin in-target --target=/target -- bash -c 'jq '\''."pinned-apps".default -= ["firefox.desktop"]'\'' /usr/share/cinnamon/applets/grouped-window-list@cinnamon.org/settings-schema.json | sponge /usr/share/cinnamon/applets/grouped-window-list@cinnamon.org/settings-schema.json'
+    # Pin Firefox (snap), Naksu and Naksu 2 to taskbar
+    - curtin in-target --target=/target -- bash -c 'jq '\''."pinned-apps".default += ["firefox_firefox.desktop", "naksu.desktop", "naksu2.desktop"]'\'' /usr/share/cinnamon/applets/grouped-window-list@cinnamon.org/settings-schema.json | sponge /usr/share/cinnamon/applets/grouped-window-list@cinnamon.org/settings-schema.json'    
