@@ -4,6 +4,7 @@ dynamic = ["version"]
 description = ""
 requires-python = ">=3.12"
 dependencies = [
+    "Paste==3.10.1",
     "validators==0.35.0",
     "waitress>=3.0.0",
     "Werkzeug==3.1.3",

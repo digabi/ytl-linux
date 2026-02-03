@@ -3,11 +3,12 @@
 import argparse
 import pathlib
 
+from waitress import serve
+from paste.translogger import TransLogger
+
 from digabi2_examnet_bouncer.announcer import Announcer
 from digabi2_examnet_bouncer.bouncer import Bouncer
 from digabi2_examnet_bouncer.config import Config
-from waitress import serve
-
 
 parser = argparse.ArgumentParser(
     pathlib.Path(__file__).stem,
@@ -85,7 +86,7 @@ def main():
         if output_file is not None:
             _ = output_file.write_text(info.server)
         bouncer = Bouncer(config, info.server)
-        serve(bouncer, host=config.ipv4_address, port=config.bouncer_port)
+        serve(TransLogger(bouncer), host=config.ipv4_address, port=config.bouncer_port)
 
 
 if __name__ == "__main__":
