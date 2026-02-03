@@ -432,8 +432,14 @@ function restart_networkmanager() {
 }
 
 function wait_for_network_online() {
-    # Wait for NetworkManager to report connectivity before attempting outbound traffic
-    $BIN_NM_ONLINE -s -q --timeout=60 >>"$PATH_DEBUG" 2>&1
+    _TIMEOUT=$1
+
+    if [ -z "$_TIMEOUT" ]; then
+        _TIMEOUT=30
+    fi
+
+    $BIN_NM_ONLINE -s -q --timeout="$_TIMEOUT" >>"$PATH_DEBUG" 2>&1
+
     exit_if_error $? $EXIT_CODE_NETWORK_NOT_ONLINE "Network did not become online within timeout"
 }
 
@@ -643,6 +649,12 @@ if [[ $* == *--remove* ]]; then
     remove_all_settings
     restart_network_services
     restart_docker
+
+    # Using a shorter timeout for removing settings, since if the internal network device does not have DHCP (common in dedicated exam networks,
+    # since this server is acting as DHCP), the internal network connection will never activate. nm-online -s waits for connections to become
+    # active within the timeout, so if the internal network device does not have DHCP, this will never happen and we will always hit the timeout.
+    # As such, use a fairly short timeout to just give NetworkManager a little time to get the working connections up and going.
+    wait_for_network_online 5
 
     print_info "All examnet settings have been removed"
 
