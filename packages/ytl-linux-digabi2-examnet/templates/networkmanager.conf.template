@@ -1,0 +1,10 @@
+# YTL-Linux configuration for NetworkManager
+
+# Prevent NetworkManager from attempting to manage Docker's network devices, causing performance degradation
+[device-ytl0-unmanaged]
+match-device=interface-name:ytl0
+managed=0
+
+[device-docker0-unmanaged]
+match-device=interface-name:docker0
+managed=0
