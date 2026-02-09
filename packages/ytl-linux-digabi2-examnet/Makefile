@@ -1,5 +1,5 @@
 NAME := ytl-linux-digabi2-examnet
-VERSION := 0.0.18
+VERSION := 0.0.19
 
 DEPENDENCIES := \
 	--depends apt \
@@ -57,7 +57,7 @@ deb:
 	cp *.md $(DEB_ROOT)/usr/local/share/doc/$(NAME)/
 
 	fpm -C $(DEB_ROOT)/ -s dir --name $(NAME) --architecture amd64 -t deb --version "$(VERSION)" \
-		 --description "Digabi2 exam network setup tool (PoC)" \
+		 --description "Digabi 2 exam network setup tool" \
 		 --maintainer "abitti@ylioppilastutkinto.fi" \
 		 --vendor "Matriculation Examination Board" \
 		 --url "https://github.com/digabi/ytl-linux" \
