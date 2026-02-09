@@ -24,6 +24,10 @@ deb:
 	mkdir -p $(DEB_ROOT)/etc/ytl-linux-digabi2-examnet/config/
 	cp conf/* $(DEB_ROOT)/etc/ytl-linux-digabi2-examnet/config/
 
+	# NetworkManager configuration
+	mkdir -p $(DEB_ROOT)/etc/NetworkManager/conf.d/
+	cp -r NetworkManager/* $(DEB_ROOT)/etc/NetworkManager/conf.d/
+
 	# Bouncer
 	(cd digabi2-examnet-bouncer \
 		&& \
