@@ -1,5 +1,5 @@
 NAME := ytl-linux-digabi2-examnet
-VERSION := 0.0.18
+VERSION := 0.0.19
 
 DEPENDENCIES := \
 	--depends apt \
@@ -23,6 +23,10 @@ deb:
 	# Examnet configs
 	mkdir -p $(DEB_ROOT)/etc/ytl-linux-digabi2-examnet/config/
 	cp conf/* $(DEB_ROOT)/etc/ytl-linux-digabi2-examnet/config/
+
+	# NetworkManager configuration
+	mkdir -p $(DEB_ROOT)/etc/NetworkManager/conf.d/
+	cp -r NetworkManager/* $(DEB_ROOT)/etc/NetworkManager/conf.d/
 
 	# Bouncer
 	(cd digabi2-examnet-bouncer \
@@ -57,7 +61,7 @@ deb:
 	cp *.md $(DEB_ROOT)/usr/local/share/doc/$(NAME)/
 
 	fpm -C $(DEB_ROOT)/ -s dir --name $(NAME) --architecture amd64 -t deb --version "$(VERSION)" \
-		 --description "Digabi2 exam network setup tool (PoC)" \
+		 --description "Digabi 2 exam network setup tool" \
 		 --maintainer "abitti@ylioppilastutkinto.fi" \
 		 --vendor "Matriculation Examination Board" \
 		 --url "https://github.com/digabi/ytl-linux" \
