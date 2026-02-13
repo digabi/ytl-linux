@@ -8,7 +8,7 @@ if ! ./test-connections.sh; then
   echo "Connectivity tests reported failures (see summary below)."
 fi
 
-latest_log=$(ls -t naksu2-network-test-*.log 2>/dev/null | head -n 1 || true)
+latest_log=$(ls -t exam-server-network-test-*.log 2>/dev/null | head -n 1 || true)
 
 if [[ -z "$latest_log" ]]; then
   echo "Error: no network test log files found." >&2

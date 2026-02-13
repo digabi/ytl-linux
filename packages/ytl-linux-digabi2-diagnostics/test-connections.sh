@@ -3,7 +3,7 @@
 set -euo pipefail
 
 timestamp=$(date +"%Y%m%d-%H%M%S")
-log_file="naksu2-network-test-${timestamp}.log"
+log_file="exam-server-network-test-${timestamp}.log"
 
 # Write all output to both stdout and a log file
 exec > >(tee -a "$log_file") 2>&1
