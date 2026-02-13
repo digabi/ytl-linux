@@ -3,7 +3,7 @@
 set -euo pipefail
 
 echo "Running connectivity tests..."
-if ! ./test-connections.sh; then
+if ! /usr/local/lib/ytl-linux-diagnostics/test-connections.sh; then
   echo
   echo "Connectivity tests reported failures (see summary below)."
 fi
@@ -16,7 +16,7 @@ if [[ -z "$latest_log" ]]; then
 fi
 
 echo "Generating HTML report from: $latest_log"
-./network-log-to-html.sh "$latest_log"
+/usr/local/lib/ytl-linux-diagnostics/network-log-to-html.sh "$latest_log"
 
 html_file="${latest_log}.html"
 

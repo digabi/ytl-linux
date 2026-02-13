@@ -2,7 +2,5 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="/usr/local/lib/ytl-linux-diagnostics"
-cd "$SCRIPT_DIR"
-exec ./run-network-diagnostics.sh "$@"
+exec /usr/local/lib/ytl-linux-diagnostics/run-network-diagnostics.sh "$@"
 
