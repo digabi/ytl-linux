@@ -20,6 +20,9 @@ output_html="${2:-${log_file}.html}"
 
 title="YTL Exam Server - network connection diagnostics report"
 
+# Extract local timestamp from the log, if present
+local_time="$(grep -m1 'Time (local):' "$log_file" 2>/dev/null | sed 's/^[[:space:]]*Time (local):[[:space:]]*//')"
+
 {
   echo "<!doctype html>"
   echo "<html lang=\"en\">"
@@ -46,6 +49,9 @@ title="YTL Exam Server - network connection diagnostics report"
   echo "  <h1>${title}</h1>"
   echo "  <div class=\"meta\">"
   echo "    <div>Source log file: <code>${log_file}</code></div>"
+  if [[ -n "$local_time" ]]; then
+    echo "    <div>Test time (local): ${local_time}</div>"
+  fi
   echo "  </div>"
   echo "  <h2>Summary</h2>"
   echo "  <table class=\"summary\">"

@@ -9,13 +9,13 @@ log_file="exam-server-network-test-${timestamp}.log"
 exec > >(tee -a "$log_file") 2>&1
 
 ENDPOINTS=(
-  "static.abitti.fi|Abitti static versions JSON|https://static.abitti.fi/naksu2/digabi2-versions-v2.json"
-  "linux.abitti.fi|Naksu 2 latest version metadata|https://linux.abitti.fi/meta/naksu2-latest-version.json"
+  "static.abitti.fi|Server versions|https://static.abitti.fi/naksu2/digabi2-versions-v2.json"
+  "linux.abitti.fi|Naksu 2 versions|https://linux.abitti.fi/meta/naksu2-latest-version.json"
   "85t03rgks5.execute-api.eu-north-1.amazonaws.com|Docker compose generator API|https://85t03rgks5.execute-api.eu-north-1.amazonaws.com/production/generate-docker-compose"
   "koe.ylioppilastutkinto.fi|Exam credentials endpoint|https://koe.ylioppilastutkinto.fi/get-credentials"
   "sayo.production.yo-prod.ylioppilastutkinto.fi|School certificate endpoint|https://sayo.production.yo-prod.ylioppilastutkinto.fi/get-school-certificate"
-  "863419159770.dkr.ecr.eu-north-1.amazonaws.com|AWS ECR registry for certificate-creator image|https://863419159770.dkr.ecr.eu-north-1.amazonaws.com/v2/"
-  "s3.eu-north-1.amazonaws.com|AWS S3 eu-north-1 + naksu-logs bucket|https://s3.eu-north-1.amazonaws.com/abitti-prod.abitti-prod-cdk.naksu-logs"
+  "863419159770.dkr.ecr.eu-north-1.amazonaws.com|AWS ECR registry|https://863419159770.dkr.ecr.eu-north-1.amazonaws.com/v2/"
+  "s3.eu-north-1.amazonaws.com|AWS S3 log bucket|https://s3.eu-north-1.amazonaws.com/abitti-prod.abitti-prod-cdk.naksu-logs"
 )
 
 print_ip_addresses() {
