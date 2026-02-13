@@ -18,7 +18,7 @@ fi
 
 output_html="${2:-${log_file}.html}"
 
-title="YTL Exam Server - network connection diagnostics report"
+title="Internet diagnostics for Abitti2"
 
 # Extract local timestamp from the log, if present
 local_time="$(grep -m1 'Time (local):' "$log_file" 2>/dev/null | sed 's/^[[:space:]]*Time (local):[[:space:]]*//')"

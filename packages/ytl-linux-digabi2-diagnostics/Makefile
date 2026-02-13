@@ -3,15 +3,6 @@ VERSION := 1.0.0
 
 DEB_ROOT := deb-root
 
-DEPENDENCIES := \
-	--depends bash \
-	--depends curl \
-	--depends iproute2 \
-	--depends net-tools \
-	--depends bind9-dnsutils \
-	--depends netcat-openbsd \
-	--depends xdg-utils
-
 deb:
 	if [ -d $(DEB_ROOT) ]; then rm -fR $(DEB_ROOT)/; fi
 	if [ -f $(NAME)_$(VERSION)_all.deb ]; then rm $(NAME)_$(VERSION)_all.deb; fi
@@ -32,10 +23,9 @@ deb:
 	chmod 755 $(DEB_ROOT)/usr/local/bin/ytl-network-diagnostics
 
 	fpm -C $(DEB_ROOT)/ -s dir --name $(NAME) --architecture all -t deb --version "$(VERSION)" \
-		--description "Network diagnostics for YTL Linux Digabi2" \
+		--description "Internet diagnostics for Abitti2" \
 		--maintainer "abitti@ylioppilastutkinto.fi" \
 		--vendor "Matriculation Examination Board" \
 		--url "https://github.com/digabi/ytl-linux" \
-		$(DEPENDENCIES) \
 		.
 

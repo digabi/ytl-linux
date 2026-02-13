@@ -20,39 +20,23 @@ ENDPOINTS=(
 
 print_ip_addresses() {
   echo "  IP addresses:"
-
-  # Linux: use ip -o -4 addr show
-  if command -v ip >/dev/null 2>&1; then
-    ip -o -4 addr show 2>/dev/null | awk '
-      {
-        iface=$2
-        addr=$4
-        sub(/\/[0-9]+$/, "", addr)
-        gsub(":", "", iface)
-        print "    " iface ": " addr
-      }
-    '
-    return
+  if ! ip -o -4 addr show 2>/dev/null | awk '
+    {
+      iface=$2
+      addr=$4
+      sub(/\/[0-9]+$/, "", addr)
+      gsub(":", "", iface)
+      print "    " iface ": " addr
+    }
+  '; then
+    echo "    (could not detect IP addresses)"
   fi
-
-  # macOS / BSD: use ifconfig
-  if command -v ifconfig >/dev/null 2>&1; then
-    ifconfig 2>/dev/null | awk '
-      /^[a-zA-Z0-9]/ { iface=$1; gsub(":", "", iface) }
-      /inet / && $2 != "127.0.0.1" {
-        print "    " iface ": " $2
-      }
-    '
-    return
-  fi
-
-  echo "    (could not detect IP addresses)"
 }
 
 now_local=$(date +"%Y-%m-%d %H:%M:%S %Z")
 now_utc=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
 
-echo "Running quick connectivity checks for core Naksu 2 endpoints"
+echo "Running Abitti2 internet connectivity tests"
 echo "  Log file   : $log_file"
 echo "  Time (local): $now_local"
 echo "  Time (UTC)  : $now_utc"
@@ -83,55 +67,25 @@ for entry in "${ENDPOINTS[@]}"; do
   host_failed=0
 
   # 1) DNS resolution
-  if command -v getent >/dev/null 2>&1; then
-    dns_output=$(getent hosts "$host" || true)
-    if [[ -n "${dns_output}" ]]; then
-      dns_ip=$(echo "$dns_output" | awk '{print $1}' | head -n1)
-      echo "DNS  : OK ($dns_ip)"
-      dns_ok=1
-    else
-      echo "DNS  : FAIL (no DNS result)"
-      dns_ok=0
-      host_failed=1
-    fi
-  elif command -v host >/dev/null 2>&1; then
-    dns_output=$(host "$host" 2>/dev/null || true)
-    if echo "$dns_output" | grep -q "has address"; then
-      dns_ip=$(echo "$dns_output" | awk '/has address/ {print $4; exit}')
-      echo "DNS  : OK ($dns_ip)"
-      dns_ok=1
-    else
-      echo "DNS  : FAIL (no DNS result)"
-      dns_ok=0
-      host_failed=1
-    fi
-  else
-    echo "DNS  : SKIP (no getent/host available)"
+  dns_output=$(host "$host" 2>/dev/null || true)
+  if echo "$dns_output" | grep -q "has address"; then
+    dns_ip=$(echo "$dns_output" | awk '/has address/ {print $4; exit}')
+    echo "DNS  : OK ($dns_ip)"
     dns_ok=1
+  else
+    echo "DNS  : FAIL (no DNS result)"
+    dns_ok=0
+    host_failed=1
   fi
 
-  # 2) TCP connectivity to port (fast sanity check)
+  # 2) TCP connectivity
   tcp_ok=1
-  if command -v nc >/dev/null 2>&1; then
-    # Use netcat if available; -z for scan, -v for message, -w for timeout
-    if nc -vz -w 3 "$host" "$port" >/dev/null 2>&1; then
-      echo "TCP  : OK (nc connect succeeded)"
-    else
-      echo "TCP  : FAIL (nc could not connect)"
-      tcp_ok=0
-      host_failed=1
-    fi
-  elif command -v timeout >/dev/null 2>&1; then
-    # Fallback to /dev/tcp with timeout if nc is not available
-    if timeout 3 bash -c "</dev/tcp/$host/$port" 2>/dev/null; then
-      echo "TCP  : OK (port reachable via /dev/tcp)"
-    else
-      echo "TCP  : FAIL (cannot open TCP connection via /dev/tcp)"
-      tcp_ok=0
-      host_failed=1
-    fi
+  if nc -vz -w 3 "$host" "$port" >/dev/null 2>&1; then
+    echo "TCP  : OK (nc connect succeeded)"
   else
-    echo "TCP  : SKIP (no nc or timeout; relying on HTTP test)"
+    echo "TCP  : FAIL (nc could not connect)"
+    tcp_ok=0
+    host_failed=1
   fi
 
   # 3) HTTPS/HTTP request
@@ -145,7 +99,7 @@ for entry in "${ENDPOINTS[@]}"; do
     host_failed=1
   fi
 
-  # Short hint for IT
+  # Short hint
   if [[ "${dns_ok:-1}" -eq 0 ]]; then
     echo "Hint : Check DNS configuration and that this hostname is allowed/resolvable from the server."
   elif [[ "${tcp_ok:-1}" -eq 0 ]]; then

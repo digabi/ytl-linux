@@ -27,12 +27,5 @@ fi
 
 echo "Opening HTML report: $html_file"
 
-if command -v xdg-open >/dev/null 2>&1; then
-  xdg-open "$html_file" >/dev/null 2>&1 || true
-elif command -v open >/dev/null 2>&1; then
-  open "$html_file" >/dev/null 2>&1 || true
-else
-  echo "Could not auto-open the report. Please open this file in a browser:"
-  echo "  $html_file"
-fi
+open "$html_file" >/dev/null 2>&1 || true
 
