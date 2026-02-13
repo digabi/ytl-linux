@@ -16,7 +16,6 @@ ENDPOINTS=(
   "sayo.production.yo-prod.ylioppilastutkinto.fi|School certificate endpoint|https://sayo.production.yo-prod.ylioppilastutkinto.fi/get-school-certificate"
   "863419159770.dkr.ecr.eu-north-1.amazonaws.com|AWS ECR registry for certificate-creator image|https://863419159770.dkr.ecr.eu-north-1.amazonaws.com/v2/"
   "s3.eu-north-1.amazonaws.com|AWS S3 eu-north-1 + naksu-logs bucket|https://s3.eu-north-1.amazonaws.com/abitti-prod.abitti-prod-cdk.naksu-logs"
-  "jotain-puppua.fi|TEST: intentionally failing domain|https://jotain-puppua.fi/"
 )
 
 print_ip_addresses() {

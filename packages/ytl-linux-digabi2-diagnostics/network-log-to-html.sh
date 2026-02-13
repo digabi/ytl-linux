@@ -50,7 +50,7 @@ title="Naksu 2 network connectivity report"
   echo "  <h2>Summary</h2>"
   echo "  <table class=\"summary\">"
   echo "    <thead>"
-  echo "      <tr><th>Status</th><th>Host</th><th>Description</th><th>DNS</th><th>TCP</th><th>HTTP</th></tr>"
+  echo "      <tr><th>Status</th><th>Host</th><th>Port (outbound)</th><th>Description</th><th>DNS</th><th>TCP</th><th>HTTP</th></tr>"
   echo "    </thead>"
   echo "    <tbody>"
   awk '
@@ -67,18 +67,20 @@ title="Naksu 2 network connectivity report"
         gsub(/&/, "\\&amp;", dns);  gsub(/</, "\\&lt;", dns);  gsub(/>/, "\\&gt;", dns);
         gsub(/&/, "\\&amp;", tcp);  gsub(/</, "\\&lt;", tcp);  gsub(/>/, "\\&gt;", tcp);
         gsub(/&/, "\\&amp;", http); gsub(/</, "\\&lt;", http); gsub(/>/, "\\&gt;", http);
+        gsub(/&/, "\\&amp;", port); gsub(/</, "\\&lt;", port); gsub(/>/, "\\&gt;", port);
 
         statusClass = (overall == "ok") ? "status-ok" : "status-fail";
         rowClass = (overall == "ok") ? "ok" : "fail";
         statusText = (overall == "ok") ? "OK" : "FAIL";
         dot = (overall == "ok") ? "&#9679;" : "&#9679;";
 
-        printf "      <tr class=\"%s\"><td><span class=\"status-dot %s\">%s %s</span></td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n",
-               rowClass, statusClass, dot, statusText, host, desc, dns, tcp, http;
+        printf "      <tr class=\"%s\"><td><span class=\"status-dot %s\">%s %s</span></td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n",
+               rowClass, statusClass, dot, statusText, host, port, desc, dns, tcp, http;
       }
-      host = substr($0, 8); desc=""; dns=""; tcp=""; http="";
+      host = substr($0, 8); desc=""; port=""; dns=""; tcp=""; http="";
     }
     /^Desc : / { desc = substr($0, 8); }
+    /^Port : / { port = substr($0, 8); }
     /^DNS  : / { dns  = substr($0, 8); }
     /^TCP  : / { tcp  = substr($0, 8); }
     /^HTTP : / { http = substr($0, 8); }
@@ -94,14 +96,15 @@ title="Naksu 2 network connectivity report"
         gsub(/&/, "\\&amp;", dns);  gsub(/</, "\\&lt;", dns);  gsub(/>/, "\\&gt;", dns);
         gsub(/&/, "\\&amp;", tcp);  gsub(/</, "\\&lt;", tcp);  gsub(/>/, "\\&gt;", tcp);
         gsub(/&/, "\\&amp;", http); gsub(/</, "\\&lt;", http); gsub(/>/, "\\&gt;", http);
+        gsub(/&/, "\\&amp;", port); gsub(/</, "\\&lt;", port); gsub(/>/, "\\&gt;", port);
 
         statusClass = (overall == "ok") ? "status-ok" : "status-fail";
         rowClass = (overall == "ok") ? "ok" : "fail";
         statusText = (overall == "ok") ? "OK" : "FAIL";
         dot = (overall == "ok") ? "&#9679;" : "&#9679;";
 
-        printf "      <tr class=\"%s\"><td><span class=\"status-dot %s\">%s %s</span></td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n",
-               rowClass, statusClass, dot, statusText, host, desc, dns, tcp, http;
+        printf "      <tr class=\"%s\"><td><span class=\"status-dot %s\">%s %s</span></td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n",
+               rowClass, statusClass, dot, statusText, host, port, desc, dns, tcp, http;
       }
     }
   ' "$log_file"
