@@ -6,3 +6,33 @@ sleep-display-ac=0
 sleep-display-battery=0
 sleep-inactive-ac-timeout=0
 sleep-inactive-battery-timeout=0
+
+# Disable lid and power button actions.
+lid-close-battery-action='nothing'
+lid-close-ac-action='nothing'
+button-power='nothing'
+
+# Disable screensaver.
+[org/cinnamon/desktop/session]
+idle-delay=uint32 0
+
+# Disable sleep timeouts as well as lid and power button actions on login screen before first login.
+# Before the first Cinnamon session is started after boot, the power settings of Unity Greeter (login screen) are in effect.
+# This causes the computer to sleep if left sitting in login screen after install or boot.
+# Additionally, the computer might not recover from this sleep but show a black screen instead after waking up.
+# The only solution is to reboot the computer by long-pressing the power button or by going blind to e.g. tty2 using Ctrl+Alt+F2 and then rebooting using Ctrl+Alt+Delete.
+[com/canonical/unity/settings-daemon/plugins/power]
+sleep-inactive-ac-timeout=0
+sleep-inactive-battery-timeout=0
+lid-close-battery-action='nothing'
+lid-close-ac-action='nothing'
+power-button-action='nothing'
+
+# Do the same just in case for Gnome settings. This might not be necessary, but won't hurt either.
+# The combination of Unity Greeter, Cinnamon Desktop and LightDM Display Manager is somewhat unstable and settings from multiple components can conflict.
+[org/gnome/settings-daemon/plugins/power]
+sleep-inactive-ac-timeout=0
+sleep-inactive-battery-timeout=0
+lid-close-battery-action='nothing'
+lid-close-ac-action='nothing'
+power-button-action='nothing'
