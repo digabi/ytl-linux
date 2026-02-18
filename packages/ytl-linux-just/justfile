@@ -1,0 +1,10 @@
+[private]
+default:
+    @just --list --unsorted
+
+[private]
+the-needful: migrate-package-keys
+
+# Installs public keys of package sources to supported location
+migrate-package-keys:
+    ./scripts/2026-02-18_migrate-package-keys.py
