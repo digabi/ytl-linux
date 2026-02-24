@@ -2,6 +2,7 @@
 default:
     @just --list --unsorted
 
+# A group of tasks essential for every healthy YTL Linux installation.
 [private]
 the-needful: migrate-package-keys
 

@@ -2,7 +2,7 @@
 
 import pathlib
 
-sources = "docker", "virtualbox-oracle", "ytl-linux"
+SOURCE_NAMES = "docker", "virtualbox-oracle", "ytl-linux"
 
 
 def merge(source: str, key: str):
@@ -17,25 +17,50 @@ def merge(source: str, key: str):
     return "\n".join(inner())
 
 
+class Source:
+    ETC_APT = pathlib.Path("/etc/apt")
+    SOURCES_LIST_D = ETC_APT / "sources.list.d"
+    TRUSTED_GPG_D = ETC_APT / "trusted.gpg.d"
+
+    def __init__(self, name: str):
+        self.name = name
+        self.sources_target = self.SOURCES_LIST_D / f"{name}.sources"
+        self.sources_backup = self.SOURCES_LIST_D / f"{name}.sources.orig"
+        self.key_target = self.TRUSTED_GPG_D / f"{name}.list.asc"
+        self.key_backup = self.TRUSTED_GPG_D / f"{name}.list.asc.orig"
+
+    def is_present(self):
+        return self.sources_target.is_file() and self.key_target.is_file()
+
+    def is_migrated(self):
+        return self.sources_backup.is_file() and self.key_backup.is_file()
+
+    def migrate(self):
+        if self.is_migrated():
+            print(f"{self.name}: already migrated")
+            return
+
+        sources_content = self.sources_target.read_text()
+        key_content = self.key_target.read_text()
+
+        self.sources_target.rename(self.sources_backup)
+        print(f"Renamed '{self.sources_target}' -> '{self.sources_backup}'")
+
+        self.key_target.rename(self.key_backup)
+        print(f"Renamed '{self.key_target}' -> '{self.key_backup}'")
+
+        self.sources_target.write_text(merge(sources_content, key_content))
+        print(f"Updated '{self.sources_target}' with public key")
+
+
 if __name__ == "__main__":
-    etc_apt = pathlib.Path("/etc/apt")
-    sources_list_d = etc_apt / "sources.list.d"
-    trusted_gpg_d = etc_apt / "trusted.gpg.d"
+    sources = [Source(name) for name in SOURCE_NAMES]
+
     for src in sources:
-        src_file = sources_list_d / f"{src}.sources"
-        src_orig = sources_list_d / f"{src}.sources.orig"
-        key_file = trusted_gpg_d / f"{src}.list.asc"
-        key_orig = trusted_gpg_d / f"{src}.list.asc.orig"
-        migrated = src_orig.is_file() and key_orig.is_file()
-        neednt_migrate = not key_file.is_file() and not key_orig.is_file()
-        if migrated or neednt_migrate:
-            print(f"{src}: no need to migrate")
-            continue
-        source = src_file.read_text()
-        key = key_file.read_text()
-        src_file.rename(src_orig)
-        print(f"moved {src_file} -> {src_orig}")
-        key_file.rename(key_orig)
-        print(f"moved {key_file} -> {key_orig}")
-        src_file.write_text(merge(source, key))
-        print(f"updated {src_file} with key")
+        if not src.is_migrated() and not src.is_present():
+            raise SystemExit(
+                f"Missing package source {src.name!r}, refusing to continue"
+            )
+
+    for src in sources:
+        src.migrate()
