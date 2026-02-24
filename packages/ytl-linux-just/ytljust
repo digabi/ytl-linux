@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-
-/usr/bin/just --justfile /usr/local/share/ytl-linux-just/justfile "${@}"
