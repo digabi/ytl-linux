@@ -71,6 +71,14 @@ Install and set up [git-lfs](https://git-lfs.com).
 3. `git push`
 4. That's it. Naksu will read the latest version from [https://linux.abitti.fi/meta/naksu2-latest-version.json](https://linux.abitti.fi/meta/naksu2-latest-version.json)
 
+## AnyDesk
+
+Install and set up [git-lfs](https://git-lfs.com).
+
+1. Run `scripts/update-anydesk.sh` to download the latest version of the AnyDesk deb from GitHub Releases.
+2. `git add .` and `git commit -m "Update AnyDesk to xxxx-xx-xx-x"`
+3. `git push`
+
 ## Building the image
 
 ### Building the image locally
