@@ -1,5 +1,5 @@
 NAME := ytl-linux-tasks
-VERSION := 0.1.0
+VERSION := 0.2.0
 
 DEPENDENCIES := --depends just
 
@@ -19,5 +19,7 @@ deb:
 		--vendor "Matriculation Examination Board" \
 		--url "https://github.com/digabi/ytl-linux" \
 		--deb-no-default-config-files \
+		--after-install after-install.sh \
+		--after-upgrade after-install.sh \
 		$(DEPENDENCIES) \
 		.
