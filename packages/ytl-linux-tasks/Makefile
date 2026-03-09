@@ -11,7 +11,7 @@ deb:
 	mkdir -p deb-root
 	install -D -m 644 justfile deb-root/usr/local/share/ytl-linux-tasks/justfile
 	install -D -m 755 ytl-tasks deb-root/usr/local/bin/ytl-tasks
-	install -D -m 644 ytl-tasks-maintentance.service deb-root/etc/systemd/system/ytl-tasks-maintenance.service
+	install -D -m 644 ytl-tasks-maintenance.service deb-root/etc/systemd/system/ytl-tasks-maintenance.service
 	cp -r scripts deb-root/usr/local/share/ytl-linux-tasks/scripts
 
 	fpm -C deb-root/ -s dir --name $(NAME) --architecture all -t deb --version "$(VERSION)" \
@@ -21,6 +21,5 @@ deb:
 		--url "https://github.com/digabi/ytl-linux" \
 		--deb-no-default-config-files \
 		--after-install after-install.sh \
-		--after-upgrade after-install.sh \
 		$(DEPENDENCIES) \
 		.
