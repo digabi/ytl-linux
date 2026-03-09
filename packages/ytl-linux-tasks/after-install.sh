@@ -2,4 +2,3 @@
 
 systemctl daemon-reload
 systemctl enable ytl-tasks-maintenance.service
-systemctl start ytl-tasks-maintenance.service
