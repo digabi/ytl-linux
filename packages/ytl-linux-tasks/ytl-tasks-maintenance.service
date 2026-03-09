@@ -1,0 +1,9 @@
+[Unit]
+Description=YTL Linux maintenance tasks
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/ytl-tasks maintenance
+
+[Install]
+WantedBy=multi-user.target

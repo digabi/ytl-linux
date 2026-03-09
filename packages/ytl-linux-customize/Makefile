@@ -1,8 +1,8 @@
-VERSION := 1.1.0
+VERSION := 1.2.0
 
 # Dependencies which are not related to any code in the
 DEPENDENCIES_META := --depends virtualbox-7.0 --depends ethtool --depends exfat-fuse --depends update-manager --depends gnome-icon-theme --depends dconf-cli \
-	--depends anydesk-meb
+	--depends anydesk-meb --depends ytl-linux-tasks
 RECOMMENDS_META := --deb-recommends digabi-usb-monster
 
 DEPENDENCIES_NAKSU := --depends wget --depends zenity
