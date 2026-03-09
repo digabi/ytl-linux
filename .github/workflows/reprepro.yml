@@ -32,6 +32,16 @@ jobs:
           for package in packages/*/; do
             make -C $package deb
           done
+      - name: Look up AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-north-1
+      - name: Fetch diagnostics tool .debs from S3
+        run: |
+          mkdir -p diagnostics
+          aws s3 sync --exclude "*" --include "*.deb" s3://ytl-linux/diagnostics/ diagnostics/
       - name: Build repository
         env:
             SKEY: ${{ secrets.YTL_LINUX_PACKAGE_SIGNING_PRIVATE_KEY }}
@@ -43,16 +53,9 @@ jobs:
             echo "Signing with key 0x$keyid"
             echo "SignWith: 0x$keyid" >> reprepro/conf/distributions
             for dir in debs/ ytl-linux-customize/; do [ -d $dir ] || mkdir $dir; done
-            find debs/ packages/ -name '*.deb' | while read deb; do echo $deb; reprepro -b reprepro includedeb ytl-linux $deb; done
+            find debs/ packages/ diagnostics/ -name '*.deb' | while read deb; do echo $deb; reprepro -b reprepro includedeb ytl-linux $deb; done
             # also make signing key available on the web site
             echo "$SPUBKEY" > apt-signing-key.pub
-      - name: Look up AWS credentials
-        if: ${{ github.ref == 'refs/heads/main' || github.event.inputs.publish == 'true' }}
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-north-1
       - name: Copy repository to AWS S3
         if: ${{ github.ref == 'refs/heads/main' || github.event.inputs.publish == 'true' }}
         run: |
