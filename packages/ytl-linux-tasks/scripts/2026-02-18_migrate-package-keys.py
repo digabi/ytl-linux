@@ -10,7 +10,7 @@ def migration_necessary():
     try:
         info = platform.freedesktop_os_release()
         return info["VERSION_ID"] >= "24.04"
-    except OSError, KeyError:
+    except (OSError, KeyError):
         return False
 
 
