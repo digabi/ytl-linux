@@ -1,8 +1,17 @@
 #!/usr/bin/env python3
 
 import pathlib
+import platform
 
 SOURCE_NAMES = "docker", "virtualbox-oracle", "ytl-linux"
+
+
+def migration_necessary():
+    try:
+        info = platform.freedesktop_os_release()
+        return info["VERSION_ID"] >= "24.04"
+    except OSError, KeyError:
+        return False
 
 
 def merge(source: str, key: str):
@@ -54,6 +63,9 @@ class Source:
 
 
 if __name__ == "__main__":
+    if not migration_necessary():
+        exit()
+
     sources = [Source(name) for name in SOURCE_NAMES]
 
     for src in sources:

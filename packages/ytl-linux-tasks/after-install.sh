@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
 
-/usr/local/bin/ytl-tasks the-needful
+systemctl daemon-reload
+systemctl enable ytl-tasks-maintenance.service
+systemctl start ytl-tasks-maintenance.service

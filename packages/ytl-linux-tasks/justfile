@@ -4,8 +4,8 @@ default:
 
 # A group of tasks essential for every healthy YTL Linux installation.
 [private]
-the-needful: migrate-package-keys
+maintenance: migrate-package-keys
 
 # Installs public keys of package sources to supported location
 migrate-package-keys:
-    ./scripts/2026-02-18_migrate-package-keys.py
+    './scripts/2026-02-18_migrate-package-keys.py'
