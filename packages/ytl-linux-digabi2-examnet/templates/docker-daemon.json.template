@@ -1,3 +1,7 @@
 {
-  "dns": ["${DOCKER_BRIDGE_NETWORK_DNS_RESOLVER_IP}"]
+  "dns": ["${DOCKER_BRIDGE_NETWORK_DNS_RESOLVER_IP}"],
+  "default-address-pools":
+  [
+    {"base": "${DOCKER_BRIDGE_NETWORK_POOL_BASE_IP}/16", "size":26}
+  ]
 }
