@@ -51,6 +51,7 @@ readonly PATH_DOCKER_DAEMON_CONF_TEMPLATE=$PATH_TEMPLATES/docker-daemon.json.tem
 readonly PATH_NAKSU2_WORKDIR="${NAKSU2_WORKDIR:-/home/school/.local/share/digabi/naksu2}"
 readonly PATH_NAKSU2_CERTS_DIR="$PATH_NAKSU2_WORKDIR/certs"
 readonly PATH_NAKSU2_CERT="$PATH_NAKSU2_CERTS_DIR/cert.pem"
+readonly PATH_NAKSU2_KEY="$PATH_NAKSU2_CERTS_DIR/key.pem"
 readonly PATH_NAKSU2_DOMAIN="$PATH_NAKSU2_CERTS_DIR/domain.txt"
 readonly PATH_EXAMNET_CONFIG=/etc/ytl-linux-digabi2-examnet/config/
 readonly PATH_SERVER_FRIENDLY_NAME_CONF=$PATH_EXAMNET_CONFIG/server-friendly-name
@@ -577,12 +578,11 @@ if [[ $* == *--daemon* ]]; then
     fi
 
     $BIN_DIGABI2_EXAMNET_BOUNCER \
-        --friendly-name-file $PATH_SERVER_FRIENDLY_NAME_CONF \
-        --dns-hostname-file $PATH_NAKSU2_DOMAIN \
+        --friendly-names-file $PATH_SERVER_FRIENDLY_NAME_CONF \
         --ncsi-hostnames-file $PATH_EXAMNET_CONFIG/ncsi-hostnames \
-        --mdns-hostname-output-file $PATH_EXAMNET_CONFIG/mdns-hostname-output \
-        --bind-addr "$_LAN_DEVICE_IP" \
-        --bind-port 80
+        --tls-key-file $PATH_NAKSU2_KEY \
+        --tls-cert-file $PATH_NAKSU2_CERT \
+        --dns-hostname-file $PATH_NAKSU2_DOMAIN
 
     # We're not supposed to get here, so this would indicate the daemon process exited
     exit_script $EXIT_CODE_DAEMON_EXITED_UNEXPECTEDLY

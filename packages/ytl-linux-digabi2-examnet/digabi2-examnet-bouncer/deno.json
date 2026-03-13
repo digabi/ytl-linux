@@ -1,0 +1,10 @@
+{
+  "tasks": {
+    "dev": "deno run --allow-net --allow-read --watch src/main.ts"
+  },
+  "imports": {
+    "@gabriel/ts-pattern": "jsr:@gabriel/ts-pattern@^5.9.0",
+    "@std/cli": "jsr:@std/cli@^1.0.28",
+    "@zod/zod": "jsr:@zod/zod@^4.3.6"
+  }
+}

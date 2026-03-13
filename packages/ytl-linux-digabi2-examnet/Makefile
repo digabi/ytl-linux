@@ -29,20 +29,7 @@ deb:
 	cp -r NetworkManager/* $(DEB_ROOT)/etc/NetworkManager/conf.d/
 
 	# Bouncer
-	(cd digabi2-examnet-bouncer \
-		&& \
-		docker build \
-			-f Dockerfile.build \
-			--platform linux/amd64 \
-			-t registry.invalid/digabi2-examnet-bouncer-build \
-			. \
-		&& \
-		docker run \
-			--rm \
-			--mount type=bind,src=$(shell pwd)/$(DEB_ROOT)/usr/local/sbin/,dst=/out \
-			registry.invalid/digabi2-examnet-bouncer-build \
-				install -o $(shell id -u) /dist/digabi2-examnet-bouncer /out \
-		)
+	(cd digabi2-examnet-bouncer && deno compile --allow-net --allow-read --target x86_64-unknown-linux-gnu --output $(DEB_ROOT)/usr/local/sbin/digabi2-examnet-bouncer)
 
 	chmod 755 $(DEB_ROOT)/usr/local/sbin/*
 
