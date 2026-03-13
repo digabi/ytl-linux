@@ -28,6 +28,7 @@ readonly EXIT_CODE_MISSING_CERTIFICATE=24             # Cannot find certificate 
 readonly EXIT_CODE_INVALID_FRIENDLY_NAME=25           # Friendly name contains illegal characters
 readonly EXIT_CODE_NETWORK_NOT_ONLINE=27              # Network did not come up within timeout
 readonly EXIT_CODE_CANNOT_RUN_ALIAS_DISCOVERY=28      # Cannot run alias discovery due to missing configuration
+readonly EXIT_CODE_FAILED_TO_CONFIGURE_DOCKER=29      # Failed to configure or restart Docker
 
 readonly SCRIPT_PATH=$0
 readonly PARAM_NET_DEVICE_WAN=$1
@@ -50,9 +51,6 @@ readonly PATH_DNSMASQ_CONF=$PATH_DNSMASQ/ytl-linux.conf
 readonly PATH_DNSMASQ_CONF_TEMPLATE=$PATH_TEMPLATES/dnsmasq.conf.template
 readonly PATH_DNSMASQ_STATIC_DNS_CONF=$PATH_DNSMASQ/ytl-linux-static-dns-records.conf
 readonly PATH_DNSMASQ_KTP_ALIASES_CONF=$PATH_DNSMASQ/ytl-linux-ktp-aliases.conf
-readonly PATH_DOCKER=/etc/docker
-readonly PATH_DOCKER_DAEMON_CONF=$PATH_DOCKER/daemon.json
-readonly PATH_DOCKER_DAEMON_CONF_TEMPLATE=$PATH_TEMPLATES/docker-daemon.json.template
 readonly PATH_NAKSU2_WORKDIR="${NAKSU2_WORKDIR:-/home/school/.local/share/digabi/naksu2}"
 readonly PATH_NAKSU2_CERTS_DIR="$PATH_NAKSU2_WORKDIR/certs"
 readonly PATH_NAKSU2_CERT="$PATH_NAKSU2_CERTS_DIR/cert.pem"
@@ -292,25 +290,6 @@ function check_server_number() {
 
 function get_ip_prefix() {
     echo "${1%.*.*}."
-}
-
-function get_available_ip_range() {
-    _ALLOWED_IP_RANGES=("10.0." "192.168." "172.17.")
-
-    for range in "${_ALLOWED_IP_RANGES[@]}"; do
-        _USED=false
-        for reserved in "$@"; do
-            if [[ $reserved == $range* ]]; then
-                _USED=true
-                break
-            fi
-        done
-        if [[ "$_USED" == false ]]; then
-            # return the first available
-            echo "$range"
-            return
-        fi
-    done
 }
 
 function write_file() {
@@ -756,12 +735,6 @@ export SERVER_NUMBER
 IP_LAN_PREFIX=$(get_ip_prefix "$IP_LAN")
 export IP_LAN_PREFIX
 
-DOCKER_NETWORK_PREFIX=$(get_available_ip_range "$IP_WAN" "$IP_LAN")
-DOCKER_NETWORK_DNS_RESOLVER_IP="$DOCKER_NETWORK_PREFIX".0.1
-export DOCKER_NETWORK_DNS_RESOLVER_IP
-DOCKER_NETWORK_POOL_BASE_IP="$DOCKER_NETWORK_PREFIX".0.0
-export DOCKER_NETWORK_POOL_BASE_IP
-
 debug "SUBNETS_PER_SERVER: $CONST_SUBNETS_PER_SERVER"
 
 SERVER_HOST_NUMBER=$((SERVER_NUMBER * CONST_SUBNETS_PER_SERVER))
@@ -825,7 +798,6 @@ debug "SERVER_FRIENDLY_NAME: $SERVER_FRIENDLY_NAME"
 export SERVER_FRIENDLY_NAME
 
 write_file $PATH_RESOLVED_CONF "$(envsubst < $PATH_RESOLVED_CONF_TEMPLATE)"
-write_file $PATH_DOCKER_DAEMON_CONF "$(envsubst < $PATH_DOCKER_DAEMON_CONF_TEMPLATE)"
 
 remove_dnsmasq_settings
 export FRIENDLY_NAME_SEARCH_DOMAIN
@@ -841,6 +813,9 @@ enable_systemd_services
 restart_systemd_resolved
 restart_dnsmasq
 restart_examnet_daemon
-restart_docker
+
+debug "Configuring Docker daemon"
+ytl-linux-digabi2-docker-configure.sh "${IP_WAN}" "${IP_LAN}"
+exit_if_error $? $EXIT_CODE_FAILED_TO_CONFIGURE_DOCKER "Failed to configure and restart Docker"
 
 print_info "Changes made successfully"
