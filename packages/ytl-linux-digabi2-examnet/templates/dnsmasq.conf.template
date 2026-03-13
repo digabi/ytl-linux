@@ -1,3 +1,6 @@
+# Enable full query logging to assist debugging
+log-queries=extra
+
 # Bind to LAN device and Docker bridge interfaces
 interface=${NET_DEVICE_LAN}
 interface=docker0
