@@ -2,6 +2,6 @@
   "dns": ["${DOCKER_NETWORK_DNS_RESOLVER_IP}"],
   "default-address-pools":
   [
-    {"base": "${DOCKER_NETWORK_POOL_BASE_IP}/16", "size":26}
+    {"base": "${DOCKER_NETWORK_POOL_BASE_IP}/16", "size":24}
   ]
 }
