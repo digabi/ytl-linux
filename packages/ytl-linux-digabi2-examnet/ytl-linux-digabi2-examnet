@@ -36,6 +36,7 @@ readonly PARAM_SERVER_FRIENDLY_NAME=$4
 
 readonly NETWORK_DEVICE_FILTER_RE="^docker|^br|^veth|^lo$"
 readonly DOCKER_BRIDGE_NETWORK_DNS_RESOLVER_IP="172.17.0.1"
+readonly FRIENDLY_NAME_SEARCH_DOMAIN="internal"
 
 readonly PATH_TEMPLATES=/etc/ytl-linux-digabi2-examnet/templates
 readonly PATH_RESOLVED=/etc/systemd/resolved.conf.d
@@ -756,6 +757,7 @@ write_file $PATH_RESOLVED_CONF "$(envsubst < $PATH_RESOLVED_CONF_TEMPLATE)"
 write_file $PATH_DOCKER_DAEMON_CONF "$(envsubst < $PATH_DOCKER_DAEMON_CONF_TEMPLATE)"
 
 remove_dnsmasq_settings
+export FRIENDLY_NAME_SEARCH_DOMAIN
 write_file $PATH_DNSMASQ_CONF "$(envsubst < $PATH_DNSMASQ_CONF_TEMPLATE)"
 
 if [ $USE_STATIC_LOCAL_DNS -gt 0 ]; then
