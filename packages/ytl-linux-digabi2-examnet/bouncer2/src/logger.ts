@@ -1,7 +1,6 @@
 import pino from 'pino'
 import pretty from 'pino-pretty'
-import process from 'node:process'
 
-const logger = pino({ level: process.env.LOG_LEVEL ?? 'debug' }, pretty())
+const logger = pino({ level: Deno.env.get('LOG_LEVEL') ?? 'debug' }, pretty())
 
 export default logger
