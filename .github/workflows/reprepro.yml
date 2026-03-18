@@ -26,6 +26,7 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
+      - uses: extractions/setup-just@v3
       - name: Checkout code
         uses: actions/checkout@v4
         with:

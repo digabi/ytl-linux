@@ -1,0 +1,19 @@
+{
+  "tasks": {
+    "dev": "deno run --allow-net --allow-read --allow-write --allow-env --allow-sys --allow-run=\"systemctl\" --watch src/main.ts",
+    "tests": "deno test --allow-net --allow-read --allow-write --allow-env --allow-sys --allow-run=\"systemctl\" tests/**/*.test.ts",
+    "build": "deno compile --allow-net --allow-read --allow-write --allow-env --allow-sys --allow-run=\"systemctl\" --target x86_64-unknown-linux-gnu --output ../deb-root/usr/local/libexec/ytl-linux-digabi2-examnet/discovery src/main.ts"
+  },
+  "imports": {
+    "@std/cli": "jsr:@std/cli@^1.0.28",
+    "@std/expect": "jsr:@std/expect@^1.0.18",
+    "@std/fs": "jsr:@std/fs@^1.0.23",
+    "@std/http": "jsr:@std/http@^1.0.25",
+    "@std/testing": "jsr:@std/testing@^1.0.17",
+    "@types/lodash": "npm:@types/lodash@^4.17.24",
+    "@zod/zod": "jsr:@zod/zod@^4.3.6",
+    "lodash": "npm:lodash@^4.17.23",
+    "pino": "npm:pino@^10.3.1",
+    "pino-pretty": "npm:pino-pretty@^13.1.3"
+  }
+}

@@ -1,0 +1,9 @@
+[Unit]
+Description=Periodically scan for aliases in Digabi 2 exam network
+
+[Timer]
+AccuracySec=1seconds
+OnUnitInactiveSec=1minutes
+
+[Install]
+WantedBy=multi-user.target

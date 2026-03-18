@@ -27,6 +27,7 @@ readonly EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE=23     # Cannot change service st
 readonly EXIT_CODE_MISSING_CERTIFICATE=24             # Cannot find certificate (e.g. download failure, missing file, invalid API key)
 readonly EXIT_CODE_INVALID_FRIENDLY_NAME=25           # Friendly name contains illegal characters
 readonly EXIT_CODE_NETWORK_NOT_ONLINE=27              # Network did not come up within timeout
+readonly EXIT_CODE_CANNOT_RUN_ALIAS_DISCOVERY=28      # Cannot run alias discovery due to missing configuration
 
 readonly SCRIPT_PATH=$0
 readonly PARAM_NET_DEVICE_WAN=$1
@@ -37,6 +38,8 @@ readonly PARAM_SERVER_FRIENDLY_NAME=$4
 readonly NETWORK_DEVICE_FILTER_RE="^docker|^br|^veth|^lo$"
 readonly DOCKER_BRIDGE_NETWORK_DNS_RESOLVER_IP="172.17.0.1"
 readonly FRIENDLY_NAME_SEARCH_DOMAIN="internal"
+readonly DISCOVERY_PORT=26464
+readonly BOUNCER_PORT=80
 
 readonly PATH_TEMPLATES=/etc/ytl-linux-digabi2-examnet/templates
 readonly PATH_RESOLVED=/etc/systemd/resolved.conf.d
@@ -46,6 +49,7 @@ readonly PATH_DNSMASQ=/etc/dnsmasq.d
 readonly PATH_DNSMASQ_CONF=$PATH_DNSMASQ/ytl-linux.conf
 readonly PATH_DNSMASQ_CONF_TEMPLATE=$PATH_TEMPLATES/dnsmasq.conf.template
 readonly PATH_DNSMASQ_STATIC_DNS_CONF=$PATH_DNSMASQ/ytl-linux-static-dns-records.conf
+readonly PATH_DNSMASQ_KTP_ALIASES_CONF=$PATH_DNSMASQ/ytl-linux-ktp-aliases.conf
 readonly PATH_DOCKER=/etc/docker
 readonly PATH_DOCKER_DAEMON_CONF=$PATH_DOCKER/daemon.json
 readonly PATH_DOCKER_DAEMON_CONF_TEMPLATE=$PATH_TEMPLATES/docker-daemon.json.template
@@ -73,6 +77,7 @@ readonly BIN_SED=/usr/bin/sed
 readonly BIN_XARGS=/usr/bin/xargs
 readonly BIN_OPENSSL=/usr/bin/openssl
 readonly BIN_DIGABI2_EXAMNET_BOUNCER=/usr/local/libexec/ytl-linux-digabi2-examnet/bouncer
+readonly BIN_DIGABI2_EXAMNET_DISCOVERY=/usr/local/libexec/ytl-linux-digabi2-examnet/discovery
 readonly BIN_STAT=/usr/bin/stat
 readonly BIN_CHOWN=/usr/bin/chown
 
@@ -129,6 +134,7 @@ function print_usage() {
     $BIN_ECHO "usage: $SCRIPT_PATH wan-network-device local-network-device server-number [custom-server-name] [--use-static-local-dns]" >&2
     $BIN_ECHO "       $SCRIPT_PATH --gui" >&2
     $BIN_ECHO "       $SCRIPT_PATH --daemon" >&2
+    $BIN_ECHO "       $SCRIPT_PATH --discover" >&2
     $BIN_ECHO "       $SCRIPT_PATH --remove" >&2
     $BIN_ECHO "" >&2
     $BIN_ECHO "example: $SCRIPT_PATH eth0 eth1 1" >&2
@@ -442,6 +448,16 @@ function restart_examnet_daemon() {
         $BIN_SYSTEMCTL restart ytl-linux-digabi2-examnet.service >>"$PATH_DEBUG" 2>&1
         exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to restart ytl-linux-digabi2-examnet.service"
     fi
+
+    if [[ "$(systemctl is-enabled ytl-linux-digabi2-examnet-discovery.timer)" == "enabled" ]]; then
+        $BIN_SYSTEMCTL restart ytl-linux-digabi2-examnet-discovery.timer >>"$PATH_DEBUG" 2>&1
+        exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to restart ytl-linux-digabi2-examnet-discovery.timer"
+    fi
+
+    if [[ "$(systemctl is-enabled ytl-linux-digabi2-examnet-discovery.service)" == "enabled" ]]; then
+        $BIN_SYSTEMCTL restart ytl-linux-digabi2-examnet-discovery.service >>"$PATH_DEBUG" 2>&1
+        exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to restart ytl-linux-digabi2-examnet-discovery.service"
+    fi
 }
 
 function restart_network_services() {
@@ -457,6 +473,12 @@ function enable_systemd_services() {
 
     $BIN_SYSTEMCTL enable dnsmasq.service >>"$PATH_DEBUG" 2>&1
     exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to enable dnsmasq.service"
+
+    $BIN_SYSTEMCTL enable ytl-linux-digabi2-examnet-discovery.service >>"$PATH_DEBUG" 2>&1
+    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to enable ytl-linux-digabi2-examnet-discovery.service"
+
+    $BIN_SYSTEMCTL enable ytl-linux-digabi2-examnet-discovery.timer >>"$PATH_DEBUG" 2>&1
+    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to enable ytl-linux-digabi2-examnet-discovery.timer"
 }
 
 function disable_systemd_services() {
@@ -465,6 +487,12 @@ function disable_systemd_services() {
 
     $BIN_SYSTEMCTL disable --now dnsmasq.service >>"$PATH_DEBUG" 2>&1
     exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to disable dnsmasq.service"
+
+    $BIN_SYSTEMCTL disable --now ytl-linux-digabi2-examnet-discovery.timer >>"$PATH_DEBUG" 2>&1
+    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to disable ytl-linux-digabi2-examnet-discovery.timer"
+
+    $BIN_SYSTEMCTL disable --now ytl-linux-digabi2-examnet-discovery.service >>"$PATH_DEBUG" 2>&1
+    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to disable ytl-linux-digabi2-examnet-discovery.service"
 }
 
 function restart_docker() {
@@ -583,9 +611,9 @@ if [[ $* == *--daemon* ]]; then
             "friendlyName": $(jq -Rc . "$PATH_SERVER_FRIENDLY_NAME_CONF"),
             "canonicalHostname": $(jq -Rc . "$PATH_NAKSU2_DOMAIN"),
             "ncsiHostnames": $(jq -Rc '.|split(",")|map(select(.!=""))' "$PATH_EXAMNET_CONFIG/ncsi-hostnames"),
-            "searchDomain": "internal",
+            "searchDomain": "$FRIENDLY_NAME_SEARCH_DOMAIN",
             "serverOwnIp": $(jq -Rc . "$PATH_SERVER_OWN_IP"),
-            "ports": {"discovery": 26242, "bouncer": 80}
+            "ports": {"discovery": $DISCOVERY_PORT, "bouncer": $BOUNCER_PORT}
         },
         "secrets": $(jq -nc '{cert:$cert, key:$key}' \
             --arg cert "$PATH_NAKSU2_CERTS_DIR/cert.pem" \
@@ -598,6 +626,32 @@ EOF
 
     # We're not supposed to get here, so this would indicate the daemon process exited
     exit_script $EXIT_CODE_DAEMON_EXITED_UNEXPECTEDLY
+fi
+
+if [[ $* == *--discover* ]]; then
+    print_info "Running alias discovery"
+
+    if [[ ! -f $PATH_DNSMASQ_STATIC_DNS_CONF || ! -f $PATH_SERVER_OWN_IP ]]; then
+        print_error "Examnet is not configured, cannot run alias discovery"
+        exit_script $EXIT_CODE_CANNOT_RUN_ALIAS_DISCOVERY
+    fi
+
+    CONFIG=$(cat <<EOF
+    {
+        "config": {
+            "isProd": {{ prod-mode }},
+            "ktpDomains": $(jq -Rcs '[. | split("\n") | .[] | match("host-record=(.+),.+").captures[0].string]' "$PATH_DNSMASQ_STATIC_DNS_CONF"),
+            "dnsmasqConfigOutputFile": $(jq -Rc . "$PATH_DNSMASQ_KTP_ALIASES_CONF"),
+            "ports": {"discovery": $DISCOVERY_PORT}
+        }
+    }
+EOF
+    )
+
+    $BIN_DIGABI2_EXAMNET_DISCOVERY "$CONFIG"
+
+    exit_if_error $? $EXIT_CODE_CANNOT_RUN_ALIAS_DISCOVERY "Failed to run alias discovery"
+    exit 0
 fi
 
 if [[ $* == *--remove* ]]; then
