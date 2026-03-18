@@ -33,9 +33,7 @@ Deno.test('Redirect handler responds correctly', () => {
     expect(resp.headers.get('location')).toBe(`https://${config.canonicalHostname}:8010/`)
   }
   {
-    const resp = app(
-      new Request(`http://${config.friendlyName}.${config.searchDomain}/ktp/hello`, { method: 'POST' })
-    )
+    const resp = app(new Request(`http://${config.friendlyName}.${config.searchDomain}/ktp/hello`, { method: 'POST' }))
     expect(resp.status).toBe(307)
     expect(resp.headers.get('location')).toBe(`https://${config.canonicalHostname}:8010/ktp/hello`)
   }
