@@ -57,13 +57,13 @@ jobs:
             # also make signing key available on the web site
             echo "$SPUBKEY" > apt-signing-key.pub
       - name: Copy repository to AWS S3
-        if: ${{ github.ref == 'refs/heads/main' || github.event.inputs.publish == 'true' }}
+        if: ${{ github.event.inputs.publish == 'true' }}
         run: |
           aws s3 sync --cache-control no-store reprepro/pool  s3://ytl-linux/deb/pool
           aws s3 sync --cache-control no-store reprepro/dists s3://ytl-linux/deb/dists
           aws s3 cp --cache-control no-store apt-signing-key.pub s3://ytl-linux/
       - name: Update Naksu 2 latest version
-        if: ${{ github.ref == 'refs/heads/main' || github.event.inputs.publish == 'true' }}
+        if: ${{ github.event.inputs.publish == 'true' }}
         run: |
           export NAKSU_DEB=$(find debs -name 'naksu2*.deb')
           export VERSION=$(dpkg-deb -f "$NAKSU_DEB" Version)
