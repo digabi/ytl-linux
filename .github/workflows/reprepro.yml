@@ -23,6 +23,9 @@ jobs:
         run: |
             sudo apt -y install reprepro gnupg ruby ruby-dev rubygems build-essential
             sudo gem install --no-document fpm
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
       - name: Checkout code
         uses: actions/checkout@v4
         with:
