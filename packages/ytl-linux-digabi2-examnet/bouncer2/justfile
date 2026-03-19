@@ -23,7 +23,7 @@ start: generate-dev-conf
 test:
     deno run tests
 
-generate-dev-conf friendly-name="jotain-puppua" skip-cert-if-exists="true":
+generate-dev-conf friendly-name="pomppulinna" skip-cert-if-exists="true":
     #!/usr/bin/env bash
     set -euo pipefail
 

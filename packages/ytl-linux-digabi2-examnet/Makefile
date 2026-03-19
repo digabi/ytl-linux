@@ -29,6 +29,7 @@ deb:
 	cp -r NetworkManager/* $(DEB_ROOT)/etc/NetworkManager/conf.d/
 
 	# Bouncer
+	(cd bouncer2; deno run tests)
 	(cd bouncer2; deno run build)
 	install -D bouncer2/digabi2-examnet-bouncer $(DEB_ROOT)/usr/local/sbin/digabi2-examnet-bouncer
 
