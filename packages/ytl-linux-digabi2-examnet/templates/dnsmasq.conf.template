@@ -12,6 +12,7 @@ host-record=${NCSI_HOSTNAMES_LIST},${SERVER_OWN_IP}
 
 # --- temporary ---
 domain=internal
+dhcp-option=option:domain-name,internal
 host-record=${SERVER_FRIENDLY_NAME}.internal,${SERVER_OWN_IP}
 
 # Use WAN device nameservers as upstream

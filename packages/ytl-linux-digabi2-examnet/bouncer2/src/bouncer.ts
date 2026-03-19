@@ -29,15 +29,15 @@ export function bouncerApp(config: Config): (req: Request) => Response {
 
   function redirectHandler(req: Request): Response {
     const url = new URL(req.url)
-    return match([req.method, url.pathname.replace(/\/$/, '')])
-      .with(['GET', '/valvoja'], () => {
+    return match([req.method, url.pathname.replace(/\/*$/, '/')])
+      .with(['GET', '/valvoja/'], () => {
         const targetURL = new URL(url)
         targetURL.protocol = 'https'
         targetURL.host = config.canonicalHostname
         targetURL.pathname = '/'
         return redirect(targetURL)
       })
-      .with(['GET', '/koe'], () => {
+      .with(['GET', '/koe/'], () => {
         const targetURL = new URL(url)
         targetURL.protocol = 'https'
         targetURL.hostname = config.canonicalHostname
@@ -45,11 +45,12 @@ export function bouncerApp(config: Config): (req: Request) => Response {
         targetURL.pathname = '/'
         return redirect(targetURL)
       })
-      .with(['POST', '/ktp/hello'], () => {
+      .with(['POST', '/ktp/hello/'], () => {
         const targetURL = new URL(url)
         targetURL.protocol = 'https'
         targetURL.hostname = config.canonicalHostname
         targetURL.port = '8010'
+        targetURL.pathname = '/ktp/hello'
         return redirect(targetURL)
       })
       .otherwise(() => new Response(null, { status: 404 }))
