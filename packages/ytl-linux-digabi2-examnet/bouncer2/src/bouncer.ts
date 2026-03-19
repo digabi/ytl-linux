@@ -9,7 +9,7 @@ export function bouncerApp(config: Config): (req: Request) => Response {
     const url = new URL(req.url)
     return match(url.hostname)
       .when(
-        x => x === friendlyHostname,
+        x => x === friendlyHostname || x === friendlyName,
         () => redirectHandler(req)
       )
       .when(
