@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Exit codes
 readonly EXIT_CODE_MUST_BE_ROOT=1                     # The script must be executed by root or sudo
@@ -71,7 +71,7 @@ readonly BIN_ZENITY=/usr/bin/zenity
 readonly BIN_SED=/usr/bin/sed
 readonly BIN_XARGS=/usr/bin/xargs
 readonly BIN_OPENSSL=/usr/bin/openssl
-readonly BIN_DIGABI2_EXAMNET_BOUNCER=/usr/local/sbin/digabi2-examnet-bouncer
+readonly BIN_DIGABI2_EXAMNET_BOUNCER=/usr/local/libexec/ytl-linux-digabi2-examnet/bouncer
 readonly BIN_STAT=/usr/bin/stat
 readonly BIN_CHOWN=/usr/bin/chown
 
@@ -174,14 +174,14 @@ function network_enumerate_devices () {
 
 function network_enumerate_devices_with_information () {
     device_to_skip=$1
-    
+
     devices=$(network_enumerate_devices)
 
     for device in $devices; do
         if [ -n "$device_to_skip" ] && [ "$device" == "$device_to_skip" ]; then
             continue
         fi
-        
+
         ip=$(ip addr show dev "$device" | grep "inet " | awk '{print $2}' | cut -d/ -f1)
         if [ -z "$ip" ]; then
             ip=-
@@ -199,7 +199,7 @@ function network_enumerate_devices_with_information () {
 function ask_network_device () {
     question=$1
     device_to_skip=$2
-    
+
     devices=$(network_enumerate_devices_with_information "$device_to_skip")
 
     # shellcheck disable=SC2086
@@ -338,11 +338,11 @@ function configure_networkmanager() {
         autoconnect yes \
         save yes >>"$PATH_DEBUG" 2>&1
     exit_if_error $? $EXIT_CODE_CANNOT_RESTART_LAN_DEVICE "NetworkManager CLI: connection add $_CONNECTION_NAME failed"
-    
+
     debug "Disabling IPv6 in connection '$_CONNECTION_NAME'"
     $BIN_NMCLI connection modify "$_CONNECTION_NAME" ipv6.method "disabled" >>"$PATH_DEBUG" 2>&1
     exit_if_error $? $EXIT_CODE_CANNOT_RESTART_LAN_DEVICE "NetworkManager CLI: IPv6 disable failed"
-    
+
     debug "Starting connection '$_CONNECTION_NAME'"
     $BIN_NMCLI connection up "$_CONNECTION_NAME" >>"$PATH_DEBUG" 2>&1
     exit_if_error $? $EXIT_CODE_CANNOT_RESTART_LAN_DEVICE "Failed to start NetworkManager connection '$_CONNECTION_NAME'"
@@ -387,7 +387,7 @@ function remove_all_settings() {
         rm -f $PATH_SERVER_FRIENDLY_NAME_CONF
         exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_SERVER_FRIENDLY_NAME_CONF'"
     fi
-    
+
     if [ -f $PATH_SERVER_OWN_IP ]; then
         rm -f $PATH_SERVER_OWN_IP
         exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_SERVER_OWN_IP'"
@@ -576,7 +576,7 @@ if [[ $* == *--daemon* ]]; then
         exit_script $EXIT_CODE_CANNOT_START_DAEMON
     fi
 
-    CONFIG=$(cat <<-EOF
+    CONFIG=$(cat <<EOF
     {
         "config": {
             "friendlyName": $(jq -Rc . "$PATH_SERVER_FRIENDLY_NAME_CONF"),
@@ -591,7 +591,7 @@ if [[ $* == *--daemon* ]]; then
             --arg key "$PATH_NAKSU2_CERTS_DIR/key.pem"
         )
     }
-    EOF
+EOF
     )
     $BIN_DIGABI2_EXAMNET_BOUNCER "$CONFIG"
 

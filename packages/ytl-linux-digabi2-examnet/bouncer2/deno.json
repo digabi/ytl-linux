@@ -2,7 +2,7 @@
   "tasks": {
     "dev": "deno run --allow-net --allow-read --allow-env --allow-sys --watch src/main.ts",
     "tests": "deno test --allow-net --allow-read --allow-env --allow-sys tests/**/*.test.ts",
-    "build": "deno compile --allow-net --allow-read --allow-env --allow-sys --output ../deb-root/usr/local/sbin/bouncer2 --target x86_64-unknown-linux-gnu src/main.ts"
+    "build": "deno compile --allow-net --allow-read --allow-env --allow-sys --output ../deb-root/usr/local/libexec/ytl-linux-digabi2-examnet/bouncer --target x86_64-unknown-linux-gnu src/main.ts"
   },
   "imports": {
     "@gabriel/ts-pattern": "jsr:@gabriel/ts-pattern@^5.9.0",

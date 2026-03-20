@@ -1,4 +1,4 @@
-# digabi2-examnet-bouncer
+# examnet bouncer
 
 This is a utility service for Digabi 2 exam networks that provides the following features:
 

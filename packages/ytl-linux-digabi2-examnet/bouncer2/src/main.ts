@@ -8,7 +8,7 @@ const args = parseArgs(Deno.args)
 if (!args) Deno.exit(1)
 const { config, secrets } = args
 
-logger.info(config, 'Starting digabi2-examnet-bouncer with config:')
+logger.info(config, 'Starting examnet bouncer with config:')
 
 const _discoveryServer = Deno.serve(
   {
