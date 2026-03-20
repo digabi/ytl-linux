@@ -10,6 +10,11 @@ dhcp-option=6,${SERVER_OWN_IP}
 # Redirect requests for Windows Network Connection Status Indicator (NCSI) to our local NCSI spoofer (digabi2-examnet-bouncer)
 host-record=${NCSI_HOSTNAMES_LIST},${SERVER_OWN_IP}
 
+# --- temporary ---
+domain=internal
+dhcp-option=option:domain-name,internal
+host-record=${SERVER_FRIENDLY_NAME}.internal,${SERVER_OWN_IP}
+
 # Use WAN device nameservers as upstream
 resolv-file=/etc/resolv.conf
 

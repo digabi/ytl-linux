@@ -1,9 +1,10 @@
 NAME := ytl-linux-digabi2-examnet
-VERSION := 0.0.19
+VERSION := 0.1.0
 
 DEPENDENCIES := \
 	--depends apt \
 	--depends dnsmasq \
+	--depends jq \
 	--depends network-manager \
 	--depends zenity
 DEB_ROOT := deb-root
@@ -29,20 +30,8 @@ deb:
 	cp -r NetworkManager/* $(DEB_ROOT)/etc/NetworkManager/conf.d/
 
 	# Bouncer
-	(cd digabi2-examnet-bouncer \
-		&& \
-		docker build \
-			-f Dockerfile.build \
-			--platform linux/amd64 \
-			-t registry.invalid/digabi2-examnet-bouncer-build \
-			. \
-		&& \
-		docker run \
-			--rm \
-			--mount type=bind,src=$(shell pwd)/$(DEB_ROOT)/usr/local/sbin/,dst=/out \
-			registry.invalid/digabi2-examnet-bouncer-build \
-				install -o $(shell id -u) /dist/digabi2-examnet-bouncer /out \
-		)
+	(cd bouncer; deno run tests)
+	(cd bouncer; deno run build)
 
 	chmod 755 $(DEB_ROOT)/usr/local/sbin/*
 

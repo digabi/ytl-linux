@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Exit codes
 readonly EXIT_CODE_MUST_BE_ROOT=1                     # The script must be executed by root or sudo
@@ -71,7 +71,7 @@ readonly BIN_ZENITY=/usr/bin/zenity
 readonly BIN_SED=/usr/bin/sed
 readonly BIN_XARGS=/usr/bin/xargs
 readonly BIN_OPENSSL=/usr/bin/openssl
-readonly BIN_DIGABI2_EXAMNET_BOUNCER=/usr/local/sbin/digabi2-examnet-bouncer
+readonly BIN_DIGABI2_EXAMNET_BOUNCER=/usr/local/libexec/ytl-linux-digabi2-examnet/bouncer
 readonly BIN_STAT=/usr/bin/stat
 readonly BIN_CHOWN=/usr/bin/chown
 
@@ -174,14 +174,14 @@ function network_enumerate_devices () {
 
 function network_enumerate_devices_with_information () {
     device_to_skip=$1
-    
+
     devices=$(network_enumerate_devices)
 
     for device in $devices; do
         if [ -n "$device_to_skip" ] && [ "$device" == "$device_to_skip" ]; then
             continue
         fi
-        
+
         ip=$(ip addr show dev "$device" | grep "inet " | awk '{print $2}' | cut -d/ -f1)
         if [ -z "$ip" ]; then
             ip=-
@@ -199,7 +199,7 @@ function network_enumerate_devices_with_information () {
 function ask_network_device () {
     question=$1
     device_to_skip=$2
-    
+
     devices=$(network_enumerate_devices_with_information "$device_to_skip")
 
     # shellcheck disable=SC2086
@@ -338,11 +338,11 @@ function configure_networkmanager() {
         autoconnect yes \
         save yes >>"$PATH_DEBUG" 2>&1
     exit_if_error $? $EXIT_CODE_CANNOT_RESTART_LAN_DEVICE "NetworkManager CLI: connection add $_CONNECTION_NAME failed"
-    
+
     debug "Disabling IPv6 in connection '$_CONNECTION_NAME'"
     $BIN_NMCLI connection modify "$_CONNECTION_NAME" ipv6.method "disabled" >>"$PATH_DEBUG" 2>&1
     exit_if_error $? $EXIT_CODE_CANNOT_RESTART_LAN_DEVICE "NetworkManager CLI: IPv6 disable failed"
-    
+
     debug "Starting connection '$_CONNECTION_NAME'"
     $BIN_NMCLI connection up "$_CONNECTION_NAME" >>"$PATH_DEBUG" 2>&1
     exit_if_error $? $EXIT_CODE_CANNOT_RESTART_LAN_DEVICE "Failed to start NetworkManager connection '$_CONNECTION_NAME'"
@@ -387,7 +387,7 @@ function remove_all_settings() {
         rm -f $PATH_SERVER_FRIENDLY_NAME_CONF
         exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_SERVER_FRIENDLY_NAME_CONF'"
     fi
-    
+
     if [ -f $PATH_SERVER_OWN_IP ]; then
         rm -f $PATH_SERVER_OWN_IP
         exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_SERVER_OWN_IP'"
@@ -576,13 +576,24 @@ if [[ $* == *--daemon* ]]; then
         exit_script $EXIT_CODE_CANNOT_START_DAEMON
     fi
 
-    $BIN_DIGABI2_EXAMNET_BOUNCER \
-        --friendly-name-file $PATH_SERVER_FRIENDLY_NAME_CONF \
-        --dns-hostname-file $PATH_NAKSU2_DOMAIN \
-        --ncsi-hostnames-file $PATH_EXAMNET_CONFIG/ncsi-hostnames \
-        --mdns-hostname-output-file $PATH_EXAMNET_CONFIG/mdns-hostname-output \
-        --bind-addr "$_LAN_DEVICE_IP" \
-        --bind-port 80
+    CONFIG=$(cat <<EOF
+    {
+        "config": {
+            "friendlyName": $(jq -Rc . "$PATH_SERVER_FRIENDLY_NAME_CONF"),
+            "canonicalHostname": $(jq -Rc . "$PATH_NAKSU2_DOMAIN"),
+            "ncsiHostnames": $(jq -Rc '.|split(",")|map(select(.!=""))' "$PATH_EXAMNET_CONFIG/ncsi-hostnames"),
+            "searchDomain": "internal",
+            "serverOwnIp": $(jq -Rc . "$PATH_SERVER_OWN_IP"),
+            "ports": {"discovery": 26242, "bouncer": 80}
+        },
+        "secrets": $(jq -nc '{cert:$cert, key:$key}' \
+            --arg cert "$PATH_NAKSU2_CERTS_DIR/cert.pem" \
+            --arg key "$PATH_NAKSU2_CERTS_DIR/key.pem"
+        )
+    }
+EOF
+    )
+    $BIN_DIGABI2_EXAMNET_BOUNCER "$CONFIG"
 
     # We're not supposed to get here, so this would indicate the daemon process exited
     exit_script $EXIT_CODE_DAEMON_EXITED_UNEXPECTEDLY
@@ -732,6 +743,15 @@ fi
 restart_networkmanager
 wait_for_network_online
 
+if [ -z "$SERVER_FRIENDLY_NAME" ]; then
+    debug "User did not provide friendly name, falling back to static DNS name"
+    # Fallback to use server's static DNS name (e.g. ktp1)
+    SERVER_FRIENDLY_NAME=$(cat $PATH_NAKSU2_DOMAIN | cut -d '.' -f1)
+fi
+
+debug "SERVER_FRIENDLY_NAME: $SERVER_FRIENDLY_NAME"
+export SERVER_FRIENDLY_NAME
+
 write_file $PATH_RESOLVED_CONF "$(envsubst < $PATH_RESOLVED_CONF_TEMPLATE)"
 write_file $PATH_DOCKER_DAEMON_CONF "$(envsubst < $PATH_DOCKER_DAEMON_CONF_TEMPLATE)"
 
@@ -741,14 +761,6 @@ write_file $PATH_DNSMASQ_CONF "$(envsubst < $PATH_DNSMASQ_CONF_TEMPLATE)"
 if [ $USE_STATIC_LOCAL_DNS -gt 0 ]; then
     configure_static_dns_records "$SERVER_NUMBER"
 fi
-
-if [ -z "$SERVER_FRIENDLY_NAME" ]; then
-    debug "User did not provide friendly name, falling back to static DNS name"
-    # Fallback to use server's static DNS name (e.g. ktp1)
-    SERVER_FRIENDLY_NAME=$(cat $PATH_NAKSU2_DOMAIN | cut -d '.' -f1)
-fi
-
-debug "SERVER_FRIENDLY_NAME: $SERVER_FRIENDLY_NAME"
 
 write_file $PATH_SERVER_FRIENDLY_NAME_CONF "$SERVER_FRIENDLY_NAME"
 
