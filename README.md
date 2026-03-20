@@ -126,11 +126,11 @@ pages](https://digabi.github.io/ytl-linux/autoinstall-config/user-data)
 
 ## APT repository and deb packages
 
-Custom YTL-Linux deb packages can be found in the [packages](./packages) directory.
+Sources for the deb packages making up YTL Linux all the way up to `ytl-linux-customize[-24]` are in the [packages](./packages) directory.
+Other vendored packages in the `debs/` directory will be included in the resulting package repository.
 
-The ytl-linux-customize deb package is built automatically by a GitHub action
-on pushes to the source code directory. The resulting package, along with any others
-in the debs/ directory (currently none) get pushed to an apt repository at
+The packages and the package repository are built in the [Update Debian repository](https://github.com/digabi/ytl-linux/actions/workflows/reprepro.yml) workflow automatically on push to `main`, and published when the workflow is launched manually.
+The resulting repository is available at
 
 `deb https://linux.abitti.fi/deb ytl-linux main`
 
@@ -138,7 +138,7 @@ and are signed with the GPG key currently available at
 
 `https://linux.abitti.fi/apt-signing-key.pub`
 
-The installation ISO image will pull in the ytl-linux-customize package from there.
+The installation ISO image will pull in the relevant `ytl-linux-customize[-24]` package from there.
 
 ### Testing deb packages
 
