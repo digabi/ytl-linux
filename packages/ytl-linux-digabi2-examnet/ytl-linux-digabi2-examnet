@@ -576,13 +576,24 @@ if [[ $* == *--daemon* ]]; then
         exit_script $EXIT_CODE_CANNOT_START_DAEMON
     fi
 
-    $BIN_DIGABI2_EXAMNET_BOUNCER \
-        --friendly-name-file $PATH_SERVER_FRIENDLY_NAME_CONF \
-        --dns-hostname-file $PATH_NAKSU2_DOMAIN \
-        --ncsi-hostnames-file $PATH_EXAMNET_CONFIG/ncsi-hostnames \
-        --mdns-hostname-output-file $PATH_EXAMNET_CONFIG/mdns-hostname-output \
-        --bind-addr "$_LAN_DEVICE_IP" \
-        --bind-port 80
+    CONFIG=$(cat <<-EOF
+    {
+        "config": {
+            "friendlyName": $(jq -Rc . "$PATH_SERVER_FRIENDLY_NAME_CONF"),
+            "canonicalHostname": $(jq -Rc . "$PATH_NAKSU2_DOMAIN"),
+            "ncsiHostnames": $(jq -Rc '.|split(",")|map(select(.!=""))' "$PATH_EXAMNET_CONFIG/ncsi-hostnames"),
+            "searchDomain": "internal",
+            "serverOwnIp": $(jq -Rc . "$PATH_SERVER_OWN_IP"),
+            "ports": {"discovery": 26242, "bouncer": 80}
+        },
+        "secrets": $(jq -nc '{cert:$cert, key:$key}' \
+            --arg cert "$PATH_NAKSU2_CERTS_DIR/cert.pem" \
+            --arg key "$PATH_NAKSU2_CERTS_DIR/key.pem"
+        )
+    }
+    EOF
+    )
+    $BIN_DIGABI2_EXAMNET_BOUNCER "$CONFIG"
 
     # We're not supposed to get here, so this would indicate the daemon process exited
     exit_script $EXIT_CODE_DAEMON_EXITED_UNEXPECTEDLY

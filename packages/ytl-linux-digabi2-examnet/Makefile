@@ -4,6 +4,7 @@ VERSION := 0.1.0
 DEPENDENCIES := \
 	--depends apt \
 	--depends dnsmasq \
+	--depends jq \
 	--depends network-manager \
 	--depends zenity
 DEB_ROOT := deb-root

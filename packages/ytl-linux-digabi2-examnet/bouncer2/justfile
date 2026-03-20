@@ -9,16 +9,31 @@ format:
     @just --unstable --fmt
 
 start: generate-dev-conf
-    deno run dev \
-      --friendly-name-file devconf/server-friendly-name \
-      --ncsi-hostnames-file ../conf/ncsi-hostnames \
-      --dns-records-file devconf/ytl-linux-static-dns-records.conf \
-      --dns-hostname-file devconf/domain.txt \
-      --server-own-ip-file devconf/server-own-ip \
-      --dns-search-domain internal \
-      --tls-key-file devconf/key.pem \
-      --tls-cert-file devconf/cert.pem \
-      --dnsmasq-config-file devconf/ytl-linux-ktp-aliases.conf
+    #!/usr/bin/env bash
+    PATH_SERVER_FRIENDLY_NAME_CONF=devconf/server-friendly-name
+    PATH_NAKSU2_DOMAIN=devconf/domain.txt
+    PATH_EXAMNET_CONFIG=../conf
+    PATH_SERVER_OWN_IP=devconf/server-own-ip
+    PATH_NAKSU2_CERTS_DIR=devconf
+    # This is intentionally identical to its equivalent in the examnet script
+    CONFIG=$(cat <<-EOF
+    {
+        "config": {
+            "friendlyName": $(jq -Rc . "$PATH_SERVER_FRIENDLY_NAME_CONF"),
+            "canonicalHostname": $(jq -Rc . "$PATH_NAKSU2_DOMAIN"),
+            "ncsiHostnames": $(jq -Rc '.|split(",")|map(select(.!=""))' "$PATH_EXAMNET_CONFIG/ncsi-hostnames"),
+            "searchDomain": "internal",
+            "serverOwnIp": $(jq -Rc . "$PATH_SERVER_OWN_IP"),
+            "ports": {"discovery": 26242, "bouncer": 80}
+        },
+        "secrets": $(jq -nc '{cert:$cert, key:$key}' \
+            --arg cert "$PATH_NAKSU2_CERTS_DIR/cert.pem" \
+            --arg key "$PATH_NAKSU2_CERTS_DIR/key.pem"
+        )
+    }
+    EOF
+    )
+    deno run dev "$CONFIG"
 
 test:
     deno run tests
