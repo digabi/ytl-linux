@@ -616,7 +616,7 @@ if [[ $* == *--daemon* ]]; then
             "ports": {"discovery": $DISCOVERY_PORT, "bouncer": $BOUNCER_PORT}
         },
         "secrets": $(jq -nc '{cert:$cert, key:$key}' \
-            --arg cert "$PATH_NAKSU2_CERTS_DIR/cert.pem" \
+            --arg cert "$PATH_NAKSU2_CERTS_DIR/fullchain.pem" \
             --arg key "$PATH_NAKSU2_CERTS_DIR/key.pem"
         )
     }
