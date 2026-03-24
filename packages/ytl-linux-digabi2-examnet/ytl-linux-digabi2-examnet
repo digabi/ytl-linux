@@ -639,9 +639,9 @@ if [[ $* == *--discover* ]]; then
     CONFIG=$(cat <<EOF
     {
         "config": {
-            "isProd": {{ prod-mode }},
+            "isProd": true,
             "ktpDomains": $(jq -Rcs '[. | split("\n") | .[] | match("host-record=(.+),.+").captures[0].string]' "$PATH_DNSMASQ_STATIC_DNS_CONF"),
-            "dnsmasqConfigOutputFile": $(jq -Rc . "$PATH_DNSMASQ_KTP_ALIASES_CONF"),
+            "dnsmasqConfigOutputFile": "$PATH_DNSMASQ_KTP_ALIASES_CONF",
             "ports": {"discovery": $DISCOVERY_PORT}
         }
     }

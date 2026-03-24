@@ -1,8 +1,18 @@
 {
   "tasks": {
-    "dev": "deno run --allow-net --allow-read --allow-write --allow-env --allow-sys --allow-run=\"systemctl\" --watch src/main.ts",
-    "tests": "deno test --allow-net --allow-read --allow-write --allow-env --allow-sys --allow-run=\"systemctl\" tests/**/*.test.ts",
-    "build": "deno compile --allow-net --allow-read --allow-write --allow-env --allow-sys --allow-run=\"systemctl\" --target x86_64-unknown-linux-gnu --output ../deb-root/usr/local/libexec/ytl-linux-digabi2-examnet/discovery src/main.ts"
+    "dev": "deno run -P --watch src/main.ts",
+    "tests": "LOG_LEVEL=silent deno test -P tests/**/*.test.ts",
+    "build": "deno compile -P --target x86_64-unknown-linux-gnu --output ../deb-root/usr/local/libexec/ytl-linux-digabi2-examnet/discovery src/main.ts"
+  },
+  "permissions": {
+    "default": {
+      "net": true,
+      "read": true,
+      "write": true,
+      "env": true,
+      "sys": true,
+      "run": ["systemctl"]
+    }
   },
   "imports": {
     "@std/cli": "jsr:@std/cli@^1.0.28",
