@@ -23,10 +23,12 @@ jobs:
         run: |
             sudo apt -y install reprepro gnupg ruby ruby-dev rubygems build-essential
             sudo gem install --no-document fpm
+      - name: Read Deno version
+        id: deno-version
+        run: echo "DENO_VERSION=$(cat .deno-version)" >> $GITHUB_OUTPUT
       - uses: denoland/setup-deno@v2
         with:
-          deno-version: v2.x
-      - uses: extractions/setup-just@v3
+          deno-version: ${{ steps.deno-version.outputs.DENO_VERSION }}
       - name: Checkout code
         uses: actions/checkout@v4
         with:

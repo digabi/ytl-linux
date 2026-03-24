@@ -1,8 +1,8 @@
 {
   "tasks": {
-    "dev": "deno run -P --watch src/main.ts",
-    "tests": "LOG_LEVEL=silent deno test -P tests/**/*.test.ts",
-    "build": "deno compile -P --target x86_64-unknown-linux-gnu --output ../deb-root/usr/local/libexec/ytl-linux-digabi2-examnet/discovery src/main.ts"
+    "dev": "deno run --permission-set --watch src/main.ts",
+    "tests": "LOG_LEVEL=silent deno test --permission-set tests/**/*.test.ts",
+    "build": "deno compile --permission-set --target x86_64-unknown-linux-gnu --output ../deb-root/usr/local/libexec/ytl-linux-digabi2-examnet/discovery src/main.ts"
   },
   "permissions": {
     "default": {
