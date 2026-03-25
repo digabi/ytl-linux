@@ -13,9 +13,10 @@ deb:
 	if [ -d $(DEB_ROOT) ]; then rm -fR $(DEB_ROOT)/; fi
 	if [ -f $(NAME)_$(VERSION)_amd64.deb ]; then rm $(NAME)_$(VERSION)_amd64.deb; fi
 
-	# Script file
+	# Script files
 	mkdir -p $(DEB_ROOT)/usr/local/sbin/
 	cp ytl-linux-digabi2-examnet $(DEB_ROOT)/usr/local/sbin/
+	cp ytl-linux-digabi2-docker-configure.sh $(DEB_ROOT)/usr/local/sbin/
 
 	# Config templates
 	mkdir -p ${DEB_ROOT}/etc/ytl-linux-digabi2-examnet/templates/
