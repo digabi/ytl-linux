@@ -16,7 +16,6 @@ readonly EXIT_CODE_CANNOT_RESTART_LAN_DEVICE=12       # Cannot start local netwo
 readonly EXIT_CODE_CANNOT_RESTART_DNSMASQ=13          # Cannot restart dnsmasq
 readonly EXIT_CODE_CANNOT_RESTART_NM=14               # Cannot restart NetworkManager
 readonly EXIT_CODE_WAN_WITH_NO_IP=15                  # Given WAN device does not have an IPv4 address
-readonly EXIT_CODE_NO_GUI_FOR_ROOT=16                 # You shouldn't execute the script by root in GUI mode (use sudo instead)
 readonly EXIT_CODE_CANNOT_REMOVE_FILES=17             # The script was executed with --remove, but it could not remove settings files
 readonly EXIT_CODE_CANNOT_REMOVE_CONNECTION=18        # The script was executed with --remove, but it could not remove a connection
 readonly EXIT_CODE_CANNOT_RESTART_DOCKER=19           # Cannot restart docker
@@ -72,7 +71,6 @@ readonly BIN_MKDIR=/usr/bin/mkdir
 readonly BIN_SYSTEMCTL=/usr/bin/systemctl
 readonly BIN_NMCLI=/usr/bin/nmcli
 readonly BIN_NM_ONLINE=/usr/bin/nm-online
-readonly BIN_ZENITY=/usr/bin/zenity
 readonly BIN_SED=/usr/bin/sed
 readonly BIN_XARGS=/usr/bin/xargs
 readonly BIN_OPENSSL=/usr/bin/openssl
@@ -113,26 +111,17 @@ function debug() {
 function print_error() {
     _ERROR_MESSAGE=$1
     debug "ERROR: $_ERROR_MESSAGE"
-    if [ $GUI_MODE -gt 0 ]; then
-        $BIN_ZENITY --error --text="$_ERROR_MESSAGE"
-    else
-        $BIN_ECHO "$SCRIPT_PATH error: $_ERROR_MESSAGE" >&2
-    fi
+    $BIN_ECHO "$SCRIPT_PATH error: $_ERROR_MESSAGE" >&2
 }
 
 function print_info() {
     _INFO_MESSAGE=$1
     debug "INFO: $_INFO_MESSAGE"
-    if [ $GUI_MODE -gt 0 ]; then
-        $BIN_ZENITY --info --text="$_INFO_MESSAGE"
-    else
-        $BIN_ECHO "$SCRIPT_PATH info: $_INFO_MESSAGE"
-    fi
+    $BIN_ECHO "$SCRIPT_PATH info: $_INFO_MESSAGE"
 }
 
 function print_usage() {
     $BIN_ECHO "usage: $SCRIPT_PATH wan-network-device local-network-device server-number [custom-server-name] [--use-static-local-dns]" >&2
-    $BIN_ECHO "       $SCRIPT_PATH --gui" >&2
     $BIN_ECHO "       $SCRIPT_PATH --daemon" >&2
     $BIN_ECHO "       $SCRIPT_PATH --discover" >&2
     $BIN_ECHO "       $SCRIPT_PATH --remove" >&2
@@ -164,12 +153,6 @@ function current_user_is_root () {
     fi
 }
 
-function current_user_is_sudo () {
-    if [ "$SUDO_UID" ] ; then
-        echo 1
-    fi
-}
-
 function network_enumerate_devices () {
     for dir in /sys/class/net/*; do
         device=$(basename "$dir")
@@ -178,44 +161,6 @@ function network_enumerate_devices () {
         fi
     done
 }
-
-function network_enumerate_devices_with_information () {
-    device_to_skip=$1
-
-    devices=$(network_enumerate_devices)
-
-    for device in $devices; do
-        if [ -n "$device_to_skip" ] && [ "$device" == "$device_to_skip" ]; then
-            continue
-        fi
-
-        ip=$(ip addr show dev "$device" | grep "inet " | awk '{print $2}' | cut -d/ -f1)
-        if [ -z "$ip" ]; then
-            ip=-
-        fi
-
-        connect=$(ip link show dev "$device" | grep -q "state UP" && echo "Connected" || echo "Disconnected")
-        if [ -z "$connect" ]; then
-            connect=-
-        fi
-
-        echo "$device" "$ip" "$connect"
-    done
-}
-
-function ask_network_device () {
-    question=$1
-    device_to_skip=$2
-
-    devices=$(network_enumerate_devices_with_information "$device_to_skip")
-
-    # shellcheck disable=SC2086
-    $BIN_ZENITY --list --title "$question" \
-        --column "Device" --column "IPv4" --column "Connection" \
-        --width=400 --height=400 \
-        $devices
-}
-
 
 function network_device_exists() {
     _DEVICE=$1
@@ -564,7 +509,7 @@ function configure_static_dns_records() {
 
     debug "Configuring domain for KTP"
     debug "This server's domain based on server number ($SERVER_NUMBER) is: $THIS_SERVER_DOMAIN"
-    write_file $PATH_NAKSU2_DOMAIN "$THIS_SERVER_DOMAIN" "$NAKSU2_WORKDIR_OWNER"
+    write_file "$PATH_NAKSU2_DOMAIN" "$THIS_SERVER_DOMAIN" "$NAKSU2_WORKDIR_OWNER"
 }
 
 function remove_school_host_entries() {
@@ -577,8 +522,6 @@ if [ -z "$PARAM_NET_DEVICE_WAN" ]; then
     print_usage
     exit_script $EXIT_CODE_NETWORK_DEVICE_NAME_MISSING_WAN
 fi
-
-GUI_MODE=0
 
 if [ ! "$(current_user_is_root)" ]; then
     print_error "You're not root"
@@ -676,41 +619,14 @@ if [[ $* == *--use-static-local-dns* ]]; then
     USE_STATIC_LOCAL_DNS=1
 fi
 
-if [[ $* == *--gui* ]]; then
-    if [ ! "$(current_user_is_sudo)" ]; then
-        print_error "GUI mode cannot be executed as root, since typically root does not have access to user's desktop session"
-        exit_script $EXIT_CODE_NO_GUI_FOR_ROOT
-    fi
-
-    GUI_MODE=1
-    NET_DEVICE_WAN=$(ask_network_device "Select internet (WAN) network device")
-    if [ -z "$NET_DEVICE_WAN" ]; then
-        print_error "Missing WAN network device name"
-        exit_script $EXIT_CODE_NETWORK_DEVICE_NAME_MISSING_WAN
-    fi
-else
-    NET_DEVICE_WAN=$PARAM_NET_DEVICE_WAN
-fi
-
-if [ $GUI_MODE -gt 0 ]; then
-    NET_DEVICE_LAN=$(ask_network_device "Select local (LAN) network device" "$NET_DEVICE_WAN")
-    if [ -z "$NET_DEVICE_LAN" ]; then
-        print_error "Missing LAN network device name"
-        exit_script $EXIT_CODE_NETWORK_DEVICE_NAME_MISSING_LAN
-    fi
-else
-    NET_DEVICE_LAN=$PARAM_NET_DEVICE_LAN
-fi
+NET_DEVICE_WAN=$PARAM_NET_DEVICE_WAN
+NET_DEVICE_LAN=$PARAM_NET_DEVICE_LAN
 
 debug "NET_DEVICE_WAN: $NET_DEVICE_WAN"
 debug "NET_DEVICE_LAN: $NET_DEVICE_LAN"
 check_network_device_names "$NET_DEVICE_WAN" "$NET_DEVICE_LAN"
 
-if [ $GUI_MODE -gt 0 ]; then
-    SERVER_NUMBER=$($BIN_ZENITY --entry --title="Server number" --text="Enter server number ($CONST_MIN_SERVER_NUMBER-$CONST_MAX_SERVER_NUMBER)")
-else
-    SERVER_NUMBER=$PARAM_SERVER_NUMBER
-fi
+SERVER_NUMBER=$PARAM_SERVER_NUMBER
 
 debug "SERVER_NUMBER: $SERVER_NUMBER"
 check_server_number "$SERVER_NUMBER"
@@ -769,15 +685,10 @@ NCSI_HOSTNAMES_LIST=$(cat $PATH_EXAMNET_CONFIG/ncsi-hostnames)
 debug "NCSI_HOSTNAMES_LIST: $NCSI_HOSTNAMES_LIST"
 export NCSI_HOSTNAMES_LIST
 
-
-if [[ $GUI_MODE -gt 0 ]]; then
-        SERVER_FRIENDLY_NAME=$($BIN_ZENITY --entry --title="Custom server name" --text="Enter custom name for this server, e.g. 'classroom' (leave empty for no custom name)")
+if [[ ! $PARAM_SERVER_FRIENDLY_NAME =~ ^--.+$ ]]; then
+    SERVER_FRIENDLY_NAME=$PARAM_SERVER_FRIENDLY_NAME
 else
-    if [[ ! $PARAM_SERVER_FRIENDLY_NAME =~ ^--.+$ ]]; then
-        SERVER_FRIENDLY_NAME=$PARAM_SERVER_FRIENDLY_NAME
-    else
-        SERVER_FRIENDLY_NAME=""
-    fi
+    SERVER_FRIENDLY_NAME=""
 fi
 
 if [ -n "$SERVER_FRIENDLY_NAME" ]; then
@@ -801,7 +712,7 @@ wait_for_network_online
 if [ -z "$SERVER_FRIENDLY_NAME" ]; then
     debug "User did not provide friendly name, falling back to static DNS name"
     # Fallback to use server's static DNS name (e.g. ktp1)
-    SERVER_FRIENDLY_NAME=$(cat $PATH_NAKSU2_DOMAIN | cut -d '.' -f1)
+    SERVER_FRIENDLY_NAME=$(cat "$PATH_NAKSU2_DOMAIN" | cut -d '.' -f1)
 fi
 
 debug "SERVER_FRIENDLY_NAME: $SERVER_FRIENDLY_NAME"
