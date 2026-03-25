@@ -10,6 +10,8 @@ format:
 
 start: generate-dev-conf
     #!/usr/bin/env bash
+    set -euo pipefail
+
     PATH_SERVER_FRIENDLY_NAME_CONF=devconf/server-friendly-name
     PATH_NAKSU2_DOMAIN=devconf/domain.txt
     PATH_EXAMNET_CONFIG=../conf
@@ -53,9 +55,21 @@ generate-dev-conf friendly-name="pomppulinna" skip-cert-if-exists="true":
         echo "host-record=ktp$i.1000.koe.abitti.net,192.168.$((i * 10)).1" >> devconf/ytl-linux-static-dns-records.conf
     done
 
-    if [[ "{{ skip-cert-if-exists }}" == "false" || (! -f devconf/cert.pem && ! -f devconf/key.pem) ]]; then
+    CERT_FILES=("cert.pem" "key.pem" "chain.pem" "fullchain.pem")
+    CERT_FILES_MISSING=false
+
+    for CERT_FILE in ${CERT_FILES[@]}; do
+        if [[ ! -f devconf/$CERT_FILE ]]; then
+            CERT_FILES_MISSING=true
+            break
+        fi
+    done
+
+    if [[ "{{ skip-cert-if-exists }}" == "false" || $CERT_FILES_MISSING == true ]]; then
         # Generate fake certificate that mimics the ones generated for schools
         mkcert -cert-file devconf/cert.pem -key-file devconf/key.pem ${KTP_DOMAINS[@]}
+        cp "$(mkcert -CAROOT)/rootCA.pem" devconf/chain.pem
+        cat devconf/cert.pem devconf/chain.pem > devconf/fullchain.pem
     fi
 
     echo '{{ friendly-name }}' > devconf/server-friendly-name

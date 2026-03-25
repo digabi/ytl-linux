@@ -17,19 +17,21 @@ jobs:
   run-reprepro:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
       - name: Disable man-db updates
         run: sudo rm -f /var/lib/man-db/auto-update
       - name: Install prerequisite packages
         run: |
             sudo apt -y install reprepro gnupg ruby ruby-dev rubygems build-essential
             sudo gem install --no-document fpm
+      - name: Read Deno version
+        id: deno-version
+        run: echo "DENO_VERSION=$(cat .deno-version)" >> $GITHUB_OUTPUT
       - uses: denoland/setup-deno@v2
         with:
-          deno-version: v2.x
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          lfs: true
+          deno-version: ${{ steps.deno-version.outputs.DENO_VERSION }}
       - name: Build deb packages
         run: |
           for package in packages/*/; do

@@ -1,5 +1,5 @@
 NAME := ytl-linux-digabi2-examnet
-VERSION := 0.1.0
+VERSION := 0.2.0
 
 DEPENDENCIES := \
 	--depends apt \
@@ -33,11 +33,17 @@ deb:
 	(cd bouncer; deno run tests)
 	(cd bouncer; deno run build)
 
+	# Discovery
+	(cd discovery && deno run tests)
+	(cd discovery && deno run build)
+
 	chmod 755 $(DEB_ROOT)/usr/local/sbin/*
 
-	# systemd unit file
+	# systemd unit files
 	mkdir -p $(DEB_ROOT)/etc/systemd/system/
 	cp ytl-linux-digabi2-examnet.service $(DEB_ROOT)/etc/systemd/system/
+	cp ytl-linux-digabi2-examnet-discovery.service $(DEB_ROOT)/etc/systemd/system/
+	cp ytl-linux-digabi2-examnet-discovery.timer $(DEB_ROOT)/etc/systemd/system/
 
 	chmod 644 $(DEB_ROOT)/etc/systemd/system/*
 

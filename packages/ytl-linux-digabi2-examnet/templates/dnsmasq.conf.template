@@ -1,11 +1,18 @@
+# Enable full query logging to assist debugging
+log-queries=extra
+
 # Bind to LAN device and Docker bridge interfaces
 interface=${NET_DEVICE_LAN}
 interface=docker0
 interface=ytl0
 
-# Tell clients to use this server as DHCP and DNS
+# Set search domain to ktp to support server aliases
+domain=${FRIENDLY_NAME_SEARCH_DOMAIN}
+
+# Tell clients to use this server as DHCP and DNS, also configure its search domain
 dhcp-range=${DHCP_RANGE_START},${DHCP_RANGE_END},255.255.0.0,1h
 dhcp-option=6,${SERVER_OWN_IP}
+dhcp-option=option:domain-name,${FRIENDLY_NAME_SEARCH_DOMAIN}
 
 # Redirect requests for Windows Network Connection Status Indicator (NCSI) to our local NCSI spoofer (digabi2-examnet-bouncer)
 host-record=${NCSI_HOSTNAMES_LIST},${SERVER_OWN_IP}
@@ -23,11 +30,6 @@ resolv-file=/etc/resolv.conf
 # examination networks, where the host records are local and static. Public DNS returns a private IP, but we
 # need DNS to tell student computers where to go
 server=/koe.abitti.net/#
-
-# Don't forward friendly name (.local) queries - return NXDOMAIN so Windows falls back to mDNS
-# Windows sends unicast DNS queries for .local domains (in addition to mDNS), which would
-# otherwise hit the null-route below and return 0.0.0.0.
-server=/local/
 
 # Null-route all other traffic
 # This prevents software on the student computer from getting confused by when DNS queries work, but the TCP

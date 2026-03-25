@@ -12,3 +12,5 @@ if [[ -f /etc/systemd/system/ytl-linux-digabi2-ncsi.service ]]; then
 fi
 
 systemctl enable ytl-linux-digabi2-examnet
+systemctl enable ytl-linux-digabi2-examnet-discovery.timer
+systemctl enable ytl-linux-digabi2-examnet-discovery.service
