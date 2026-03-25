@@ -20,7 +20,10 @@ export interface DiscoveredKTP {
 export async function fetchFromDiscoveryEndpoint(ktpDomain: string, config: Config) {
   const discoveryUrl = `https://${ktpDomain}:${config.ports.discovery}${DISCOVERY_PATH}`
   logger.debug(`Asking ${ktpDomain} for alias using URL ${discoveryUrl}`)
-  return await fetch(discoveryUrl)
+  
+  return await fetch(discoveryUrl, {
+    signal: AbortSignal.timeout(1000)
+  })
 }
 
 export async function discoverFriendlyNamesInNetwork(
