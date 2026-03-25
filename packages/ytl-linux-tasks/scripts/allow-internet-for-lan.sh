@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+DNSMASQ_CONFIG_FILE="/etc/dnsmasq.d/ytl-linux.conf"
+
 wan="$1"
 lan="$2"
 
@@ -40,10 +42,6 @@ fi
 
 echo "INFO WAN device: $wan ($wan_cidr)"
 echo "INFO LAN device: $lan ($lan_cidr)"
-echo "INFO Enabling IPv4 forwarding"
-
-echo 'net.ipv4.ip_forward=1' | sudo tee /etc/sysctl.d/99-router.conf >/dev/null
-sudo sysctl -w net.ipv4.ip_forward=1 >/dev/null
 
 echo "INFO Allowing internet access for clients on $lan via $wan"
 
@@ -53,8 +51,14 @@ sudo iptables -t nat -C POSTROUTING -o "$wan" -j MASQUERADE 2>/dev/null || \
 sudo iptables -C FORWARD -i "$lan" -o "$wan" -j ACCEPT 2>/dev/null || \
     sudo iptables -A FORWARD -i "$lan" -o "$wan" -j ACCEPT
 
-sudo iptables -C FORWARD -i "$wan" -o "$lan" -m state --state RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || \
-    sudo iptables -A FORWARD -i "$wan" -o "$lan" -m state --state RELATED,ESTABLISHED -j ACCEPT
+sudo iptables -C FORWARD -i "$wan" -o "$lan" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || \
+    sudo iptables -A FORWARD -i "$wan" -o "$lan" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+
+echo "INFO Disabling null route in dnsmasq configuration file ${DNSMASQ_CONFIG_FILE}"
+sudo sed -i 's/^address=\/#\/0\.0\.0\.0$/# address=\/#\/0.0.0.0/' "${DNSMASQ_CONFIG_FILE}"
+
+echo "INFO Restarting dnsmasq"
+sudo systemctl restart dnsmasq.service
 
 echo "INFO Done"
 echo "INFO Clients on $lan should use $lan_ip as their default gateway"

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+DNSMASQ_CONFIG_FILE="/etc/dnsmasq.d/ytl-linux.conf"
+
 wan="$1"
 lan="$2"
 
@@ -24,12 +26,14 @@ while sudo iptables -C FORWARD -i "$lan" -o "$wan" -j ACCEPT 2>/dev/null; do
     sudo iptables -D FORWARD -i "$lan" -o "$wan" -j ACCEPT
 done
 
-while sudo iptables -C FORWARD -i "$wan" -o "$lan" -m state --state RELATED,ESTABLISHED -j ACCEPT 2>/dev/null; do
-    sudo iptables -D FORWARD -i "$wan" -o "$lan" -m state --state RELATED,ESTABLISHED -j ACCEPT
+while sudo iptables -C FORWARD -i "$wan" -o "$lan" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null; do
+    sudo iptables -D FORWARD -i "$wan" -o "$lan" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
 done
 
-echo "INFO Disabling IPv4 forwarding"
-echo 'net.ipv4.ip_forward=0' | sudo tee /etc/sysctl.d/99-router.conf >/dev/null
-sudo sysctl -w net.ipv4.ip_forward=0 >/dev/null
+echo "INFO Enabling null route in dnsmasq configuration file ${DNSMASQ_CONFIG_FILE}"
+sudo sed -i 's/^# address=\/#\/0\.0\.0\.0$/address=\/#\/0.0.0.0/' "${DNSMASQ_CONFIG_FILE}"
+
+echo "INFO Restarting dnsmasq"
+sudo systemctl restart dnsmasq.service
 
 echo "INFO Done"
