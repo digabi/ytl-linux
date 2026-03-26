@@ -28,7 +28,7 @@ function get_available_ip_range() {
             return
         fi
     done
-    exit -1
+    exit 1
 }
 
 DOCKER_NETWORK_PREFIX=$(get_available_ip_range "$@")
@@ -39,6 +39,9 @@ export DOCKER_NETWORK_DNS_RESOLVER_IP
 export DOCKER_NETWORK_POOL_BASE_IP
 
 echo "Created Docker configuration, writing to $PATH_DOCKER_DAEMON_CONF"
-echo "$(envsubst < $PATH_DOCKER_DAEMON_CONF_TEMPLATE)"
-write_file $PATH_DOCKER_DAEMON_CONF "$(envsubst < $PATH_DOCKER_DAEMON_CONF_TEMPLATE)"
+CONTENTS="$(envsubst < $PATH_DOCKER_DAEMON_CONF_TEMPLATE)"
+echo "$CONTENTS"
+
+mkdir -p "$PATH_DOCKER"
+echo -e "$CONTENTS" > "$PATH_DOCKER_DAEMON_CONF"
 restart_docker
