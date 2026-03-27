@@ -68,9 +68,7 @@ export async function writeDnsmasqConfig(discovered: DiscoveredKTP[], config: Co
   if (Deno.env.get('CONSOLE_ONLY_OUTPUT') === 'true') {
     logger.info(`Console only output mode enabled, will not write any files and outputting results directly to stdout`)
 
-    console.log({
-      discovered
-    })
+    console.log(JSON.stringify({ discovered }, null, 2))
 
     return
   }
