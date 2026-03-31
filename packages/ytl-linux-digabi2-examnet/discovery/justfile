@@ -8,7 +8,7 @@ default:
 format:
     @just --unstable --fmt
 
-start prod-mode="false": generate-dev-conf
+start prod-mode="false" only-to-console="false": generate-dev-conf
     #!/usr/bin/env bash
     set -euo pipefail
 
@@ -27,11 +27,18 @@ start prod-mode="false": generate-dev-conf
     }
     EOF
     )
+    
+    if [[ "{{ only-to-console }}" == "true" ]]; then
+        export CONSOLE_ONLY_OUTPUT=true
+    fi
 
     deno run dev "$CONFIG"
 
 start-prod:
-    just start prod-mode="true"
+    just start true
+
+start-oneshot:
+    just start false true
 
 test flags="":
     LOG_LEVEL=silent deno run tests -- {{ flags }}

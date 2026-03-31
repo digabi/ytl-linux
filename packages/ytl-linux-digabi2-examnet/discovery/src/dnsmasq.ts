@@ -65,6 +65,14 @@ function checkForDuplicatesAndRemove(discovered: DiscoveredKTP[]): DiscoveredKTP
 }
 
 export async function writeDnsmasqConfig(discovered: DiscoveredKTP[], config: Config) {
+  if (Deno.env.get('CONSOLE_ONLY_OUTPUT') === 'true') {
+    logger.info(`Console only output mode enabled, will not write any files and outputting results directly to stdout`)
+
+    console.log(JSON.stringify({ discovered }, null, 2))
+
+    return
+  }
+
   const deduped = checkForDuplicatesAndRemove(discovered)
   const hostRecordEntries = deduped.map(x => `host-record=${x.alias},${x.target}`)
 
