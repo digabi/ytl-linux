@@ -3,6 +3,7 @@ import { z } from '@zod/zod/v4-mini'
 import logger from './logger.ts'
 import { Config } from './config.ts'
 import { DISCOVERY_PATH } from './constants.ts'
+import { sortByKTPNumber } from './util.ts'
 
 export const DiscoveryResponseSchema = z.object({
   target: z.string(),
@@ -11,16 +12,18 @@ export const DiscoveryResponseSchema = z.object({
 
 export type DiscoveryResponse = z.infer<typeof DiscoveryResponseSchema>
 
-export interface DiscoveredKTP {
-  address: string
-  target: string
-  alias: string
-}
+export const DiscoveredKTPSchema = z.object({
+  address: z.string(),
+  target: z.string(),
+  alias: z.string()
+})
+
+export type DiscoveredKTP = z.infer<typeof DiscoveredKTPSchema>
 
 export async function fetchFromDiscoveryEndpoint(ktpDomain: string, config: Config) {
   const discoveryUrl = `https://${ktpDomain}:${config.ports.discovery}${DISCOVERY_PATH}`
   logger.debug(`Asking ${ktpDomain} for alias using URL ${discoveryUrl}`)
-  
+
   return await fetch(discoveryUrl, {
     signal: AbortSignal.timeout(1000)
   })
@@ -32,7 +35,10 @@ export async function discoverFriendlyNamesInNetwork(
 ): Promise<DiscoveredKTP[]> {
   const discovered: DiscoveredKTP[] = []
 
-  for (const ktpDomain of config.ktpDomains) {
+  // Sort the domains so that the logs make a bit more sense, since the certificate SANs are sorted by "natural order" (i.e. 1, 10, 11, ... 2, 20, 21, ...) and not KTP number order
+  const ktpDomains = config.ktpDomains.toSorted(sortByKTPNumber)
+
+  for (const ktpDomain of ktpDomains) {
     try {
       const response = await fetchFn(ktpDomain, config)
 

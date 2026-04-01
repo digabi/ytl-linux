@@ -6,7 +6,8 @@ export const ConfigSchema = z.object({
   dnsmasqConfigOutputFile: z.string(),
   ports: z.object({
     discovery: z.int().gte(1).lte(0xffff),
-  })
+  }),
+  dbPath: z.string()
 })
 
 export type Config = z.output<typeof ConfigSchema>

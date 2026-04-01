@@ -4,6 +4,7 @@ import process from 'node:process'
 import { Config } from './config.ts'
 import { DiscoveredKTP } from './discovery.ts'
 import logger from './logger.ts'
+import * as db from './db.ts'
 
 async function restartDnsmasq(config: Config) {
   logger.debug('Restarting dnsmasq')
@@ -44,7 +45,6 @@ async function removeDnsmasqConfig(config: Config) {
   }
 }
 
-
 function checkForDuplicatesAndRemove(discovered: DiscoveredKTP[]): DiscoveredKTP[] {
   const grouped = _.groupBy(discovered, x => x.alias)
 
@@ -65,15 +65,20 @@ function checkForDuplicatesAndRemove(discovered: DiscoveredKTP[]): DiscoveredKTP
 }
 
 export async function writeDnsmasqConfig(discovered: DiscoveredKTP[], config: Config) {
+  // Write entire scan result, including duplicates, to DB so we can always see the raw situation
+  db.upsertFriendlyNames(discovered)
+
+  // Read back the results from the DB so we can also include KTPs that were not online when this scan happened,
+  // and only then dedupe them so that we don't confuse dnsmasq
+  const allFriendlyNames = db.getFriendlyNames()
+  const deduped = checkForDuplicatesAndRemove(allFriendlyNames)
+
   if (Deno.env.get('CONSOLE_ONLY_OUTPUT') === 'true') {
     logger.info(`Console only output mode enabled, will not write any files and outputting results directly to stdout`)
-
-    console.log(JSON.stringify({ discovered }, null, 2))
-
+    console.log(JSON.stringify({ discovered: deduped }, null, 2))
     return
   }
 
-  const deduped = checkForDuplicatesAndRemove(discovered)
   const hostRecordEntries = deduped.map(x => `host-record=${x.alias},${x.target}`)
 
   if (hostRecordEntries.length === 0) {
