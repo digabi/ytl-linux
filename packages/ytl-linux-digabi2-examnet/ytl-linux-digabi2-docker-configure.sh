@@ -39,9 +39,7 @@ export DOCKER_NETWORK_DNS_RESOLVER_IP
 export DOCKER_NETWORK_POOL_BASE_IP
 
 echo "Created Docker configuration, writing to $PATH_DOCKER_DAEMON_CONF"
-CONTENTS="$(envsubst < $PATH_DOCKER_DAEMON_CONF_TEMPLATE)"
-echo "$CONTENTS"
 
 mkdir -p "$PATH_DOCKER"
-echo -e "$CONTENTS" > "$PATH_DOCKER_DAEMON_CONF"
+echo -e "$(envsubst < $PATH_DOCKER_DAEMON_CONF_TEMPLATE)" > "$PATH_DOCKER_DAEMON_CONF"
 restart_docker
