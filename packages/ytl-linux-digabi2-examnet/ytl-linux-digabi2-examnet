@@ -123,6 +123,7 @@ function print_info() {
 function print_usage() {
     $BIN_ECHO "usage: $SCRIPT_PATH wan-network-device local-network-device server-number [custom-server-name] [--use-static-local-dns]" >&2
     $BIN_ECHO "       $SCRIPT_PATH --daemon" >&2
+    $BIN_ECHO "       $SCRIPT_PATH --restart-daemon" >&2
     $BIN_ECHO "       $SCRIPT_PATH --discover" >&2
     $BIN_ECHO "       $SCRIPT_PATH --remove" >&2
     $BIN_ECHO "" >&2
@@ -569,6 +570,11 @@ EOF
 
     # We're not supposed to get here, so this would indicate the daemon process exited
     exit_script $EXIT_CODE_DAEMON_EXITED_UNEXPECTEDLY
+fi
+
+if [[ $* == *--restart-daemon* ]]; then
+    restart_examnet_daemon
+    exit_script 0
 fi
 
 if [[ $* == *--discover* ]]; then
