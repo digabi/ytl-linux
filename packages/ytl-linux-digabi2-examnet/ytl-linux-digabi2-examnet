@@ -288,8 +288,14 @@ function check_server_number() {
     fi
 }
 
-function get_ip_prefix() {
-    echo "${1%.*.*}."
+function get_lan_ip_prefix() {
+    _IP_WAN=$1
+
+    if [[ "$_IP_WAN" =~ ^192\.168\. ]]; then
+        $BIN_ECHO "10.0."
+    else
+        $BIN_ECHO "192.168."
+    fi
 }
 
 function write_file() {
@@ -732,7 +738,7 @@ export IP_WAN
 export IP_LAN
 export SERVER_NUMBER
 
-IP_LAN_PREFIX=$(get_ip_prefix "$IP_LAN")
+IP_LAN_PREFIX=$(get_lan_ip_prefix "$IP_WAN")
 export IP_LAN_PREFIX
 
 debug "SUBNETS_PER_SERVER: $CONST_SUBNETS_PER_SERVER"
@@ -815,7 +821,7 @@ restart_dnsmasq
 restart_examnet_daemon
 
 debug "Configuring Docker daemon"
-ytl-linux-digabi2-docker-configure.sh "${IP_WAN}" "${IP_LAN}"
+ytl-linux-digabi2-docker-configure.sh "${IP_WAN}" "${SERVER_OWN_IP}"
 exit_if_error $? $EXIT_CODE_FAILED_TO_CONFIGURE_DOCKER "Failed to configure and restart Docker"
 
 print_info "Changes made successfully"
