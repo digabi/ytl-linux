@@ -141,7 +141,7 @@ function print_info() {
 }
 
 function print_usage() {
-    $BIN_ECHO "usage: $SCRIPT_PATH wan-network-device local-network-device server-number [custom-server-name] [--use-static-local-dns]" >&2
+    $BIN_ECHO "usage: $SCRIPT_PATH wan-network-device local-network-device server-number [custom-server-name] [--use-static-local-dns] [--configure-only-static-local-dns]" >&2
     $BIN_ECHO "       $SCRIPT_PATH --daemon" >&2
     $BIN_ECHO "       $SCRIPT_PATH --restart-daemon" >&2
     $BIN_ECHO "       $SCRIPT_PATH --discover" >&2
@@ -830,6 +830,21 @@ SERVER_NUMBER=$PARAM_SERVER_NUMBER
 
 debug "SERVER_NUMBER: $SERVER_NUMBER"
 check_server_number "$SERVER_NUMBER"
+
+if [[ $* == *--configure-only-static-local-dns* ]]; then
+    # Configuring static DNS records is the only part of examnet that needs the certificate at $PATH_NAKSU2_CERT
+    # This part can be run separately after the certificate has been downloaded.
+
+    configure_static_dns_records "$SERVER_NUMBER"
+
+    enable_systemd_services
+    restart_systemd_resolved
+    restart_dnsmasq
+    restart_examnet_daemon
+    restart_docker
+
+    exit_script 0
+fi
 
 write_file $PATH_NET_DEVICE_LAN_CONF "$NET_DEVICE_LAN"
 write_file $PATH_NET_DEVICE_WAN_CONF "$NET_DEVICE_WAN"
