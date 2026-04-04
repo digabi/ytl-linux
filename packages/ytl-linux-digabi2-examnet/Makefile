@@ -4,6 +4,9 @@ VERSION := 0.2.1
 DEPENDENCIES := \
 	--depends apt \
 	--depends dnsmasq \
+	--depends dnsutils \
+	--depends ipset \
+	--depends iptables \
 	--depends jq \
 	--depends network-manager \
 	--depends zenity

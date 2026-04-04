@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 
+# These domains are allowed from LAN to WAN for Windows Defender cloud verification.
+# Keep this list minimal.
+# TODO replace with list of actual domains used by Defender
+readonly INTERNET_ALLOWLIST_DOMAINS=(
+    "defender.microsoft.com"
+    "api.microsoft.com"
+)
+
 # Exit codes
 readonly EXIT_CODE_MUST_BE_ROOT=1                     # The script must be executed by root or sudo
 readonly EXIT_CODE_NETWORK_DEVICE_NAME_MISSING_WAN=2  # Network device name (internet) is missing
@@ -50,6 +58,11 @@ readonly PATH_DNSMASQ_CONF=$PATH_DNSMASQ/ytl-linux.conf
 readonly PATH_DNSMASQ_CONF_TEMPLATE=$PATH_TEMPLATES/dnsmasq.conf.template
 readonly PATH_DNSMASQ_STATIC_DNS_CONF=$PATH_DNSMASQ/ytl-linux-static-dns-records.conf
 readonly PATH_DNSMASQ_KTP_ALIASES_CONF=$PATH_DNSMASQ/ytl-linux-ktp-aliases.conf
+readonly PATH_DNSMASQ_IPSET_ALLOWLIST_CONF=$PATH_DNSMASQ/ytl-linux-internet-allowlist-ipset.conf
+readonly PATH_DNSMASQ_SERVER_ALLOWLIST_CONF=$PATH_DNSMASQ/ytl-linux-internet-allowlist-server.conf
+readonly PATH_DOCKER=/etc/docker
+readonly PATH_DOCKER_DAEMON_CONF=$PATH_DOCKER/daemon.json
+readonly PATH_DOCKER_DAEMON_CONF_TEMPLATE=$PATH_TEMPLATES/docker-daemon.json.template
 readonly PATH_NAKSU2_WORKDIR="${NAKSU2_WORKDIR:-/home/school/.local/share/digabi/naksu2}"
 readonly PATH_NAKSU2_CERTS_DIR="$PATH_NAKSU2_WORKDIR/certs"
 readonly PATH_NAKSU2_CERT="$PATH_NAKSU2_CERTS_DIR/cert.pem"
@@ -73,6 +86,9 @@ readonly BIN_NM_ONLINE=/usr/bin/nm-online
 readonly BIN_SED=/usr/bin/sed
 readonly BIN_XARGS=/usr/bin/xargs
 readonly BIN_OPENSSL=/usr/bin/openssl
+readonly BIN_IPTABLES=/usr/sbin/iptables
+readonly BIN_IPSET=/usr/sbin/ipset
+readonly BIN_DIG=/usr/bin/dig
 readonly BIN_DIGABI2_EXAMNET_BOUNCER=/usr/local/libexec/ytl-linux-digabi2-examnet/bouncer
 readonly BIN_DIGABI2_EXAMNET_DISCOVERY=/usr/local/libexec/ytl-linux-digabi2-examnet/discovery
 readonly BIN_STAT=/usr/bin/stat
@@ -81,6 +97,11 @@ readonly BIN_CHOWN=/usr/bin/chown
 readonly CONST_MIN_SERVER_NUMBER=1
 readonly CONST_MAX_SERVER_NUMBER=24
 readonly CONST_SUBNETS_PER_SERVER=10
+
+readonly INTERNET_ALLOWLIST_IPSET_NAME="ytl_internet_allowlist"
+readonly INTERNET_ALLOWLIST_FILTER_CHAIN="YTL_LAN_WAN_IPSET"
+readonly INTERNET_ALLOWLIST_LOG_CHAIN="YTL_LAN_WAN_IPSET_LOG"
+readonly INTERNET_ALLOWLIST_IPSET_TIMEOUT_SECONDS=3600
 
 function get_dir_owner() {
     _DIR=$1
@@ -310,6 +331,106 @@ function remove_dnsmasq_settings() {
         rm -f $PATH_DNSMASQ_STATIC_DNS_CONF
         exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_DNSMASQ_STATIC_DNS_CONF'"
     fi
+
+    if [ -f $PATH_DNSMASQ_KTP_ALIASES_CONF ]; then
+        rm -f $PATH_DNSMASQ_KTP_ALIASES_CONF
+        exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_DNSMASQ_KTP_ALIASES_CONF'"
+    fi
+
+    if [ -f $PATH_DNSMASQ_IPSET_ALLOWLIST_CONF ]; then
+        rm -f $PATH_DNSMASQ_IPSET_ALLOWLIST_CONF
+        exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_DNSMASQ_IPSET_ALLOWLIST_CONF'"
+    fi
+
+    if [ -f $PATH_DNSMASQ_SERVER_ALLOWLIST_CONF ]; then
+        rm -f $PATH_DNSMASQ_SERVER_ALLOWLIST_CONF
+        exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_DNSMASQ_SERVER_ALLOWLIST_CONF'"
+    fi
+}
+
+function remove_internet_allowlist() {
+    # When running --remove, NET_DEVICE_WAN/LAN might not be set (user might not pass params).
+    # Prefer values from saved examnet config files if available.
+    if [ -z "$NET_DEVICE_WAN" ] && [ -f "$PATH_NET_DEVICE_WAN_CONF" ]; then
+        NET_DEVICE_WAN=$(cat "$PATH_NET_DEVICE_WAN_CONF")
+    fi
+    if [ -z "$NET_DEVICE_LAN" ] && [ -f "$PATH_NET_DEVICE_LAN_CONF" ]; then
+        NET_DEVICE_LAN=$(cat "$PATH_NET_DEVICE_LAN_CONF")
+    fi
+
+    if [ -z "$NET_DEVICE_WAN" ] || [ -z "$NET_DEVICE_LAN" ]; then
+        # Can't remove interface-specific rules; still flush/destroy ipset.
+        if [ -x "$BIN_IPSET" ]; then
+            $BIN_IPSET flush "$INTERNET_ALLOWLIST_IPSET_NAME" 2>/dev/null || true
+            $BIN_IPSET destroy "$INTERNET_ALLOWLIST_IPSET_NAME" 2>/dev/null || true
+        fi
+        return 0
+    fi
+
+    # Only attempt if binaries exist.
+    if [ -x "$BIN_IPTABLES" ]; then
+        # Remove NAT rule
+        while $BIN_IPTABLES -t nat -C POSTROUTING -o "$NET_DEVICE_WAN" -m set --match-set "$INTERNET_ALLOWLIST_IPSET_NAME" dst -j MASQUERADE 2>/dev/null; do
+            $BIN_IPTABLES -t nat -D POSTROUTING -o "$NET_DEVICE_WAN" -m set --match-set "$INTERNET_ALLOWLIST_IPSET_NAME" dst -j MASQUERADE
+        done
+
+        # Remove FORWARD jump rules
+        while $BIN_IPTABLES -t filter -C FORWARD -i "$NET_DEVICE_LAN" -o "$NET_DEVICE_WAN" -j "$INTERNET_ALLOWLIST_LOG_CHAIN" 2>/dev/null; do
+            $BIN_IPTABLES -t filter -D FORWARD -i "$NET_DEVICE_LAN" -o "$NET_DEVICE_WAN" -j "$INTERNET_ALLOWLIST_LOG_CHAIN"
+        done
+
+        while $BIN_IPTABLES -t filter -C FORWARD -i "$NET_DEVICE_LAN" -o "$NET_DEVICE_WAN" -j "$INTERNET_ALLOWLIST_FILTER_CHAIN" 2>/dev/null; do
+            $BIN_IPTABLES -t filter -D FORWARD -i "$NET_DEVICE_LAN" -o "$NET_DEVICE_WAN" -j "$INTERNET_ALLOWLIST_FILTER_CHAIN"
+        done
+
+        # Remove established return rule
+        while $BIN_IPTABLES -t filter -C FORWARD -i "$NET_DEVICE_WAN" -o "$NET_DEVICE_LAN" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null; do
+            $BIN_IPTABLES -t filter -D FORWARD -i "$NET_DEVICE_WAN" -o "$NET_DEVICE_LAN" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+        done
+
+        # Delete chains
+        $BIN_IPTABLES -t filter -F "$INTERNET_ALLOWLIST_FILTER_CHAIN" 2>/dev/null || true
+        $BIN_IPTABLES -t filter -X "$INTERNET_ALLOWLIST_FILTER_CHAIN" 2>/dev/null || true
+        $BIN_IPTABLES -t filter -F "$INTERNET_ALLOWLIST_LOG_CHAIN" 2>/dev/null || true
+        $BIN_IPTABLES -t filter -X "$INTERNET_ALLOWLIST_LOG_CHAIN" 2>/dev/null || true
+    fi
+
+    if [ -x "$BIN_IPSET" ]; then
+        $BIN_IPSET flush "$INTERNET_ALLOWLIST_IPSET_NAME" 2>/dev/null || true
+        $BIN_IPSET destroy "$INTERNET_ALLOWLIST_IPSET_NAME" 2>/dev/null || true
+    fi
+}
+
+function enable_systemd_services() {
+    $BIN_SYSTEMCTL enable ytl-linux-digabi2-examnet.service >>"$PATH_DEBUG" 2>&1
+    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to enable ytl-linux-digabi2-examnet.service"
+
+    $BIN_SYSTEMCTL enable dnsmasq.service >>"$PATH_DEBUG" 2>&1
+    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to enable dnsmasq.service"
+
+    $BIN_SYSTEMCTL enable ytl-linux-digabi2-examnet-discovery.service >>"$PATH_DEBUG" 2>&1
+    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to enable ytl-linux-digabi2-examnet-discovery.service"
+
+    $BIN_SYSTEMCTL enable ytl-linux-digabi2-examnet-discovery.timer >>"$PATH_DEBUG" 2>&1
+    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to enable ytl-linux-digabi2-examnet-discovery.timer"
+}
+
+function disable_systemd_services() {
+    $BIN_SYSTEMCTL disable --now ytl-linux-digabi2-examnet.service >>"$PATH_DEBUG" 2>&1
+    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to disable ytl-linux-digabi2-examnet.service"
+
+    $BIN_SYSTEMCTL disable --now dnsmasq.service >>"$PATH_DEBUG" 2>&1
+    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to disable dnsmasq.service"
+
+    $BIN_SYSTEMCTL disable --now ytl-linux-digabi2-examnet-discovery.timer >>"$PATH_DEBUG" 2>&1
+    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to disable ytl-linux-digabi2-examnet-discovery.timer"
+
+    $BIN_SYSTEMCTL disable --now ytl-linux-digabi2-examnet-discovery.service >>"$PATH_DEBUG" 2>&1
+    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to disable ytl-linux-digabi2-examnet-discovery.service"
+}
+
+function remove_school_host_entries() {
+    $BIN_SED -i '/^# BEGIN SCHOOL DOMAIN ENTRIES$/,/^# END SCHOOL DOMAIN ENTRIES$/d' /etc/hosts
 }
 
 function remove_all_settings() {
@@ -351,6 +472,7 @@ function remove_all_settings() {
     fi
 
     remove_dnsmasq_settings
+    remove_internet_allowlist
     remove_school_host_entries
 
     $BIN_NMCLI -f UUID,NAME connection show | $BIN_GREP -P -v "^UUID" | $BIN_TR -s ' ' | while read -r line ; do
@@ -374,6 +496,105 @@ function restart_dnsmasq() {
         $BIN_SYSTEMCTL restart dnsmasq.service >>"$PATH_DEBUG" 2>&1
         exit_if_error $? $EXIT_CODE_CANNOT_RESTART_DNSMASQ "Failed to restart dnsmasq.service"
     fi
+}
+
+function configure_internet_allowlist() {
+    if [ -z "$NET_DEVICE_LAN" ] || [ -z "$NET_DEVICE_WAN" ] || [ -z "$SERVER_OWN_IP" ]; then
+        print_error "Internet allowlist: missing NET_DEVICE_LAN/NET_DEVICE_WAN/SERVER_OWN_IP"
+        exit_script $EXIT_CODE_CANNOT_START_DAEMON
+    fi
+
+    if [ ! -x "$BIN_IPTABLES" ]; then
+        print_error "Internet allowlist: iptables not found ($BIN_IPTABLES)"
+        exit_script $EXIT_CODE_CANNOT_START_DAEMON
+    fi
+
+    if [ ! -x "$BIN_IPSET" ]; then
+        print_error "Internet allowlist: ipset not found ($BIN_IPSET)"
+        exit_script $EXIT_CODE_CANNOT_START_DAEMON
+    fi
+
+    if [ ! -x "$BIN_DIG" ]; then
+        print_error "Internet allowlist: dig not found ($BIN_DIG); install dnsutils"
+        exit_script $EXIT_CODE_CANNOT_START_DAEMON
+    fi
+
+    # DNS-level deny:
+    # Keep address=/#/0.0.0.0 in the main dnsmasq config (deny by default).
+    # Allowlisted domains are the ONLY ones we forward to upstream resolvers.
+    #
+    # This prevents LAN clients from receiving real DNS answers for arbitrary
+    # Internet domains.
+
+    # 1) Write a dnsmasq snippet that (a) adds resolved IPs for allowed domains into ipset
+    # and (b) forwards ONLY those domains to upstream resolver(s).
+    {
+        echo "# Managed by ytl-linux-digabi2-examnet"
+        echo "# Internet allowlist (DNS + ipset)"
+        echo "# - Allowlisted domains are forwarded to upstream resolvers"
+        echo "# - All other domains are null-routed by address=/#/0.0.0.0 in the main config"
+        echo "# - Returned IPs for allowlisted domains are added to ipset '$INTERNET_ALLOWLIST_IPSET_NAME'"
+        for d in "${INTERNET_ALLOWLIST_DOMAINS[@]}"; do
+            echo "ipset=/$d/$INTERNET_ALLOWLIST_IPSET_NAME"
+        done
+    } >"$PATH_DNSMASQ_IPSET_ALLOWLIST_CONF"
+
+    # 2) Write a dnsmasq snippet that forwards allowlisted domains to upstream resolvers.
+    {
+        echo "# Managed by ytl-linux-digabi2-examnet"
+        echo "# Forward ONLY allowlisted domains to upstream DNS (as defined by resolv-file=/etc/resolv.conf)"
+        for d in "${INTERNET_ALLOWLIST_DOMAINS[@]}"; do
+            echo "server=/$d/#"
+        done
+    } >"$PATH_DNSMASQ_SERVER_ALLOWLIST_CONF"
+
+    # 3) Ensure ipset exists (with timeout).
+    # Note: -exist prevents failure if it already exists.
+    $BIN_IPSET create "$INTERNET_ALLOWLIST_IPSET_NAME" hash:ip timeout "$INTERNET_ALLOWLIST_IPSET_TIMEOUT_SECONDS" -exist
+
+    # 4) Install iptables rules.
+    # Strategy:
+    #   - LOG chain logs NEW flows allowed by ipset
+    #   - FILTER chain allows LAN->WAN only if dst in ipset; then drop
+    #   - FORWARD has:
+    #       (a) established return traffic WAN->LAN
+    #       (b) LAN->WAN jump to LOG and FILTER chain
+    #   - NAT POSTROUTING masquerade only when dst in ipset
+
+    $BIN_IPTABLES -t filter -N "$INTERNET_ALLOWLIST_LOG_CHAIN" 2>/dev/null || true
+    $BIN_IPTABLES -t filter -F "$INTERNET_ALLOWLIST_LOG_CHAIN" 2>/dev/null || true
+    $BIN_IPTABLES -t filter -A "$INTERNET_ALLOWLIST_LOG_CHAIN" \
+        -m conntrack --ctstate NEW \
+        -m set --match-set "$INTERNET_ALLOWLIST_IPSET_NAME" dst \
+        -m limit --limit 10/second --limit-burst 30 \
+        -j LOG --log-prefix "YTL ALLOW NEW " --log-level 6
+    $BIN_IPTABLES -t filter -A "$INTERNET_ALLOWLIST_LOG_CHAIN" -j RETURN
+
+    $BIN_IPTABLES -t filter -N "$INTERNET_ALLOWLIST_FILTER_CHAIN" 2>/dev/null || true
+    $BIN_IPTABLES -t filter -F "$INTERNET_ALLOWLIST_FILTER_CHAIN" 2>/dev/null || true
+    $BIN_IPTABLES -t filter -A "$INTERNET_ALLOWLIST_FILTER_CHAIN" -m set --match-set "$INTERNET_ALLOWLIST_IPSET_NAME" dst -j ACCEPT
+    $BIN_IPTABLES -t filter -A "$INTERNET_ALLOWLIST_FILTER_CHAIN" -j DROP
+
+    # Established/related return traffic from WAN->LAN
+    $BIN_IPTABLES -t filter -C FORWARD -i "$NET_DEVICE_WAN" -o "$NET_DEVICE_LAN" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || \
+        $BIN_IPTABLES -t filter -A FORWARD -i "$NET_DEVICE_WAN" -o "$NET_DEVICE_LAN" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+
+    # LAN->WAN logging (NEW allowed only) + enforcement
+    $BIN_IPTABLES -t filter -C FORWARD -i "$NET_DEVICE_LAN" -o "$NET_DEVICE_WAN" -j "$INTERNET_ALLOWLIST_LOG_CHAIN" 2>/dev/null || \
+        $BIN_IPTABLES -t filter -I FORWARD 1 -i "$NET_DEVICE_LAN" -o "$NET_DEVICE_WAN" -j "$INTERNET_ALLOWLIST_LOG_CHAIN"
+
+    $BIN_IPTABLES -t filter -C FORWARD -i "$NET_DEVICE_LAN" -o "$NET_DEVICE_WAN" -j "$INTERNET_ALLOWLIST_FILTER_CHAIN" 2>/dev/null || \
+        $BIN_IPTABLES -t filter -I FORWARD 2 -i "$NET_DEVICE_LAN" -o "$NET_DEVICE_WAN" -j "$INTERNET_ALLOWLIST_FILTER_CHAIN"
+
+    # NAT only for allowed destinations
+    $BIN_IPTABLES -t nat -C POSTROUTING -o "$NET_DEVICE_WAN" -m set --match-set "$INTERNET_ALLOWLIST_IPSET_NAME" dst -j MASQUERADE 2>/dev/null || \
+        $BIN_IPTABLES -t nat -A POSTROUTING -o "$NET_DEVICE_WAN" -m set --match-set "$INTERNET_ALLOWLIST_IPSET_NAME" dst -j MASQUERADE
+
+    # 5) Restart dnsmasq to pick up ipset=/server= rules, then proactively populate ipset via local dnsmasq.
+    restart_dnsmasq
+    for d in "${INTERNET_ALLOWLIST_DOMAINS[@]}"; do
+        $BIN_DIG +time=1 +tries=1 @127.0.0.1 "$d" A >/dev/null 2>&1 || true
+    done
 }
 
 function restart_networkmanager() {
@@ -415,34 +636,6 @@ function restart_network_services() {
     restart_dnsmasq
     restart_networkmanager
     restart_examnet_daemon
-}
-
-function enable_systemd_services() {
-    $BIN_SYSTEMCTL enable ytl-linux-digabi2-examnet.service >>"$PATH_DEBUG" 2>&1
-    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to enable ytl-linux-digabi2-examnet.service"
-
-    $BIN_SYSTEMCTL enable dnsmasq.service >>"$PATH_DEBUG" 2>&1
-    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to enable dnsmasq.service"
-
-    $BIN_SYSTEMCTL enable ytl-linux-digabi2-examnet-discovery.service >>"$PATH_DEBUG" 2>&1
-    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to enable ytl-linux-digabi2-examnet-discovery.service"
-
-    $BIN_SYSTEMCTL enable ytl-linux-digabi2-examnet-discovery.timer >>"$PATH_DEBUG" 2>&1
-    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to enable ytl-linux-digabi2-examnet-discovery.timer"
-}
-
-function disable_systemd_services() {
-    $BIN_SYSTEMCTL disable --now ytl-linux-digabi2-examnet.service >>"$PATH_DEBUG" 2>&1
-    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to disable ytl-linux-digabi2-examnet.service"
-
-    $BIN_SYSTEMCTL disable --now dnsmasq.service >>"$PATH_DEBUG" 2>&1
-    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to disable dnsmasq.service"
-
-    $BIN_SYSTEMCTL disable --now ytl-linux-digabi2-examnet-discovery.timer >>"$PATH_DEBUG" 2>&1
-    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to disable ytl-linux-digabi2-examnet-discovery.timer"
-
-    $BIN_SYSTEMCTL disable --now ytl-linux-digabi2-examnet-discovery.service >>"$PATH_DEBUG" 2>&1
-    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to disable ytl-linux-digabi2-examnet-discovery.service"
 }
 
 function restart_docker() {
@@ -515,10 +708,6 @@ function configure_static_dns_records() {
     debug "Configuring domain for KTP"
     debug "This server's domain based on server number ($SERVER_NUMBER) is: $THIS_SERVER_DOMAIN"
     write_file "$PATH_NAKSU2_DOMAIN" "$THIS_SERVER_DOMAIN" "$NAKSU2_WORKDIR_OWNER"
-}
-
-function remove_school_host_entries() {
-    $BIN_SED -i '/^# BEGIN SCHOOL DOMAIN ENTRIES$/,/^# END SCHOOL DOMAIN ENTRIES$/d' /etc/hosts
 }
 
 # ---------- Main script logic starts here ---------- #
@@ -732,6 +921,7 @@ write_file $PATH_RESOLVED_CONF "$(envsubst < $PATH_RESOLVED_CONF_TEMPLATE)"
 remove_dnsmasq_settings
 export FRIENDLY_NAME_SEARCH_DOMAIN
 write_file $PATH_DNSMASQ_CONF "$(envsubst < $PATH_DNSMASQ_CONF_TEMPLATE)"
+configure_internet_allowlist
 
 if [ $USE_STATIC_LOCAL_DNS -gt 0 ]; then
     configure_static_dns_records "$SERVER_NUMBER"
