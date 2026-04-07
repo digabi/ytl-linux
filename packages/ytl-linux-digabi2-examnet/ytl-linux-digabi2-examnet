@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
-# These domains are allowed from LAN to WAN for Windows Defender cloud verification.
+# These domains and their subdomains are allowed from LAN to WAN for Windows Defender cloud verification.
 # Keep this list minimal.
-# TODO replace with list of actual domains used by Defender
 readonly INTERNET_ALLOWLIST_DOMAINS=(
-    "defender.microsoft.com"
-    "api.microsoft.com"
+    "endpoint.security.microsoft.com"
+    "smartscreen-prod.microsoft.com"
+    "smartscreen.microsoft.com"
 )
 
 # Exit codes
@@ -528,14 +528,26 @@ function configure_internet_allowlist() {
 
     # 1) Write a dnsmasq snippet that (a) adds resolved IPs for allowed domains into ipset
     # and (b) forwards ONLY those domains to upstream resolver(s).
+    normalize_dnsmasq_domain_suffix() {
+        # dnsmasq treats /domain/ as a suffix match; providing a leading dot makes intent explicit.
+        # Example: endpoint.security.microsoft.com -> .endpoint.security.microsoft.com
+        _d="$1"
+        if [[ "$_d" == .* ]]; then
+            echo "$_d"
+        else
+            echo ".$_d"
+        fi
+    }
+
     {
         echo "# Managed by ytl-linux-digabi2-examnet"
         echo "# Internet allowlist (DNS + ipset)"
         echo "# - Allowlisted domains are forwarded to upstream resolvers"
         echo "# - All other domains are null-routed by address=/#/0.0.0.0 in the main config"
-        echo "# - Returned IPs for allowlisted domains are added to ipset '$INTERNET_ALLOWLIST_IPSET_NAME'"
+        echo "# - Returned A records for allowlisted domains (and their subdomains) are added to ipset '$INTERNET_ALLOWLIST_IPSET_NAME'"
         for d in "${INTERNET_ALLOWLIST_DOMAINS[@]}"; do
-            echo "ipset=/$d/$INTERNET_ALLOWLIST_IPSET_NAME"
+            sd="$(normalize_dnsmasq_domain_suffix "$d")"
+            echo "ipset=/$sd/$INTERNET_ALLOWLIST_IPSET_NAME"
         done
     } >"$PATH_DNSMASQ_IPSET_ALLOWLIST_CONF"
 
@@ -544,7 +556,8 @@ function configure_internet_allowlist() {
         echo "# Managed by ytl-linux-digabi2-examnet"
         echo "# Forward ONLY allowlisted domains to upstream DNS (as defined by resolv-file=/etc/resolv.conf)"
         for d in "${INTERNET_ALLOWLIST_DOMAINS[@]}"; do
-            echo "server=/$d/#"
+            sd="$(normalize_dnsmasq_domain_suffix "$d")"
+            echo "server=/$sd/#"
         done
     } >"$PATH_DNSMASQ_SERVER_ALLOWLIST_CONF"
 
