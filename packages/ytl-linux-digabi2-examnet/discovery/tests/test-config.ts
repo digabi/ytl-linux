@@ -7,7 +7,8 @@ export const config = ConfigSchema.parse({
   ktpDomains: Array(24)
     .fill(undefined)
     .map((_, i) => `ktp${i + 1}.1000.koe.abitti.net`),
-  ports: { discovery: 26464 }
+  ports: { discovery: 26464 },
+  dbPath: 'devconf/test__discovery.db'
 } satisfies Config)
 
 export const FAKE_KTPS: Record<string, DiscoveryResponse> = {

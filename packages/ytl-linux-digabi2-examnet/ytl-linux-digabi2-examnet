@@ -59,6 +59,7 @@ readonly PATH_SERVER_FRIENDLY_NAME_CONF=$PATH_EXAMNET_CONFIG/server-friendly-nam
 readonly PATH_NET_DEVICE_LAN_CONF=$PATH_EXAMNET_CONFIG/net-device-lan
 readonly PATH_NET_DEVICE_WAN_CONF=$PATH_EXAMNET_CONFIG/net-device-wan
 readonly PATH_SERVER_OWN_IP=$PATH_EXAMNET_CONFIG/server-own-ip
+readonly PATH_DISCOVERY_DB=$PATH_EXAMNET_CONFIG/discovery.db
 
 readonly BIN_ECHO=/usr/bin/echo
 readonly BIN_GREP=/usr/bin/grep
@@ -344,6 +345,11 @@ function remove_all_settings() {
         exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_SERVER_OWN_IP'"
     fi
 
+    if [ -f $PATH_DISCOVERY_DB ]; then
+        rm -f $PATH_DISCOVERY_DB
+        exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_DISCOVERY_DB'"
+    fi
+
     remove_dnsmasq_settings
     remove_school_host_entries
 
@@ -589,7 +595,8 @@ if [[ $* == *--discover* ]]; then
             "isProd": true,
             "ktpDomains": $(jq -Rcs '[. | split("\n") | .[] | match("host-record=(.+),.+").captures[0].string]' "$PATH_DNSMASQ_STATIC_DNS_CONF"),
             "dnsmasqConfigOutputFile": "$PATH_DNSMASQ_KTP_ALIASES_CONF",
-            "ports": {"discovery": $DISCOVERY_PORT}
+            "ports": {"discovery": $DISCOVERY_PORT},
+            "dbPath": "$PATH_DISCOVERY_DB"
         }
     }
 EOF
