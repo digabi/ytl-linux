@@ -45,25 +45,6 @@ async function removeDnsmasqConfig(config: Config) {
   }
 }
 
-function checkForDuplicatesAndRemove(discovered: DiscoveredKTP[]): DiscoveredKTP[] {
-  const grouped = _.groupBy(discovered, x => x.alias)
-
-  const deduped: DiscoveredKTP[] = []
-
-  // There would be a more elegant way to do this straight away, but we want these instances to be logged for debugging, so doing it the more laborious way
-  for (const [alias, declarators] of Object.entries(grouped)) {
-    if (declarators.length > 1) {
-      logger.error(declarators, `Multiple KTPs in this network declare the same alias (${alias}):`)
-      logger.error(`To prevent confusion, until this conflict is remediated, this alias will not be mapped to any KTP`)
-      continue
-    }
-
-    deduped.push(declarators[0])
-  }
-
-  return deduped
-}
-
 export async function writeDnsmasqConfig(discovered: DiscoveredKTP[], config: Config) {
   // Write entire scan result, including duplicates, to DB so we can always see the raw situation
   db.upsertFriendlyNames(discovered)
@@ -71,15 +52,14 @@ export async function writeDnsmasqConfig(discovered: DiscoveredKTP[], config: Co
   // Read back the results from the DB so we can also include KTPs that were not online when this scan happened,
   // and only then dedupe them so that we don't confuse dnsmasq
   const allFriendlyNames = db.getFriendlyNames()
-  const deduped = checkForDuplicatesAndRemove(allFriendlyNames)
 
   if (Deno.env.get('CONSOLE_ONLY_OUTPUT') === 'true') {
     logger.info(`Console only output mode enabled, will not write any files and outputting results directly to stdout`)
-    console.log(JSON.stringify({ discovered: deduped }, null, 2))
+    console.log(JSON.stringify({ discovered: allFriendlyNames }, null, 2))
     return
   }
 
-  const hostRecordEntries = deduped.map(x => `host-record=${x.alias},${x.target}`)
+  const hostRecordEntries = allFriendlyNames.map(x => `host-record=${x.alias},${x.target}`)
 
   if (hostRecordEntries.length === 0) {
     logger.info(

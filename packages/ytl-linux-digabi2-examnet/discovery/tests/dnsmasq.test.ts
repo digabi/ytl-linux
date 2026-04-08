@@ -27,7 +27,7 @@ describe('dnsmasq config generation', () => {
     await assertSnapshot(ctx, await Deno.readTextFile(config.dnsmasqConfigOutputFile))
   })
 
-  it('stores even KTPs that have the same alias declared, but only writes dnsmasq config for ones without duplicates', async ctx => {
+  it('stores KTPs that have the same alias declared', async ctx => {
     const discovered: DiscoveredKTP[] = [
       { address: 'ktp1.1000.koe.abitti.net', target: '192.168.10.1', alias: 'peruna.internal' },
       { address: 'ktp2.1000.koe.abitti.net', target: '192.168.20.1', alias: 'nauris.internal' },

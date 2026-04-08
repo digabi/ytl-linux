@@ -26,7 +26,7 @@ host-record=nauris.internal,192.168.20.1
 host-record=turnipsi.internal,192.168.30.1"
 `;
 
-snapshot[`dnsmasq config generation > stores even KTPs that have the same alias declared, but only writes dnsmasq config for ones without duplicates 1`] = `
+snapshot[`dnsmasq config generation > stores KTPs that have the same alias declared 1`] = `
 [
   {
     address: "ktp1.1000.koe.abitti.net",
@@ -51,7 +51,9 @@ snapshot[`dnsmasq config generation > stores even KTPs that have the same alias 
 ]
 `;
 
-snapshot[`dnsmasq config generation > stores even KTPs that have the same alias declared, but only writes dnsmasq config for ones without duplicates 2`] = `
-"host-record=nauris.internal,192.168.20.1
-host-record=turnipsi.internal,192.168.30.1"
+snapshot[`dnsmasq config generation > stores KTPs that have the same alias declared 2`] = `
+"host-record=peruna.internal,192.168.10.1
+host-record=nauris.internal,192.168.20.1
+host-record=turnipsi.internal,192.168.30.1
+host-record=peruna.internal,192.168.40.1"
 `;
