@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Name=Netdata
+Comment=View system performance information
+Comment[fi]=Tarkastele järjestelmän suorituskykytietoja
+Comment[sv]=Inspektera information om systemets prestanda
+Exec=open http://localhost:19999
+Terminal=false
+Type=Application
+Categories=System;Utility;
+Icon=/usr/share/icons/netdata.png

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Name=Bandwhich
+Comment=View network performance information
+Comment[fi]=Tarkastele verkon suorituskykytietoja
+Comment[sv]=Inspektera information om nätverkets prestanda
+Exec=sudo bandwhich
+Terminal=true
+Type=Application
+Categories=System;Utility;
+Icon=network-wireless
