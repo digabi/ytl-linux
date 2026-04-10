@@ -37,3 +37,4 @@ server=/koe.abitti.net/#
 # This prevents software on the student computer from getting confused by when DNS queries work, but the TCP
 # request stalls (since this is not a router) for however long the client timeout is set to; possibly Infinity
 address=/#/0.0.0.0
+address=/#/::
