@@ -19,10 +19,12 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v6
-      - uses: digabi/workflows-common/actions/setup-node@main
+      - uses: actions/setup-node@v4
         with:
-          npm-token: ${{ secrets.NPM_TOKEN }}
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: packages/ytl-linux-digabi2-examnet/package-lock.json
       - name: Install Node.js dependencies
-        run: npm ci --workspaces --iwr --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
       - name: Run unit tests
         run: npm run test

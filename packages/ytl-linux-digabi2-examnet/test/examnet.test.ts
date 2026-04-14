@@ -93,7 +93,7 @@ describe('examnet', async () => {
         {
           cmd: 'ytl-linux-digabi2-discovery',
           argv: [
-            `    {\n        "config": {\n            "isProd": true,\n            "ktpDomains": [],\n            "dnsmasqConfigOutputFile": "${mockDnsmasqDir}/ytl-linux-ktp-aliases.conf",\n            "ports": {"discovery": 26464}\n        }\n    }`
+            `    {\n        "config": {\n            "isProd": true,\n            "ktpDomains": [],\n            "dnsmasqConfigOutputFile": "${mockDnsmasqDir}/ytl-linux-ktp-aliases.conf",\n            "ports": {"discovery": 26464},\n            "dbPath": "${mockConfigDir}/discovery.db"\n        }\n    }`
           ]
         }
       ])
@@ -244,7 +244,7 @@ describe('examnet', async () => {
         { cmd: 'systemctl', argv: ['is-enabled', 'ytl-linux-digabi2-examnet.service'] },
         { cmd: 'systemctl', argv: ['is-enabled', 'ytl-linux-digabi2-examnet-discovery.timer'] },
         { cmd: 'systemctl', argv: ['is-enabled', 'ytl-linux-digabi2-examnet-discovery.service'] },
-        { cmd: 'systemctl', argv: ['restart', 'docker'] }
+        { cmd: 'ytl-linux-digabi2-docker-configure.sh', argv: ['127.0.0.1', '192.168.10.1'] }
       ])
     })
   })
@@ -393,7 +393,7 @@ describe('examnet', async () => {
         { cmd: 'systemctl', argv: ['is-enabled', 'ytl-linux-digabi2-examnet.service'] },
         { cmd: 'systemctl', argv: ['is-enabled', 'ytl-linux-digabi2-examnet-discovery.timer'] },
         { cmd: 'systemctl', argv: ['is-enabled', 'ytl-linux-digabi2-examnet-discovery.service'] },
-        { cmd: 'systemctl', argv: ['restart', 'docker'] }
+        { cmd: 'ytl-linux-digabi2-docker-configure.sh', argv: ['127.0.0.1', '192.168.10.1'] }
       ])
     })
   })
@@ -433,6 +433,7 @@ describe('examnet', async () => {
     await writeToTempDir(mockBinDir, 'stat', mockScript)
     await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-bouncer', mockBouncer)
     await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-discovery', mockScript)
+    await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-docker-configure.sh', mockScript)
 
     await writeToTempDir(mockConfigDir, 'ncsi-hostnames', 'example.com')
     await writeToTempDir(mockConfigDir, 'server-own-ip', '127.0.0.1')
@@ -457,7 +458,7 @@ describe('examnet', async () => {
     const callsLines = calls.split('\n')
     // console.log(`expecting ${expectedCalls.length} calls to external programs`)
     const callsArray = callsLines.map(line => {
-      // console.log(`parsing line ${line}`)
+      console.log(`parsing line ${line}`)
       return JSON.parse(line)
     })
     assert.deepEqual(callsArray, expectedCalls)
