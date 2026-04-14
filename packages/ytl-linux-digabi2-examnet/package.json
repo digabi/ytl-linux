@@ -1,0 +1,17 @@
+{
+  "name": "ytl-linux-digabi2-examnet",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "test": "node --import tsx --test \"test/**/*.test.ts\""
+  },
+  "devDependencies": {
+    "execa": "^9.6.1",
+    "prettier": "^3.8.1",
+    "@types/node": "^24.10.9",
+    "tsx": "^4.21.0"
+  }
+}
