@@ -49,50 +49,30 @@ readonly FRIENDLY_NAME_SEARCH_DOMAIN="internal"
 readonly DISCOVERY_PORT=26464
 readonly BOUNCER_PORT=80
 
-readonly PATH_TEMPLATES=/etc/ytl-linux-digabi2-examnet/templates
-readonly PATH_RESOLVED=/etc/systemd/resolved.conf.d
+readonly PATH_TEMPLATES=${PATH_TEMPLATES:-/etc/ytl-linux-digabi2-examnet/templates}
+readonly PATH_RESOLVED=${PATH_RESOLVED:-/etc/systemd/resolved.conf.d}
 readonly PATH_RESOLVED_CONF=$PATH_RESOLVED/ytl-linux.conf
 readonly PATH_RESOLVED_CONF_TEMPLATE=$PATH_TEMPLATES/resolved.conf.template
-readonly PATH_DNSMASQ=/etc/dnsmasq.d
+readonly PATH_DNSMASQ=${PATH_DNSMASQ:-/etc/dnsmasq.d}
 readonly PATH_DNSMASQ_CONF=$PATH_DNSMASQ/ytl-linux.conf
 readonly PATH_DNSMASQ_CONF_TEMPLATE=$PATH_TEMPLATES/dnsmasq.conf.template
 readonly PATH_DNSMASQ_STATIC_DNS_CONF=$PATH_DNSMASQ/ytl-linux-static-dns-records.conf
 readonly PATH_DNSMASQ_KTP_ALIASES_CONF=$PATH_DNSMASQ/ytl-linux-ktp-aliases.conf
 readonly PATH_DNSMASQ_IPSET_ALLOWLIST_CONF=$PATH_DNSMASQ/ytl-linux-internet-allowlist-ipset.conf
 readonly PATH_DNSMASQ_SERVER_ALLOWLIST_CONF=$PATH_DNSMASQ/ytl-linux-internet-allowlist-server.conf
-readonly PATH_DOCKER=/etc/docker
+readonly PATH_DOCKER=${PATH_DOCKER:-/etc/docker}
 readonly PATH_DOCKER_DAEMON_CONF=$PATH_DOCKER/daemon.json
 readonly PATH_DOCKER_DAEMON_CONF_TEMPLATE=$PATH_TEMPLATES/docker-daemon.json.template
 readonly PATH_NAKSU2_WORKDIR="${NAKSU2_WORKDIR:-/home/school/.local/share/digabi/naksu2}"
 readonly PATH_NAKSU2_CERTS_DIR="$PATH_NAKSU2_WORKDIR/certs"
 readonly PATH_NAKSU2_CERT="$PATH_NAKSU2_CERTS_DIR/cert.pem"
 readonly PATH_NAKSU2_DOMAIN="$PATH_NAKSU2_CERTS_DIR/domain.txt"
-readonly PATH_EXAMNET_CONFIG=/etc/ytl-linux-digabi2-examnet/config/
+readonly PATH_EXAMNET_CONFIG="${PATH_EXAMNET_CONFIG:-/etc/ytl-linux-digabi2-examnet/config/}"
 readonly PATH_SERVER_FRIENDLY_NAME_CONF=$PATH_EXAMNET_CONFIG/server-friendly-name
 readonly PATH_NET_DEVICE_LAN_CONF=$PATH_EXAMNET_CONFIG/net-device-lan
 readonly PATH_NET_DEVICE_WAN_CONF=$PATH_EXAMNET_CONFIG/net-device-wan
 readonly PATH_SERVER_OWN_IP=$PATH_EXAMNET_CONFIG/server-own-ip
 readonly PATH_DISCOVERY_DB=$PATH_EXAMNET_CONFIG/discovery.db
-
-readonly BIN_ECHO=/usr/bin/echo
-readonly BIN_GREP=/usr/bin/grep
-readonly BIN_TR=/usr/bin/tr
-readonly BIN_CUT=/usr/bin/cut
-readonly BIN_IP=/usr/sbin/ip
-readonly BIN_MKDIR=/usr/bin/mkdir
-readonly BIN_SYSTEMCTL=/usr/bin/systemctl
-readonly BIN_NMCLI=/usr/bin/nmcli
-readonly BIN_NM_ONLINE=/usr/bin/nm-online
-readonly BIN_SED=/usr/bin/sed
-readonly BIN_XARGS=/usr/bin/xargs
-readonly BIN_OPENSSL=/usr/bin/openssl
-readonly BIN_IPTABLES=/usr/sbin/iptables
-readonly BIN_IPSET=/usr/sbin/ipset
-readonly BIN_DIG=/usr/bin/dig
-readonly BIN_DIGABI2_EXAMNET_BOUNCER=/usr/local/libexec/ytl-linux-digabi2-examnet/bouncer
-readonly BIN_DIGABI2_EXAMNET_DISCOVERY=/usr/local/libexec/ytl-linux-digabi2-examnet/discovery
-readonly BIN_STAT=/usr/bin/stat
-readonly BIN_CHOWN=/usr/bin/chown
 
 readonly CONST_MIN_SERVER_NUMBER=1
 readonly CONST_MAX_SERVER_NUMBER=24
@@ -106,7 +86,7 @@ readonly INTERNET_ALLOWLIST_IPSET_TIMEOUT_SECONDS=3600
 function get_dir_owner() {
     _DIR=$1
     if [ -d "$_DIR" ]; then
-        $BIN_STAT -c '%U:%G' "$_DIR"
+        stat -c '%U:%G' "$_DIR"
     fi
 }
 
@@ -114,9 +94,9 @@ readonly NAKSU2_WORKDIR_OWNER=$(get_dir_owner "$PATH_NAKSU2_WORKDIR")
 
 function debug_path() {
     if [ -z "$DEBUG" ]; then
-        $BIN_ECHO "/dev/null"
+        echo "/dev/null"
     else
-        $BIN_ECHO "$DEBUG"
+        echo "$DEBUG"
     fi
 }
 
@@ -125,29 +105,29 @@ readonly PATH_DEBUG
 
 function debug() {
     _DEBUG_MESSAGE=$1
-    $BIN_ECHO "$SCRIPT_PATH DEBUG: $_DEBUG_MESSAGE" >>"$PATH_DEBUG"
+    echo "$SCRIPT_PATH DEBUG: $_DEBUG_MESSAGE" #>>"$PATH_DEBUG"
 }
 
 function print_error() {
     _ERROR_MESSAGE=$1
     debug "ERROR: $_ERROR_MESSAGE"
-    $BIN_ECHO "$SCRIPT_PATH error: $_ERROR_MESSAGE" >&2
+    echo "$SCRIPT_PATH error: $_ERROR_MESSAGE" >&2
 }
 
 function print_info() {
     _INFO_MESSAGE=$1
     debug "INFO: $_INFO_MESSAGE"
-    $BIN_ECHO "$SCRIPT_PATH info: $_INFO_MESSAGE"
+    echo "$SCRIPT_PATH info: $_INFO_MESSAGE"
 }
 
 function print_usage() {
-    $BIN_ECHO "usage: $SCRIPT_PATH wan-network-device local-network-device server-number [custom-server-name] [--use-static-local-dns] [--configure-only-static-local-dns]" >&2
-    $BIN_ECHO "       $SCRIPT_PATH --daemon" >&2
-    $BIN_ECHO "       $SCRIPT_PATH --restart-daemon" >&2
-    $BIN_ECHO "       $SCRIPT_PATH --discover" >&2
-    $BIN_ECHO "       $SCRIPT_PATH --remove" >&2
-    $BIN_ECHO "" >&2
-    $BIN_ECHO "example: $SCRIPT_PATH eth0 eth1 1" >&2
+    echo "usage: $SCRIPT_PATH wan-network-device local-network-device server-number [custom-server-name] [--use-static-local-dns] [--configure-only-static-local-dns] [--not-root]" >&2
+    echo "       $SCRIPT_PATH --daemon" >&2
+    echo "       $SCRIPT_PATH --restart-daemon" >&2
+    echo "       $SCRIPT_PATH --discover" >&2
+    echo "       $SCRIPT_PATH --remove" >&2
+    echo "" >&2
+    echo "example: $SCRIPT_PATH eth0 eth1 1" >&2
 }
 
 function exit_script() {
@@ -185,14 +165,15 @@ function network_enumerate_devices () {
 
 function network_device_exists() {
     _DEVICE=$1
-    $BIN_IP link show "$_DEVICE" &> /dev/null && $BIN_ECHO "1"
+    ip link show "$_DEVICE" &> /dev/null && echo "1"
 }
 
 function get_ipv4_address() {
     _DEVICE=$1
-    _IP=$($BIN_IP -oneline -4 addr show scope global "$_DEVICE" | $BIN_TR -s ' ' | $BIN_TR '/' ' ' | $BIN_CUT -f 4 -d ' ')
+    _IP=$(ip -oneline -4 addr show scope global "$_DEVICE" | tr -s ' ' | tr '/' ' ' | cut -f 4 -d ' ')
+    # echo called ip command with $PATH >&2
     if [[ ! "$_IP" =~ "does not exist" ]]; then
-        $BIN_ECHO "$_IP"
+        echo "$_IP"
     fi
 }
 
@@ -236,7 +217,7 @@ function check_network_device_names() {
 function server_number_is_valid() {
     _SERVER_NUMBER=$1
     if [[ "$_SERVER_NUMBER" =~ ^[0-9]+$ ]] && [ "$_SERVER_NUMBER" -ge $CONST_MIN_SERVER_NUMBER ] && [ "$_SERVER_NUMBER" -le $CONST_MAX_SERVER_NUMBER ]; then
-        $BIN_ECHO "1"
+        echo "1"
     fi
 }
 
@@ -260,9 +241,9 @@ function get_lan_ip_prefix() {
     _IP_WAN=$1
 
     if [[ "$_IP_WAN" =~ ^192\.168\. ]]; then
-        $BIN_ECHO "10.0."
+        echo "10.0."
     else
-        $BIN_ECHO "192.168."
+        echo "192.168."
     fi
 }
 
@@ -274,21 +255,21 @@ function write_file() {
     _FILE_PATH=$(dirname "$_FILE_FILENAME")
     if [ ! -d "$_FILE_PATH" ]; then
         debug "Path $_FILE_PATH is missing, creating"
-        $BIN_MKDIR -p "$_FILE_PATH"
+        mkdir -p "$_FILE_PATH"
         exit_if_error $? $EXIT_CODE_BAD_FILE_PATH "Failed to create directory $_FILE_PATH"
         if [ -n "$_FILE_OWNER" ]; then
-            $BIN_CHOWN "$_FILE_OWNER" "$_FILE_PATH"
+            chown "$_FILE_OWNER" "$_FILE_PATH"
         fi
     else
         debug "Path $_FILE_PATH exists"
     fi
 
     debug "$_FILE_FILENAME: $_FILE_CONTENT"
-    $BIN_ECHO -e "$_FILE_CONTENT" >"$_FILE_FILENAME"
+    echo -e "$_FILE_CONTENT" >"$_FILE_FILENAME"
     exit_if_error $? $EXIT_CODE_CANNOT_WRITE "Failed to write to $_FILE_FILENAME"
 
     if [ -n "$_FILE_OWNER" ]; then
-        $BIN_CHOWN "$_FILE_OWNER" "$_FILE_FILENAME"
+        chown "$_FILE_OWNER" "$_FILE_FILENAME"
     fi
 }
 
@@ -298,12 +279,12 @@ function configure_networkmanager() {
     _IP_AND_NETMASK=$3
 
     debug "Deleting existing NetworkManager connection '$_CONNECTION_NAME'"
-    $BIN_NMCLI connection delete "$_CONNECTION_NAME" >>"$PATH_DEBUG" 2>&1
+    nmcli connection delete "$_CONNECTION_NAME" >>"$PATH_DEBUG" 2>&1
     # We are not checking the exit code as this command fails if the connection does not exist
     # This is quite normal if the script has been executed before
 
     debug "Adding NetworkManager connection '$_CONNECTION_NAME'"
-    $BIN_NMCLI connection add \
+    nmcli connection add \
         type ethernet \
         ifname "$_INTERFACE_NAME" \
         con-name "$_CONNECTION_NAME" \
@@ -313,11 +294,11 @@ function configure_networkmanager() {
     exit_if_error $? $EXIT_CODE_CANNOT_RESTART_LAN_DEVICE "NetworkManager CLI: connection add $_CONNECTION_NAME failed"
 
     debug "Disabling IPv6 in connection '$_CONNECTION_NAME'"
-    $BIN_NMCLI connection modify "$_CONNECTION_NAME" ipv6.method "disabled" >>"$PATH_DEBUG" 2>&1
+    nmcli connection modify "$_CONNECTION_NAME" ipv6.method "disabled" >>"$PATH_DEBUG" 2>&1
     exit_if_error $? $EXIT_CODE_CANNOT_RESTART_LAN_DEVICE "NetworkManager CLI: IPv6 disable failed"
 
     debug "Starting connection '$_CONNECTION_NAME'"
-    $BIN_NMCLI connection up "$_CONNECTION_NAME" >>"$PATH_DEBUG" 2>&1
+    nmcli connection up "$_CONNECTION_NAME" >>"$PATH_DEBUG" 2>&1
     exit_if_error $? $EXIT_CODE_CANNOT_RESTART_LAN_DEVICE "Failed to start NetworkManager connection '$_CONNECTION_NAME'"
 }
 
@@ -360,77 +341,72 @@ function remove_internet_allowlist() {
 
     if [ -z "$NET_DEVICE_WAN" ] || [ -z "$NET_DEVICE_LAN" ]; then
         # Can't remove interface-specific rules; still flush/destroy ipset.
-        if [ -x "$BIN_IPSET" ]; then
-            $BIN_IPSET flush "$INTERNET_ALLOWLIST_IPSET_NAME" 2>/dev/null || true
-            $BIN_IPSET destroy "$INTERNET_ALLOWLIST_IPSET_NAME" 2>/dev/null || true
+        if [ -x "ipset" ]; then
+            ipset flush "$INTERNET_ALLOWLIST_IPSET_NAME" 2>/dev/null || true
+            ipset destroy "$INTERNET_ALLOWLIST_IPSET_NAME" 2>/dev/null || true
         fi
         return 0
     fi
 
-    # Only attempt if binaries exist.
-    if [ -x "$BIN_IPTABLES" ]; then
-        # Remove NAT rule
-        while $BIN_IPTABLES -t nat -C POSTROUTING -o "$NET_DEVICE_WAN" -m set --match-set "$INTERNET_ALLOWLIST_IPSET_NAME" dst -j MASQUERADE 2>/dev/null; do
-            $BIN_IPTABLES -t nat -D POSTROUTING -o "$NET_DEVICE_WAN" -m set --match-set "$INTERNET_ALLOWLIST_IPSET_NAME" dst -j MASQUERADE
-        done
+    # Remove NAT rule
+    while iptables -t nat -C POSTROUTING -o "$NET_DEVICE_WAN" -m set --match-set "$INTERNET_ALLOWLIST_IPSET_NAME" dst -j MASQUERADE 2>/dev/null; do
+        iptables -t nat -D POSTROUTING -o "$NET_DEVICE_WAN" -m set --match-set "$INTERNET_ALLOWLIST_IPSET_NAME" dst -j MASQUERADE
+    done
 
-        # Remove FORWARD jump rules
-        while $BIN_IPTABLES -t filter -C FORWARD -i "$NET_DEVICE_LAN" -o "$NET_DEVICE_WAN" -j "$INTERNET_ALLOWLIST_LOG_CHAIN" 2>/dev/null; do
-            $BIN_IPTABLES -t filter -D FORWARD -i "$NET_DEVICE_LAN" -o "$NET_DEVICE_WAN" -j "$INTERNET_ALLOWLIST_LOG_CHAIN"
-        done
+    # Remove FORWARD jump rules
+    while iptables -t filter -C FORWARD -i "$NET_DEVICE_LAN" -o "$NET_DEVICE_WAN" -j "$INTERNET_ALLOWLIST_LOG_CHAIN" 2>/dev/null; do
+        iptables -t filter -D FORWARD -i "$NET_DEVICE_LAN" -o "$NET_DEVICE_WAN" -j "$INTERNET_ALLOWLIST_LOG_CHAIN"
+    done
 
-        while $BIN_IPTABLES -t filter -C FORWARD -i "$NET_DEVICE_LAN" -o "$NET_DEVICE_WAN" -j "$INTERNET_ALLOWLIST_FILTER_CHAIN" 2>/dev/null; do
-            $BIN_IPTABLES -t filter -D FORWARD -i "$NET_DEVICE_LAN" -o "$NET_DEVICE_WAN" -j "$INTERNET_ALLOWLIST_FILTER_CHAIN"
-        done
+    while iptables -t filter -C FORWARD -i "$NET_DEVICE_LAN" -o "$NET_DEVICE_WAN" -j "$INTERNET_ALLOWLIST_FILTER_CHAIN" 2>/dev/null; do
+        iptables -t filter -D FORWARD -i "$NET_DEVICE_LAN" -o "$NET_DEVICE_WAN" -j "$INTERNET_ALLOWLIST_FILTER_CHAIN"
+    done
 
-        # Remove established return rule
-        while $BIN_IPTABLES -t filter -C FORWARD -i "$NET_DEVICE_WAN" -o "$NET_DEVICE_LAN" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null; do
-            $BIN_IPTABLES -t filter -D FORWARD -i "$NET_DEVICE_WAN" -o "$NET_DEVICE_LAN" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
-        done
+    # Remove established return rule
+    while iptables -t filter -C FORWARD -i "$NET_DEVICE_WAN" -o "$NET_DEVICE_LAN" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null; do
+        iptables -t filter -D FORWARD -i "$NET_DEVICE_WAN" -o "$NET_DEVICE_LAN" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+    done
 
-        # Delete chains
-        $BIN_IPTABLES -t filter -F "$INTERNET_ALLOWLIST_FILTER_CHAIN" 2>/dev/null || true
-        $BIN_IPTABLES -t filter -X "$INTERNET_ALLOWLIST_FILTER_CHAIN" 2>/dev/null || true
-        $BIN_IPTABLES -t filter -F "$INTERNET_ALLOWLIST_LOG_CHAIN" 2>/dev/null || true
-        $BIN_IPTABLES -t filter -X "$INTERNET_ALLOWLIST_LOG_CHAIN" 2>/dev/null || true
-    fi
+    # Delete chains
+    iptables -t filter -F "$INTERNET_ALLOWLIST_FILTER_CHAIN" 2>/dev/null || true
+    iptables -t filter -X "$INTERNET_ALLOWLIST_FILTER_CHAIN" 2>/dev/null || true
+    iptables -t filter -F "$INTERNET_ALLOWLIST_LOG_CHAIN" 2>/dev/null || true
+    iptables -t filter -X "$INTERNET_ALLOWLIST_LOG_CHAIN" 2>/dev/null || true
 
-    if [ -x "$BIN_IPSET" ]; then
-        $BIN_IPSET flush "$INTERNET_ALLOWLIST_IPSET_NAME" 2>/dev/null || true
-        $BIN_IPSET destroy "$INTERNET_ALLOWLIST_IPSET_NAME" 2>/dev/null || true
-    fi
+    ipset flush "$INTERNET_ALLOWLIST_IPSET_NAME" 2>/dev/null || true
+    ipset destroy "$INTERNET_ALLOWLIST_IPSET_NAME" 2>/dev/null || true
 }
 
 function enable_systemd_services() {
-    $BIN_SYSTEMCTL enable ytl-linux-digabi2-examnet.service >>"$PATH_DEBUG" 2>&1
+    systemctl enable ytl-linux-digabi2-examnet.service >>"$PATH_DEBUG" 2>&1
     exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to enable ytl-linux-digabi2-examnet.service"
 
-    $BIN_SYSTEMCTL enable dnsmasq.service >>"$PATH_DEBUG" 2>&1
+    systemctl enable dnsmasq.service >>"$PATH_DEBUG" 2>&1
     exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to enable dnsmasq.service"
 
-    $BIN_SYSTEMCTL enable ytl-linux-digabi2-examnet-discovery.service >>"$PATH_DEBUG" 2>&1
+    systemctl enable ytl-linux-digabi2-examnet-discovery.service >>"$PATH_DEBUG" 2>&1
     exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to enable ytl-linux-digabi2-examnet-discovery.service"
 
-    $BIN_SYSTEMCTL enable ytl-linux-digabi2-examnet-discovery.timer >>"$PATH_DEBUG" 2>&1
+    systemctl enable ytl-linux-digabi2-examnet-discovery.timer >>"$PATH_DEBUG" 2>&1
     exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to enable ytl-linux-digabi2-examnet-discovery.timer"
 }
 
 function disable_systemd_services() {
-    $BIN_SYSTEMCTL disable --now ytl-linux-digabi2-examnet.service >>"$PATH_DEBUG" 2>&1
+    systemctl disable --now ytl-linux-digabi2-examnet.service >>"$PATH_DEBUG" 2>&1
     exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to disable ytl-linux-digabi2-examnet.service"
 
-    $BIN_SYSTEMCTL disable --now dnsmasq.service >>"$PATH_DEBUG" 2>&1
+    systemctl disable --now dnsmasq.service >>"$PATH_DEBUG" 2>&1
     exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to disable dnsmasq.service"
 
-    $BIN_SYSTEMCTL disable --now ytl-linux-digabi2-examnet-discovery.timer >>"$PATH_DEBUG" 2>&1
+    systemctl disable --now ytl-linux-digabi2-examnet-discovery.timer >>"$PATH_DEBUG" 2>&1
     exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to disable ytl-linux-digabi2-examnet-discovery.timer"
 
-    $BIN_SYSTEMCTL disable --now ytl-linux-digabi2-examnet-discovery.service >>"$PATH_DEBUG" 2>&1
+    systemctl disable --now ytl-linux-digabi2-examnet-discovery.service >>"$PATH_DEBUG" 2>&1
     exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to disable ytl-linux-digabi2-examnet-discovery.service"
 }
 
 function remove_school_host_entries() {
-    $BIN_SED -i '/^# BEGIN SCHOOL DOMAIN ENTRIES$/,/^# END SCHOOL DOMAIN ENTRIES$/d' /etc/hosts
+    sed -i '/^# BEGIN SCHOOL DOMAIN ENTRIES$/,/^# END SCHOOL DOMAIN ENTRIES$/d' /etc/hosts
 }
 
 function remove_all_settings() {
@@ -475,25 +451,25 @@ function remove_all_settings() {
     remove_internet_allowlist
     remove_school_host_entries
 
-    $BIN_NMCLI -f UUID,NAME connection show | $BIN_GREP -P -v "^UUID" | $BIN_TR -s ' ' | while read -r line ; do
-        connection_uuid=$(echo "$line" | $BIN_CUT -d ' ' -f 1)
-        connection_name=$(echo "$line" | $BIN_CUT -d ' ' -f 2)
+    nmcli -f UUID,NAME connection show | grep -P -v "^UUID" | tr -s ' ' | while read -r line ; do
+        connection_uuid=$(echo "$line" | cut -d ' ' -f 1)
+        connection_name=$(echo "$line" | cut -d ' ' -f 2)
         if [[ "$connection_name" =~ ^yo- ]]; then
             debug "Removing connection '$connection_name', uuid: $connection_uuid"
-            $BIN_NMCLI connection delete "$connection_uuid"
+            nmcli connection delete "$connection_uuid"
             exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_CONNECTION "Failed to remove connection '$connection_name'"
         fi
     done
 }
 
 function restart_systemd_resolved() {
-    $BIN_SYSTEMCTL restart systemd-resolved
+    systemctl restart systemd-resolved
     exit_if_error $? $EXIT_CODE_CANNOT_RESTART_RESOLVED "Failed to restart systemd-resolved"
 }
 
 function restart_dnsmasq() {
     if [[ "$(systemctl is-enabled dnsmasq.service)" == "enabled" ]]; then
-        $BIN_SYSTEMCTL restart dnsmasq.service >>"$PATH_DEBUG" 2>&1
+        systemctl restart dnsmasq.service >>"$PATH_DEBUG" 2>&1
         exit_if_error $? $EXIT_CODE_CANNOT_RESTART_DNSMASQ "Failed to restart dnsmasq.service"
     fi
 }
@@ -504,18 +480,18 @@ function configure_internet_allowlist() {
         exit_script $EXIT_CODE_CANNOT_START_DAEMON
     fi
 
-    if [ ! -x "$BIN_IPTABLES" ]; then
-        print_error "Internet allowlist: iptables not found ($BIN_IPTABLES)"
+    if ! command -v "iptables" >/dev/null 2>&1; then
+        print_error "Internet allowlist: iptables not found (iptables)"
         exit_script $EXIT_CODE_CANNOT_START_DAEMON
     fi
 
-    if [ ! -x "$BIN_IPSET" ]; then
-        print_error "Internet allowlist: ipset not found ($BIN_IPSET)"
+    if ! command -v "ipset" >/dev/null 2>&1; then
+        print_error "Internet allowlist: ipset not found (ipset)"
         exit_script $EXIT_CODE_CANNOT_START_DAEMON
     fi
 
-    if [ ! -x "$BIN_DIG" ]; then
-        print_error "Internet allowlist: dig not found ($BIN_DIG); install dnsutils"
+    if ! command -v "dig" >/dev/null 2>&1; then
+        print_error "Internet allowlist: dig not found (dig); install dnsutils"
         exit_script $EXIT_CODE_CANNOT_START_DAEMON
     fi
 
@@ -563,7 +539,7 @@ function configure_internet_allowlist() {
 
     # 3) Ensure ipset exists (with timeout).
     # Note: -exist prevents failure if it already exists.
-    $BIN_IPSET create "$INTERNET_ALLOWLIST_IPSET_NAME" hash:ip timeout "$INTERNET_ALLOWLIST_IPSET_TIMEOUT_SECONDS" -exist
+    ipset create "$INTERNET_ALLOWLIST_IPSET_NAME" hash:ip timeout "$INTERNET_ALLOWLIST_IPSET_TIMEOUT_SECONDS" -exist
 
     # 4) Install iptables rules.
     # Strategy:
@@ -574,44 +550,44 @@ function configure_internet_allowlist() {
     #       (b) LAN->WAN jump to LOG and FILTER chain
     #   - NAT POSTROUTING masquerade only when dst in ipset
 
-    $BIN_IPTABLES -t filter -N "$INTERNET_ALLOWLIST_LOG_CHAIN" 2>/dev/null || true
-    $BIN_IPTABLES -t filter -F "$INTERNET_ALLOWLIST_LOG_CHAIN" 2>/dev/null || true
-    $BIN_IPTABLES -t filter -A "$INTERNET_ALLOWLIST_LOG_CHAIN" \
+    iptables -t filter -N "$INTERNET_ALLOWLIST_LOG_CHAIN" 2>/dev/null || true
+    iptables -t filter -F "$INTERNET_ALLOWLIST_LOG_CHAIN" 2>/dev/null || true
+    iptables -t filter -A "$INTERNET_ALLOWLIST_LOG_CHAIN" \
         -m conntrack --ctstate NEW \
         -m set --match-set "$INTERNET_ALLOWLIST_IPSET_NAME" dst \
         -m limit --limit 10/second --limit-burst 30 \
         -j LOG --log-prefix "YTL ALLOW NEW " --log-level 6
-    $BIN_IPTABLES -t filter -A "$INTERNET_ALLOWLIST_LOG_CHAIN" -j RETURN
+    iptables -t filter -A "$INTERNET_ALLOWLIST_LOG_CHAIN" -j RETURN
 
-    $BIN_IPTABLES -t filter -N "$INTERNET_ALLOWLIST_FILTER_CHAIN" 2>/dev/null || true
-    $BIN_IPTABLES -t filter -F "$INTERNET_ALLOWLIST_FILTER_CHAIN" 2>/dev/null || true
-    $BIN_IPTABLES -t filter -A "$INTERNET_ALLOWLIST_FILTER_CHAIN" -m set --match-set "$INTERNET_ALLOWLIST_IPSET_NAME" dst -j ACCEPT
-    $BIN_IPTABLES -t filter -A "$INTERNET_ALLOWLIST_FILTER_CHAIN" -j DROP
+    iptables -t filter -N "$INTERNET_ALLOWLIST_FILTER_CHAIN" 2>/dev/null || true
+    iptables -t filter -F "$INTERNET_ALLOWLIST_FILTER_CHAIN" 2>/dev/null || true
+    iptables -t filter -A "$INTERNET_ALLOWLIST_FILTER_CHAIN" -m set --match-set "$INTERNET_ALLOWLIST_IPSET_NAME" dst -j ACCEPT
+    iptables -t filter -A "$INTERNET_ALLOWLIST_FILTER_CHAIN" -j DROP
 
     # Established/related return traffic from WAN->LAN
-    $BIN_IPTABLES -t filter -C FORWARD -i "$NET_DEVICE_WAN" -o "$NET_DEVICE_LAN" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || \
-        $BIN_IPTABLES -t filter -A FORWARD -i "$NET_DEVICE_WAN" -o "$NET_DEVICE_LAN" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+    iptables -t filter -C FORWARD -i "$NET_DEVICE_WAN" -o "$NET_DEVICE_LAN" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || \
+        iptables -t filter -A FORWARD -i "$NET_DEVICE_WAN" -o "$NET_DEVICE_LAN" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
 
     # LAN->WAN logging (NEW allowed only) + enforcement
-    $BIN_IPTABLES -t filter -C FORWARD -i "$NET_DEVICE_LAN" -o "$NET_DEVICE_WAN" -j "$INTERNET_ALLOWLIST_LOG_CHAIN" 2>/dev/null || \
-        $BIN_IPTABLES -t filter -I FORWARD 1 -i "$NET_DEVICE_LAN" -o "$NET_DEVICE_WAN" -j "$INTERNET_ALLOWLIST_LOG_CHAIN"
+    iptables -t filter -C FORWARD -i "$NET_DEVICE_LAN" -o "$NET_DEVICE_WAN" -j "$INTERNET_ALLOWLIST_LOG_CHAIN" 2>/dev/null || \
+        iptables -t filter -I FORWARD 1 -i "$NET_DEVICE_LAN" -o "$NET_DEVICE_WAN" -j "$INTERNET_ALLOWLIST_LOG_CHAIN"
 
-    $BIN_IPTABLES -t filter -C FORWARD -i "$NET_DEVICE_LAN" -o "$NET_DEVICE_WAN" -j "$INTERNET_ALLOWLIST_FILTER_CHAIN" 2>/dev/null || \
-        $BIN_IPTABLES -t filter -I FORWARD 2 -i "$NET_DEVICE_LAN" -o "$NET_DEVICE_WAN" -j "$INTERNET_ALLOWLIST_FILTER_CHAIN"
+    iptables -t filter -C FORWARD -i "$NET_DEVICE_LAN" -o "$NET_DEVICE_WAN" -j "$INTERNET_ALLOWLIST_FILTER_CHAIN" 2>/dev/null || \
+        iptables -t filter -I FORWARD 2 -i "$NET_DEVICE_LAN" -o "$NET_DEVICE_WAN" -j "$INTERNET_ALLOWLIST_FILTER_CHAIN"
 
     # NAT only for allowed destinations
-    $BIN_IPTABLES -t nat -C POSTROUTING -o "$NET_DEVICE_WAN" -m set --match-set "$INTERNET_ALLOWLIST_IPSET_NAME" dst -j MASQUERADE 2>/dev/null || \
-        $BIN_IPTABLES -t nat -A POSTROUTING -o "$NET_DEVICE_WAN" -m set --match-set "$INTERNET_ALLOWLIST_IPSET_NAME" dst -j MASQUERADE
+    iptables -t nat -C POSTROUTING -o "$NET_DEVICE_WAN" -m set --match-set "$INTERNET_ALLOWLIST_IPSET_NAME" dst -j MASQUERADE 2>/dev/null || \
+        iptables -t nat -A POSTROUTING -o "$NET_DEVICE_WAN" -m set --match-set "$INTERNET_ALLOWLIST_IPSET_NAME" dst -j MASQUERADE
 
     # 5) Restart dnsmasq to pick up ipset=/server= rules, then proactively populate ipset via local dnsmasq.
     restart_dnsmasq
     for d in "${INTERNET_ALLOWLIST_DOMAINS[@]}"; do
-        $BIN_DIG +time=1 +tries=1 @127.0.0.1 "$d" A >/dev/null 2>&1 || true
+        dig +time=1 +tries=1 @127.0.0.1 "$d" A >/dev/null 2>&1 || true
     done
 }
 
 function restart_networkmanager() {
-    $BIN_SYSTEMCTL restart NetworkManager.service >>"$PATH_DEBUG" 2>&1
+    systemctl restart NetworkManager.service >>"$PATH_DEBUG" 2>&1
     exit_if_error $? $EXIT_CODE_CANNOT_RESTART_NM "Failed to restart NetworkManager.service"
 }
 
@@ -622,24 +598,24 @@ function wait_for_network_online() {
         _TIMEOUT=30
     fi
 
-    $BIN_NM_ONLINE -s -q --timeout="$_TIMEOUT" >>"$PATH_DEBUG" 2>&1
+    nm-online -s -q --timeout="$_TIMEOUT" >>"$PATH_DEBUG" 2>&1
 
     exit_if_error $? $EXIT_CODE_NETWORK_NOT_ONLINE "Network did not become online within timeout"
 }
 
 function restart_examnet_daemon() {
     if [[ "$(systemctl is-enabled ytl-linux-digabi2-examnet.service)" == "enabled" ]]; then
-        $BIN_SYSTEMCTL restart ytl-linux-digabi2-examnet.service >>"$PATH_DEBUG" 2>&1
+        systemctl restart ytl-linux-digabi2-examnet.service >>"$PATH_DEBUG" 2>&1
         exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to restart ytl-linux-digabi2-examnet.service"
     fi
 
     if [[ "$(systemctl is-enabled ytl-linux-digabi2-examnet-discovery.timer)" == "enabled" ]]; then
-        $BIN_SYSTEMCTL restart ytl-linux-digabi2-examnet-discovery.timer >>"$PATH_DEBUG" 2>&1
+        systemctl restart ytl-linux-digabi2-examnet-discovery.timer >>"$PATH_DEBUG" 2>&1
         exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to restart ytl-linux-digabi2-examnet-discovery.timer"
     fi
 
     if [[ "$(systemctl is-enabled ytl-linux-digabi2-examnet-discovery.service)" == "enabled" ]]; then
-        $BIN_SYSTEMCTL restart ytl-linux-digabi2-examnet-discovery.service >>"$PATH_DEBUG" 2>&1
+        systemctl restart ytl-linux-digabi2-examnet-discovery.service >>"$PATH_DEBUG" 2>&1
         exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to restart ytl-linux-digabi2-examnet-discovery.service"
     fi
 }
@@ -652,7 +628,7 @@ function restart_network_services() {
 }
 
 function restart_docker() {
-    $BIN_SYSTEMCTL restart docker
+    systemctl restart docker
     exit_if_error $? $EXIT_CODE_CANNOT_RESTART_DOCKER "Failed to restart docker"
 }
 
@@ -670,12 +646,12 @@ function configure_static_dns_records() {
     # Parse out SANs from certificate; only include server subdomains (e.g. ktp1.1000.koe.abitti.net), not the "root subdomain"
     # (e.g. 1000.koe.abitti.net) since we cannot reasonably ascribe DNS names to these
     DOMAINS="$(
-        $BIN_OPENSSL x509 -in "$PATH_NAKSU2_CERT" -text -noout |\
-        $BIN_GREP DNS: |\
-        $BIN_XARGS |\
-        $BIN_SED 's/DNS://g' |\
-        $BIN_SED 's/, /\n/g' |\
-        $BIN_GREP -E '(.+\..+){4}'
+        openssl x509 -in "$PATH_NAKSU2_CERT" -text -noout |\
+        grep DNS: |\
+        xargs |\
+        sed 's/DNS://g' |\
+        sed 's/, /\n/g' |\
+        grep -E '(.+\..+){4}'
     )"
 
     debug "Configuring static DNS records for the following domains:"
@@ -688,7 +664,7 @@ function configure_static_dns_records() {
     for DOMAIN in $DOMAINS; do
         debug "Generating DNS record for domain: $DOMAIN"
 
-        SERVER_NUMBER="$($BIN_ECHO "$DOMAIN" | $BIN_CUT -d '.' -f1 | $BIN_TR -dc '[:digit:]')"
+        SERVER_NUMBER="$(echo "$DOMAIN" | cut -d '.' -f1 | tr -dc '[:digit:]')"
 
         if [ "$SERVER_NUMBER" == "$_SERVER_NUMBER" ]; then
             THIS_SERVER_DOMAIN=$DOMAIN
@@ -706,7 +682,7 @@ function configure_static_dns_records() {
     fi
 
     debug "Generated DNS records: ${DNS_RECORDS[*]}"
-    write_file $PATH_DNSMASQ_STATIC_DNS_CONF "$(IFS=$'\n'; $BIN_ECHO "${DNS_RECORDS[*]}")"
+    write_file $PATH_DNSMASQ_STATIC_DNS_CONF "$(IFS=$'\n'; echo "${DNS_RECORDS[*]}")"
 
     debug "Generated /etc/hosts entries: ${ETC_HOSTS[*]}"
 
@@ -730,7 +706,7 @@ if [ -z "$PARAM_NET_DEVICE_WAN" ]; then
     exit_script $EXIT_CODE_NETWORK_DEVICE_NAME_MISSING_WAN
 fi
 
-if [ ! "$(current_user_is_root)" ]; then
+if [[ $* != *--not-root* && ! "$(current_user_is_root)" ]]; then
     print_error "You're not root"
     exit_script $EXIT_CODE_MUST_BE_ROOT
 fi
@@ -756,23 +732,23 @@ if [[ $* == *--daemon* ]]; then
     fi
 
     CONFIG=$(cat <<EOF
-    {
-        "config": {
-            "friendlyName": $(jq -Rc . "$PATH_SERVER_FRIENDLY_NAME_CONF"),
-            "canonicalHostname": $(jq -Rc . "$PATH_NAKSU2_DOMAIN"),
-            "ncsiHostnames": $(jq -Rc '.|split(",")|map(select(.!=""))' "$PATH_EXAMNET_CONFIG/ncsi-hostnames"),
-            "searchDomain": "$FRIENDLY_NAME_SEARCH_DOMAIN",
-            "serverOwnIp": $(jq -Rc . "$PATH_SERVER_OWN_IP"),
-            "ports": {"discovery": $DISCOVERY_PORT, "bouncer": $BOUNCER_PORT}
-        },
+    {\
+        "config": {\
+            "friendlyName": $(jq -Rc . "$PATH_SERVER_FRIENDLY_NAME_CONF"), \
+            "canonicalHostname": $(jq -Rc . "$PATH_NAKSU2_DOMAIN"), \
+            "ncsiHostnames": $(jq -Rc '.|split(",")|map(select(.!=""))' "$PATH_EXAMNET_CONFIG/ncsi-hostnames"), \
+            "searchDomain": "$FRIENDLY_NAME_SEARCH_DOMAIN", \
+            "serverOwnIp": $(jq -Rc . "$PATH_SERVER_OWN_IP"), \
+            "ports": {"discovery": $DISCOVERY_PORT, "bouncer": $BOUNCER_PORT} \
+        }, \
         "secrets": $(jq -nc '{cert:$cert, key:$key}' \
             --arg cert "$PATH_NAKSU2_CERTS_DIR/fullchain.pem" \
-            --arg key "$PATH_NAKSU2_CERTS_DIR/key.pem"
-        )
+            --arg key "$PATH_NAKSU2_CERTS_DIR/key.pem" \
+        ) \
     }
 EOF
     )
-    $BIN_DIGABI2_EXAMNET_BOUNCER "$CONFIG"
+    ytl-linux-digabi2-bouncer "$CONFIG"
 
     # We're not supposed to get here, so this would indicate the daemon process exited
     exit_script $EXIT_CODE_DAEMON_EXITED_UNEXPECTEDLY
@@ -804,7 +780,7 @@ if [[ $* == *--discover* ]]; then
 EOF
     )
 
-    $BIN_DIGABI2_EXAMNET_DISCOVERY "$CONFIG"
+    ytl-linux-digabi2-discovery "$CONFIG"
 
     exit_if_error $? $EXIT_CODE_CANNOT_RUN_ALIAS_DISCOVERY "Failed to run alias discovery"
     exit 0
