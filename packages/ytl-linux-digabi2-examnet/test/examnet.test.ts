@@ -19,6 +19,7 @@ describe('examnet', async () => {
   beforeEach(async () => {
     await truncateCallsLog()
     ;({
+      callsLog,
       mockBinDir,
       mockConfigDir,
       mockTemplatesDir,
@@ -407,10 +408,21 @@ describe('examnet', async () => {
     }
   }
 
+  async function bashWrapMockScript(mockScriptTSPath: string) {
+    return `#!/usr/bin/env bash
+    set -euo pipefail
+    node --import tsx ${shellQuote(mockScriptTSPath)} "$0" "$@"
+    `
+  }
+
+  function shellQuote(str: string) {
+    return `'${str.replace(/'/g, `'\\''`)}'`
+  }
+
   async function initTempDir() {
     const root = await mkdtemp(join(tmpdir(), 'just-test-'))
 
-    callsLog = join(root, 'calls.log')
+    const callsLog = join(root, 'calls.log')
 
     const mockBinDir = await makeTempDir(root, 'mock-bin-dir')
     const mockConfigDir = await makeTempDir(root, 'mock-config-dir')
@@ -422,6 +434,8 @@ describe('examnet', async () => {
     const mockNaksu2CertsDir = await makeTempDir(mockNaksu2WorkDir, 'certs')
 
     await writeToTempDir(mockNaksu2CertsDir, 'domain.txt', 'kamreeri-kelvokas.koe.abitti.net')
+    const mockTsPath = join(process.cwd(), 'test', 'mock-script.ts')
+    const mockScript = await bashWrapMockScript(mockTsPath)
     await writeToTempDir(mockBinDir, 'echo', mockScript)
     await writeToTempDir(mockBinDir, 'nmcli', mockScript)
     await writeToTempDir(mockBinDir, 'systemctl', mockScript)
@@ -431,7 +445,7 @@ describe('examnet', async () => {
     await writeToTempDir(mockBinDir, 'ipset', mockScript)
     await writeToTempDir(mockBinDir, 'dig', mockScript)
     await writeToTempDir(mockBinDir, 'stat', mockScript)
-    await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-bouncer', mockBouncer)
+    await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-bouncer', mockScript)
     await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-discovery', mockScript)
     await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-docker-configure.sh', mockScript)
 
@@ -442,6 +456,7 @@ describe('examnet', async () => {
     await writeToTempDir(mockTemplatesDir, 'dnsmasq.conf.template', 'foobar')
     await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
     return {
+      callsLog,
       mockBinDir,
       mockConfigDir,
       mockTemplatesDir,
@@ -458,44 +473,12 @@ describe('examnet', async () => {
     const callsLines = calls.split('\n')
     // console.log(`expecting ${expectedCalls.length} calls to external programs`)
     const callsArray = callsLines.map(line => {
-      console.log(`parsing line ${line}`)
+      // console.log(`parsing line ${line}`)
       return JSON.parse(line)
     })
     assert.deepEqual(callsArray, expectedCalls)
   }
 })
-
-const mockScript = `#!/usr/bin/env bash
-node -e '
-  const fs = require("node:fs");
-  const path = require("node:path");
-  const entry = {
-    cmd: path.basename(process.argv[1]),
-    argv: process.argv.slice(2),
-  };
-  // console.error(process.argv, "writing to", process.env.CALLS_LOG)
-  if (process.argv[8] === "eth0") {
-    console.log("127.0.0.1")
-  } else {
-    console.log("")
-  }
-  fs.appendFileSync(process.env.CALLS_LOG, JSON.stringify(entry) + "\\n");
-' "$0" "$@"
-exit 0
-`
-
-const mockBouncer = `#!/usr/bin/env bash
-node -e '
-  const fs = require("node:fs");
-  fs.appendFileSync(process.env.CALLS_LOG, JSON.stringify({
-    cmd: "ytl-linux-digabi2-bouncer",
-    argv: process.argv.slice(1),
-  }) + "\\n");
-' "$@"
-while true; do
-  sleep 1
-done
-`
 
 async function writeToTempDir(dir: string, name: string, script: string) {
   const file = join(dir, name)

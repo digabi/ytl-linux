@@ -171,7 +171,6 @@ function network_device_exists() {
 function get_ipv4_address() {
     _DEVICE=$1
     _IP=$(ip -oneline -4 addr show scope global "$_DEVICE" | tr -s ' ' | tr '/' ' ' | cut -f 4 -d ' ')
-    # echo called ip command with $PATH >&2
     if [[ ! "$_IP" =~ "does not exist" ]]; then
         echo "$_IP"
     fi
