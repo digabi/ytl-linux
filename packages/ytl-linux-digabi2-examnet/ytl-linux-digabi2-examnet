@@ -413,30 +413,30 @@ function restart_network_services() {
 }
 
 function enable_systemd_services() {
-    $BIN_SYSTEMCTL enable ytl-linux-digabi2-examnet.service >>"$PATH_DEBUG" 2>&1
+    systemctl enable ytl-linux-digabi2-examnet.service >>"$PATH_DEBUG" 2>&1
     exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to enable ytl-linux-digabi2-examnet.service"
 
-    $BIN_SYSTEMCTL enable dnsmasq.service >>"$PATH_DEBUG" 2>&1
+    systemctl enable dnsmasq.service >>"$PATH_DEBUG" 2>&1
     exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to enable dnsmasq.service"
 
-    $BIN_SYSTEMCTL enable ytl-linux-digabi2-examnet-discovery.service >>"$PATH_DEBUG" 2>&1
+    systemctl enable ytl-linux-digabi2-examnet-discovery.service >>"$PATH_DEBUG" 2>&1
     exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to enable ytl-linux-digabi2-examnet-discovery.service"
 
-    $BIN_SYSTEMCTL enable ytl-linux-digabi2-examnet-discovery.timer >>"$PATH_DEBUG" 2>&1
+    systemctl enable ytl-linux-digabi2-examnet-discovery.timer >>"$PATH_DEBUG" 2>&1
     exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to enable ytl-linux-digabi2-examnet-discovery.timer"
 }
 
 function disable_systemd_services() {
-    $BIN_SYSTEMCTL disable --now ytl-linux-digabi2-examnet.service >>"$PATH_DEBUG" 2>&1
+    systemctl disable --now ytl-linux-digabi2-examnet.service >>"$PATH_DEBUG" 2>&1
     exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to disable ytl-linux-digabi2-examnet.service"
 
-    $BIN_SYSTEMCTL disable --now dnsmasq.service >>"$PATH_DEBUG" 2>&1
+    systemctl disable --now dnsmasq.service >>"$PATH_DEBUG" 2>&1
     exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to disable dnsmasq.service"
 
-    $BIN_SYSTEMCTL disable --now ytl-linux-digabi2-examnet-discovery.timer >>"$PATH_DEBUG" 2>&1
+    systemctl disable --now ytl-linux-digabi2-examnet-discovery.timer >>"$PATH_DEBUG" 2>&1
     exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to disable ytl-linux-digabi2-examnet-discovery.timer"
 
-    $BIN_SYSTEMCTL disable --now ytl-linux-digabi2-examnet-discovery.service >>"$PATH_DEBUG" 2>&1
+    systemctl disable --now ytl-linux-digabi2-examnet-discovery.service >>"$PATH_DEBUG" 2>&1
     exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to disable ytl-linux-digabi2-examnet-discovery.service"
 }
 
