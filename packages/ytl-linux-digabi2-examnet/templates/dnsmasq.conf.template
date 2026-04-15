@@ -33,8 +33,16 @@ resolv-file=/etc/resolv.conf
 # need DNS to tell student computers where to go
 server=/koe.abitti.net/#
 
-# Null-route all other traffic
-# This prevents software on the student computer from getting confused by when DNS queries work, but the TCP
-# request stalls (since this is not a router) for however long the client timeout is set to; possibly Infinity
+# Null-route all other traffic by default.
+#
+# Note: ytl-linux-digabi2-examnet configures a permanent limited Internet allowlist
+# using dnsmasq+ipset+iptables:
+#   - This line stays enabled to deny DNS answers by default (clients get 0.0.0.0)
+#   - Allowlisted domains are forwarded to upstream DNS using:
+#       /etc/dnsmasq.d/ytl-linux-internet-allowlist-server.conf (server=/domain/#)
+#   - Returned A records for allowlisted domains are added to an ipset using:
+#       /etc/dnsmasq.d/ytl-linux-internet-allowlist-ipset.conf (ipset=/domain/set)
+#   - iptables then only forwards/NATs LAN->WAN traffic when the destination IP
+#     is in that ipset.
 address=/#/0.0.0.0
 address=/#/::
