@@ -198,6 +198,9 @@ describe('examnet', async () => {
         callSystemctl('disable', 'dnsmasq.service', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.timer', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.service', '--now'),
+        callRm(`${mockConfigDir}/server-own-ip`),
+        callRm(`${mockConfigDir}/discovery.db`),
+        callRm(`${mockDnsmasqDir}/ytl-linux-static-dns-records.conf`),
         {
           cmd: 'sed',
           argv: ['-i', '/^# BEGIN SCHOOL DOMAIN ENTRIES$/,/^# END SCHOOL DOMAIN ENTRIES$/d', '/etc/hosts']
@@ -220,6 +223,28 @@ describe('examnet', async () => {
   })
 
   describe('setup (no command flag)', () => {
+    test('returns error if WAN device does not have an IP address', async () => {
+      await runExamnetReturnsExitCode(15, ['eth1', 'eth0', '1', '--accept-non-root-user'])
+    })
+    test('returns error if same devices is used for WAN and LAN', async () => {
+      await writeToTempDir(mockBinDir, 'ip', mockScriptWithNoOutput)
+      await runExamnetReturnsExitCode(6, ['eth0', 'eth0', '1', '--accept-non-root-user'])
+    })
+    test('returns error if server friendly name is invalid', async () => {
+      await runExamnetReturnsExitCode(25, ['eth0', 'eth1', '1', 'väärin-nimetty', '--accept-non-root-user'])
+    })
+    test('returns error if network device cannot be configured', async () => {
+      await writeToTempDir(mockBinDir, 'nmcli', mockScriptReturningErrorCode)
+      await runExamnetReturnsExitCode(12, ['eth0', 'eth1', '1', '--accept-non-root-user'])
+    })
+    test('returns error if NetworkManager cannot be restarted', async () => {
+      await writeToTempDir(mockBinDir, 'systemctl', mockScriptReturningErrorCode)
+      await runExamnetReturnsExitCode(14, ['eth0', 'eth1', '1', '--accept-non-root-user'])
+    })
+    test('returns error if dnsmasq settings cannot be removed', async () => {
+      await writeToTempDir(mockBinDir, 'rm', mockScriptReturningErrorCode)
+      await runExamnetReturnsExitCode(17, ['eth0', 'eth1', '1', '--accept-non-root-user'])
+    })
     test('runs when correct parameters are given', async () => {
       await runExamnet('eth0', 'eth1', '1')
       await assertCalls([
@@ -234,6 +259,7 @@ describe('examnet', async () => {
         callNmicliConnectionUp('yo-eth1'),
         callSystemctl('restart', 'NetworkManager.service'),
         callNmonline(),
+        callRm(`${mockDnsmasqDir}/ytl-linux-static-dns-records.conf`),
         callSystemctl('enable', 'ytl-linux-digabi2-examnet.service'),
         callSystemctl('enable', 'dnsmasq.service'),
         callSystemctl('enable', 'ytl-linux-digabi2-examnet-discovery.service'),
@@ -250,6 +276,39 @@ describe('examnet', async () => {
         { cmd: 'ytl-linux-digabi2-docker-configure.sh', argv: ['127.0.0.1', '192.168.10.1'] }
       ])
     })
+    test('runs when correct parameters are given with friendly name', async () => {
+      await runExamnet('eth0', 'eth1', '1', 'perunakellari')
+      await assertCalls([
+        callStat(mockNaksu2WorkDir),
+        callIpLinkShow('eth0'),
+        callIpLinkShow('eth1'),
+        callIpAddrShow('eth0'),
+        callIpAddrShow('eth1'),
+        callNmicliConnectionDelete('yo-eth1'),
+        callNmicliConnectionAdd('yo-eth1', '192.168.10.1/16'),
+        callNmicliConnectionModify('yo-eth1'),
+        callNmicliConnectionUp('yo-eth1'),
+        callSystemctl('restart', 'NetworkManager.service'),
+        callNmonline(),
+        callRm(`${mockDnsmasqDir}/ytl-linux-static-dns-records.conf`),
+        callSystemctl('enable', 'ytl-linux-digabi2-examnet.service'),
+        callSystemctl('enable', 'dnsmasq.service'),
+        callSystemctl('enable', 'ytl-linux-digabi2-examnet-discovery.service'),
+        callSystemctl('enable', 'ytl-linux-digabi2-examnet-discovery.timer'),
+        callSystemctl('restart', 'systemd-resolved'),
+        callSystemctl('is-enabled', 'dnsmasq.service'),
+        callSystemctl('restart', 'dnsmasq.service'),
+        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet.service'),
+        callSystemctl('restart', 'ytl-linux-digabi2-examnet.service'),
+        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet-discovery.timer'),
+        callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.timer'),
+        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet-discovery.service'),
+        callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.service'),
+        { cmd: 'ytl-linux-digabi2-docker-configure.sh', argv: ['127.0.0.1', '192.168.10.1'] }
+      ])
+    })
+
+    // TODO test examnet with flag --use-static-local-dns
   })
 
   function runExamnetWithArguments(examnetArguments: string[]) {
@@ -272,10 +331,8 @@ describe('examnet', async () => {
   async function runExamnetReturnsExitCode(expectedExitCode: number, examnetArguments: string[]) {
     try {
       await runExamnetWithArguments(examnetArguments)
-      console.log((await readFile(callsLog, 'utf8')).trim())
       assert.fail('Expected runExamnet to fail, but it succeeded')
     } catch (e) {
-      console.log(e)
       assert.equal(e.exitCode, expectedExitCode)
     }
   }
@@ -339,6 +396,7 @@ describe('examnet', async () => {
     await writeToTempDir(mockBinDir, 'dig', mockScript)
     await writeToTempDir(mockBinDir, 'stat', mockScript)
     await writeToTempDir(mockBinDir, 'sed', mockScript)
+    await writeToTempDir(mockBinDir, 'rm', mockScript)
     await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-bouncer', mockScript)
     await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-discovery', mockScript)
     await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-docker-configure.sh', mockScript)
@@ -377,7 +435,7 @@ describe('examnet', async () => {
     const callsLines = calls.split('\n')
     // console.log(`expecting ${expectedCalls.length} calls to external programs`)
     const callsArray = callsLines.map(line => {
-      console.log(`parsing line ${line}`)
+      // console.log(`parsing line ${line}`)
       return JSON.parse(line)
     })
     assert.deepEqual(callsArray, expectedCalls)
@@ -501,6 +559,10 @@ function callNmicliConnectionUp(deviceName: string) {
 
 function callNmonline(timeout: number = 30) {
   return { cmd: 'nm-online', argv: ['-s', '-q', `--timeout=${timeout}`] }
+}
+
+function callRm(path: string) {
+  return { cmd: 'rm', argv: ['-f', path] }
 }
 
 function callIpsetCreate(listName: string) {
