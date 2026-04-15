@@ -505,7 +505,7 @@ function configure_static_dns_records() {
 }
 
 function remove_school_host_entries() {
-    $BIN_SED -i '/^# BEGIN SCHOOL DOMAIN ENTRIES$/,/^# END SCHOOL DOMAIN ENTRIES$/d' /etc/hosts
+    sed -i '/^# BEGIN SCHOOL DOMAIN ENTRIES$/,/^# END SCHOOL DOMAIN ENTRIES$/d' /etc/hosts
 }
 
 # ---------- Main script logic starts here ---------- #
