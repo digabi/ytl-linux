@@ -340,7 +340,10 @@ function remove_all_settings() {
     remove_dnsmasq_settings
     remove_school_host_entries
 
-    nmcli -f UUID,NAME connection show | grep -P -v "^UUID" | tr -s ' ' | while read -r line ; do
+    CONNECTIONS=$(nmcli -f UUID,NAME connection show)
+    exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_CONNECTION "Failed to enumerate NetworkManager connections for removal"
+
+    printf '%S\n' "$CONNECTIONS" | grep -P -v "^UUID" | tr -s ' ' | while read -r line ; do
         connection_uuid=$(echo "$line" | cut -d ' ' -f 1)
         connection_name=$(echo "$line" | cut -d ' ' -f 2)
         if [[ "$connection_name" =~ ^yo- ]]; then
