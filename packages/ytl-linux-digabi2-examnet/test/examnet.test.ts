@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test, describe, beforeEach } from 'node:test'
 import { execa } from 'execa'
 import { join } from 'node:path'
-import { mkdtemp, writeFile, chmod, readFile, mkdir, truncate, access } from 'node:fs/promises'
+import { mkdtemp, writeFile, chmod, readFile, mkdir, unlink, truncate, access } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 
 describe('examnet', async () => {
@@ -99,6 +99,20 @@ describe('examnet', async () => {
       await writeToTempDir(mockBinDir, 'ip', mockScriptWithNoOutput)
       await runExamnetReturnsExitCode(21, ['eth0', 'eth1', '1', '--daemon', '--accept-non-root-user'])
       await assertCalls([callStat(mockNaksu2WorkDir), callIpAddrShow('eth0')])
+    })
+    test('gives error if domain.txt is missing', async () => {
+      await writeToTempDir(mockConfigDir, 'net-device-lan', 'eth0')
+      await writeToTempDir(mockConfigDir, 'server-friendly-name', 'foobar')
+      await unlink(join(mockNaksu2CertsDir, 'domain.txt'))
+      await runExamnetReturnsExitCode(21, ['eth0', 'eth1', '1', '--daemon', '--accept-non-root-user'])
+      await assertCalls([callStat(mockNaksu2WorkDir), callIpAddrShow('eth0')])
+    })
+    test('gives error if daemon exits unexpectedly', async () => {
+      await writeToTempDir(mockConfigDir, 'net-device-lan', 'eth0')
+      await writeToTempDir(mockConfigDir, 'server-friendly-name', 'foobar')
+      await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-bouncer', mockScriptWithNoOutput)
+      await runExamnetReturnsExitCode(22, ['eth0', 'eth1', '1', '--daemon', '--accept-non-root-user'])
+      await assertCalls([callStat(mockNaksu2WorkDir), callIpAddrShow('eth0'), callBouncer(mockNaksu2CertsDir)])
     })
     test('daemon starts when correct parameters are given', async () => {
       await writeToTempDir(mockConfigDir, 'net-device-lan', 'eth0')
