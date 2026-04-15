@@ -107,7 +107,7 @@ function print_info() {
 }
 
 function print_usage() {
-    echo "usage: $SCRIPT_PATH wan-network-device local-network-device server-number [custom-server-name] [--use-static-local-dns] [--not-root]" >&2
+    echo "usage: $SCRIPT_PATH wan-network-device local-network-device server-number [custom-server-name] [--use-static-local-dns] [--accept-non-root-user]" >&2
     echo "       $SCRIPT_PATH --daemon" >&2
     echo "       $SCRIPT_PATH --restart-daemon" >&2
     echo "       $SCRIPT_PATH --discover" >&2
@@ -510,12 +510,22 @@ function remove_school_host_entries() {
 
 # ---------- Main script logic starts here ---------- #
 
-if [ -z "$PARAM_NET_DEVICE_WAN" ]; then
+if [ -z "$PARAM_NET_DEVICE_WAN" ] || [[ $PARAM_NET_DEVICE_WAN =~ ^--.+$ ]]; then
     print_usage
     exit_script $EXIT_CODE_NETWORK_DEVICE_NAME_MISSING_WAN
 fi
 
-if [[ $* != *--not-root* && ! "$(current_user_is_root)" ]]; then
+if [ -z "$PARAM_NET_DEVICE_LAN" ] || [[ $PARAM_NET_DEVICE_LAN =~ ^--.+$ ]]; then
+    print_usage
+    exit_script $EXIT_CODE_NETWORK_DEVICE_NAME_MISSING_LAN
+fi
+
+if [ -z "$PARAM_SERVER_NUMBER" ] || [[ $PARAM_SERVER_NUMBER =~ ^--.+$ ]]; then
+    print_usage
+    exit_script $EXIT_CODE_MISSING_SERVER_NUMBER
+fi
+
+if [[ $* != *--accept-non-root-user* && ! "$(current_user_is_root)" ]]; then
     print_error "You're not root"
     exit_script $EXIT_CODE_MUST_BE_ROOT
 fi

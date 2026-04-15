@@ -15,6 +15,7 @@ describe('examnet', async () => {
   let mockDnsmasqDir
   let mockNaksu2WorkDir
   let mockNaksu2CertsDir
+  let mockScriptWithNoOutput
 
   beforeEach(async () => {
     await truncateCallsLog()
@@ -27,38 +28,84 @@ describe('examnet', async () => {
       mockDockerDir,
       mockDnsmasqDir,
       mockNaksu2WorkDir,
-      mockNaksu2CertsDir
+      mockNaksu2CertsDir,
+      mockScriptWithNoOutput
     } = await initTempDir())
   })
 
-  function runExamnet(netDeviceWan: string, netDeviceLan: string, serverNumber: number, serverFriendlyName?: string) {
-    return execa(
-      './ytl-linux-digabi2-examnet',
-      [netDeviceWan, netDeviceLan, `${serverNumber}`, serverFriendlyName, '--not-root'].filter(Boolean),
-      {
-        env: {
-          ...process.env,
-          PATH: `${mockBinDir}:${process.env.PATH}`,
-          CALLS_LOG: callsLog,
-          PATH_EXAMNET_CONFIG: mockConfigDir,
-          PATH_TEMPLATES: mockTemplatesDir,
-          PATH_RESOLVED: mockResolvedDir,
-          PATH_DOCKER: mockDockerDir,
-          PATH_DNSMASQ: mockDnsmasqDir,
-          NAKSU2_WORKDIR: mockNaksu2WorkDir
-        },
-        detached: true
-      }
-    )
-  }
+  describe('command line argument validation', () => {
+    test('gives error if WAN device is missing', () => {
+      test('as non-root-user', async () => {
+        await runExamnetReturnsExitCode(2, [])
+        await assertCalls([callStat(mockNaksu2WorkDir)])
+      })
+      test('when accepcting non-root-user', async () => {
+        await runExamnetReturnsExitCode(2, ['--accept-non-root-user'])
+        await assertCalls([callStat(mockNaksu2WorkDir)])
+      })
+    })
+    test('gives error if LAN device is missing', () => {
+      test('as non-root-user', async () => {
+        await runExamnetReturnsExitCode(4, ['eth0'])
+        await assertCalls([callStat(mockNaksu2WorkDir)])
+      })
+      test('when accepcting non-root-user', async () => {
+        await runExamnetReturnsExitCode(4, ['eth0', '--accept-non-root-user'])
+        await assertCalls([callStat(mockNaksu2WorkDir)])
+      })
+    })
+    test('gives error if server number is missing', () => {
+      test('as non-root-user', async () => {
+        await runExamnetReturnsExitCode(7, ['eth0', 'eth1'])
+        await assertCalls([callStat(mockNaksu2WorkDir)])
+      })
+
+      test('when accepcting non-root-user', async () => {
+        await runExamnetReturnsExitCode(7, ['eth0', 'eth1', '--accept-non-root-user'])
+        await assertCalls([callStat(mockNaksu2WorkDir)])
+      })
+    })
+    test('gives error if server number is wrong:', () => {
+      test('invalid number', async () => {
+        await runExamnetReturnsExitCode(8, ['eth0', 'eth1', 'invalidNumber', '--accept-non-root-user'])
+        await assertCalls([callStat(mockNaksu2WorkDir), callIpLinkShow('eth0'), callIpLinkShow('eth1')])
+      })
+      test('too small integer (0)', async () => {
+        await runExamnetReturnsExitCode(8, ['eth0', 'eth1', '0', '--accept-non-root-user'])
+        await assertCalls([callStat(mockNaksu2WorkDir), callIpLinkShow('eth0'), callIpLinkShow('eth1')])
+      })
+      test('too large integer (25)', async () => {
+        await runExamnetReturnsExitCode(8, ['eth0', 'eth1', '25', '--accept-non-root-user'])
+        await assertCalls([callStat(mockNaksu2WorkDir), callIpLinkShow('eth0'), callIpLinkShow('eth1')])
+      })
+    })
+    test('gives error if script is not called as root user', async () => {
+      await runExamnetReturnsExitCode(1, ['eth0', 'eth1', '1'])
+      await assertCalls([callStat(mockNaksu2WorkDir)])
+    })
+  })
 
   describe('bouncer', async () => {
+    test('gives error if net device lan configuration is missing', async () => {
+      await runExamnetReturnsExitCode(21, ['eth0', 'eth1', '1', '--daemon', '--accept-non-root-user'])
+    })
+    test('gives error if server friendly name configuration is missing', async () => {
+      await writeToTempDir(mockConfigDir, 'net-device-lan', 'eth0')
+      await runExamnetReturnsExitCode(21, ['eth0', 'eth1', '1', '--daemon', '--accept-non-root-user'])
+    })
+    test('gives error if LAN device does not have IP address', async () => {
+      await writeToTempDir(mockConfigDir, 'net-device-lan', 'eth0')
+      await writeToTempDir(mockConfigDir, 'server-friendly-name', 'foobar')
+      await writeToTempDir(mockBinDir, 'ip', mockScriptWithNoOutput)
+      await runExamnetReturnsExitCode(21, ['eth0', 'eth1', '1', '--daemon', '--accept-non-root-user'])
+      await assertCalls([callStat(mockNaksu2WorkDir), callIpAddrShow('eth0')])
+    })
     test('daemon starts when correct parameters are given', async () => {
       await writeToTempDir(mockConfigDir, 'net-device-lan', 'eth0')
       await writeToTempDir(mockConfigDir, 'server-friendly-name', 'foobar')
 
       // do not await runExamnet, as it stays running in daemon mode
-      const subprocess = runExamnet('eth0', 'eth1', 1, '--daemon')
+      const subprocess = runExamnet('eth0', 'eth1', '1', '--daemon')
       await waitForLogEntry(callsLog, '"ytl-linux-digabi2-bouncer"')
       await assertCalls([callStat(mockNaksu2WorkDir), callIpAddrShow('eth0'), callBouncer(mockNaksu2CertsDir)])
       await killSubprocess(subprocess)
@@ -67,7 +114,7 @@ describe('examnet', async () => {
 
   describe('restart-bouncer', () => {
     test('runs when correct parameters are given', async () => {
-      await runExamnet('eth0', 'eth1', 1, '--restart-daemon')
+      await runExamnet('eth0', 'eth1', '1', '--restart-daemon')
       await assertCalls([
         callStat(mockNaksu2WorkDir),
         callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet.service'),
@@ -79,14 +126,14 @@ describe('examnet', async () => {
 
   describe('discovery', () => {
     test('runs when correct parameters are given', async () => {
-      await runExamnet('eth0', 'eth1', 1, '--discovery')
+      await runExamnet('eth0', 'eth1', '1', '--discovery')
       await assertCalls([callStat(mockNaksu2WorkDir), callDiscovery(mockDnsmasqDir, mockConfigDir)])
     })
   })
 
   describe('setup', () => {
     test('runs when correct parameters are given', async () => {
-      await runExamnet('eth0', 'eth1', 1)
+      await runExamnet('eth0', 'eth1', '1')
       await assertCalls([
         callStat(mockNaksu2WorkDir),
         callIpLinkShow('eth0'),
@@ -115,7 +162,7 @@ describe('examnet', async () => {
 
   describe('destroy', () => {
     test('runs when correct parameters are given', async () => {
-      await runExamnet('eth0', 'eth1', 1)
+      await runExamnet('eth0', 'eth1', '1')
       await assertCalls([
         callStat(mockNaksu2WorkDir),
         callIpLinkShow('eth0'),
@@ -141,6 +188,43 @@ describe('examnet', async () => {
       ])
     })
   })
+
+  function runExamnetWithArguments(examnetArguments: string[]) {
+    return execa('./ytl-linux-digabi2-examnet', examnetArguments.filter(Boolean), {
+      env: {
+        ...process.env,
+        PATH: `${mockBinDir}:${process.env.PATH}`,
+        CALLS_LOG: callsLog,
+        PATH_EXAMNET_CONFIG: mockConfigDir,
+        PATH_TEMPLATES: mockTemplatesDir,
+        PATH_RESOLVED: mockResolvedDir,
+        PATH_DOCKER: mockDockerDir,
+        PATH_DNSMASQ: mockDnsmasqDir,
+        NAKSU2_WORKDIR: mockNaksu2WorkDir
+      },
+      detached: true
+    })
+  }
+
+  async function runExamnetReturnsExitCode(expectedExitCode: number, examnetArguments: string[]) {
+    try {
+      await runExamnetWithArguments(examnetArguments)
+      assert.fail('Expected runExamnet to fail, but it succeeded')
+    } catch (e) {
+      console.log(e)
+      assert.equal(e.exitCode, expectedExitCode)
+    }
+  }
+
+  function runExamnet(netDeviceWan: string, netDeviceLan: string, serverNumber: string, serverFriendlyName?: string) {
+    return runExamnetWithArguments([
+      netDeviceWan,
+      netDeviceLan,
+      serverNumber,
+      serverFriendlyName,
+      '--accept-non-root-user'
+    ])
+  }
 
   async function truncateCallsLog() {
     try {
@@ -177,8 +261,10 @@ describe('examnet', async () => {
     const mockNaksu2CertsDir = await makeTempDir(mockNaksu2WorkDir, 'certs')
 
     await writeToTempDir(mockNaksu2CertsDir, 'domain.txt', 'kamreeri-kelvokas.koe.abitti.net')
-    const mockTsPath = join(process.cwd(), 'test', 'mock-script.ts')
-    const mockScript = await bashWrapMockScript(mockTsPath)
+
+    const mockScriptTsPath = join(process.cwd(), 'test', 'mock-script.ts')
+    const mockScript = await bashWrapMockScript(mockScriptTsPath)
+
     await writeToTempDir(mockBinDir, 'echo', mockScript)
     await writeToTempDir(mockBinDir, 'nmcli', mockScript)
     await writeToTempDir(mockBinDir, 'systemctl', mockScript)
@@ -198,6 +284,10 @@ describe('examnet', async () => {
     await writeToTempDir(mockTemplatesDir, 'docker-daemon.json.template', 'foobar')
     await writeToTempDir(mockTemplatesDir, 'dnsmasq.conf.template', 'foobar')
     await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
+
+    const mockScriptWithNoOutputTsPath = join(process.cwd(), 'test', 'mock-script-with-no-output.ts')
+    const mockScriptWithNoOutput = await bashWrapMockScript(mockScriptWithNoOutputTsPath)
+
     return {
       callsLog,
       mockBinDir,
@@ -207,7 +297,8 @@ describe('examnet', async () => {
       mockDockerDir,
       mockDnsmasqDir,
       mockNaksu2WorkDir,
-      mockNaksu2CertsDir
+      mockNaksu2CertsDir,
+      mockScriptWithNoOutput
     }
   }
 
