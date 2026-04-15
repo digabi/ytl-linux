@@ -60,16 +60,7 @@ describe('examnet', async () => {
       // do not await runExamnet, as it stays running in daemon mode
       const subprocess = runExamnet('eth0', 'eth1', 1, '--daemon')
       await waitForLogEntry(callsLog, '"ytl-linux-digabi2-bouncer"')
-      await assertCalls([
-        { cmd: 'stat', argv: ['-c', '%U:%G', mockNaksu2WorkDir] },
-        { cmd: 'ip', argv: ['-oneline', '-4', 'addr', 'show', 'scope', 'global', 'eth0'] },
-        {
-          cmd: 'ytl-linux-digabi2-bouncer',
-          argv: [
-            `    {        "config": {            "friendlyName": "foobar",             "canonicalHostname": "kamreeri-kelvokas.koe.abitti.net",             "ncsiHostnames": ["example.com"],             "searchDomain": "internal",             "serverOwnIp": "127.0.0.1",             "ports": {"discovery": 26464, "bouncer": 80}         },         "secrets": {"cert":"${mockNaksu2CertsDir}/fullchain.pem","key":"${mockNaksu2CertsDir}/key.pem"}     }`
-          ]
-        }
-      ])
+      await assertCalls([callStat(mockNaksu2WorkDir), callIpAddrShow('eth0'), callBouncer(mockNaksu2CertsDir)])
       await killSubprocess(subprocess)
     })
   })
@@ -78,10 +69,10 @@ describe('examnet', async () => {
     test('runs when correct parameters are given', async () => {
       await runExamnet('eth0', 'eth1', 1, '--restart-daemon')
       await assertCalls([
-        { cmd: 'stat', argv: ['-c', '%U:%G', mockNaksu2WorkDir] },
-        { cmd: 'systemctl', argv: ['is-enabled', 'ytl-linux-digabi2-examnet.service'] },
-        { cmd: 'systemctl', argv: ['is-enabled', 'ytl-linux-digabi2-examnet-discovery.timer'] },
-        { cmd: 'systemctl', argv: ['is-enabled', 'ytl-linux-digabi2-examnet-discovery.service'] }
+        callStat(mockNaksu2WorkDir),
+        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet.service'),
+        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet-discovery.timer'),
+        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet-discovery.service')
       ])
     })
   })
@@ -89,15 +80,7 @@ describe('examnet', async () => {
   describe('discovery', () => {
     test('runs when correct parameters are given', async () => {
       await runExamnet('eth0', 'eth1', 1, '--discovery')
-      await assertCalls([
-        { cmd: 'stat', argv: ['-c', '%U:%G', mockNaksu2WorkDir] },
-        {
-          cmd: 'ytl-linux-digabi2-discovery',
-          argv: [
-            `    {\n        "config": {\n            "isProd": true,\n            "ktpDomains": [],\n            "dnsmasqConfigOutputFile": "${mockDnsmasqDir}/ytl-linux-ktp-aliases.conf",\n            "ports": {"discovery": 26464},\n            "dbPath": "${mockConfigDir}/discovery.db"\n        }\n    }`
-          ]
-        }
-      ])
+      await assertCalls([callStat(mockNaksu2WorkDir), callDiscovery(mockDnsmasqDir, mockConfigDir)])
     })
   })
 
@@ -105,38 +88,20 @@ describe('examnet', async () => {
     test('runs when correct parameters are given', async () => {
       await runExamnet('eth0', 'eth1', 1)
       await assertCalls([
-        { cmd: 'stat', argv: ['-c', '%U:%G', mockNaksu2WorkDir] },
-        { cmd: 'ip', argv: ['link', 'show', 'eth0'] },
-        { cmd: 'ip', argv: ['link', 'show', 'eth1'] },
-        { cmd: 'ip', argv: ['-oneline', '-4', 'addr', 'show', 'scope', 'global', 'eth0'] },
-        { cmd: 'ip', argv: ['-oneline', '-4', 'addr', 'show', 'scope', 'global', 'eth1'] },
-        { cmd: 'nmcli', argv: ['connection', 'delete', 'yo-eth1'] },
-        {
-          cmd: 'nmcli',
-          argv: [
-            'connection',
-            'add',
-            'type',
-            'ethernet',
-            'ifname',
-            'eth1',
-            'con-name',
-            'yo-eth1',
-            'ip4',
-            '192.168.10.1/16',
-            'autoconnect',
-            'yes',
-            'save',
-            'yes'
-          ]
-        },
-        { cmd: 'nmcli', argv: ['connection', 'modify', 'yo-eth1', 'ipv6.method', 'disabled'] },
-        { cmd: 'nmcli', argv: ['connection', 'up', 'yo-eth1'] },
-        { cmd: 'systemctl', argv: ['restart', 'NetworkManager.service'] },
-        { cmd: 'nm-online', argv: ['-s', '-q', '--timeout=30'] },
-        { cmd: 'ipset', argv: ['create', 'ytl_internet_allowlist', 'hash:ip', 'timeout', '3600', '-exist'] },
-        { cmd: 'iptables', argv: ['-t', 'filter', '-N', 'YTL_LAN_WAN_IPSET_LOG'] },
-        { cmd: 'iptables', argv: ['-t', 'filter', '-F', 'YTL_LAN_WAN_IPSET_LOG'] },
+        callStat(mockNaksu2WorkDir),
+        callIpLinkShow('eth0'),
+        callIpLinkShow('eth1'),
+        callIpAddrShow('eth0'),
+        callIpAddrShow('eth1'),
+        callNmicliConnectionDelete('yo-eth1'),
+        callNmicliConnectionAdd('yo-eth1', '192.168.10.1/16'),
+        callNmicliConnectionModify('yo-eth1'),
+        callNmicliConnectionUp('yo-eth1'),
+        callSystemctl('restart', 'NetworkManager.service'),
+        callNmonline(),
+        callIpsetCreate('ytl_internet_allowlist'),
+        callIptablesNewChain('YTL_LAN_WAN_IPSET_LOG'),
+        callIptablesFlushChain('YTL_LAN_WAN_IPSET_LOG'),
         {
           cmd: 'iptables',
           argv: [
@@ -167,9 +132,9 @@ describe('examnet', async () => {
             '6'
           ]
         },
-        { cmd: 'iptables', argv: ['-t', 'filter', '-A', 'YTL_LAN_WAN_IPSET_LOG', '-j', 'RETURN'] },
-        { cmd: 'iptables', argv: ['-t', 'filter', '-N', 'YTL_LAN_WAN_IPSET'] },
-        { cmd: 'iptables', argv: ['-t', 'filter', '-F', 'YTL_LAN_WAN_IPSET'] },
+        callIptablesAppendRule('YTL_LAN_WAN_IPSET_LOG', 'RETURN'),
+        callIptablesNewChain('YTL_LAN_WAN_IPSET'),
+        callIptablesFlushChain('YTL_LAN_WAN_IPSET'),
         {
           cmd: 'iptables',
           argv: [
@@ -186,7 +151,7 @@ describe('examnet', async () => {
             'ACCEPT'
           ]
         },
-        { cmd: 'iptables', argv: ['-t', 'filter', '-A', 'YTL_LAN_WAN_IPSET', '-j', 'DROP'] },
+        callIptablesAppendRule('YTL_LAN_WAN_IPSET', 'DROP'),
         {
           cmd: 'iptables',
           argv: [
@@ -206,14 +171,8 @@ describe('examnet', async () => {
             'ACCEPT'
           ]
         },
-        {
-          cmd: 'iptables',
-          argv: ['-t', 'filter', '-C', 'FORWARD', '-i', 'eth1', '-o', 'eth0', '-j', 'YTL_LAN_WAN_IPSET_LOG']
-        },
-        {
-          cmd: 'iptables',
-          argv: ['-t', 'filter', '-C', 'FORWARD', '-i', 'eth1', '-o', 'eth0', '-j', 'YTL_LAN_WAN_IPSET']
-        },
+        callIptablesCheckChain('FORWARD', 'eth1', 'YTL_LAN_WAN_IPSET_LOG'),
+        callIptablesCheckChain('FORWARD', 'eth1', 'YTL_LAN_WAN_IPSET'),
         {
           cmd: 'iptables',
           argv: [
@@ -232,19 +191,19 @@ describe('examnet', async () => {
             'MASQUERADE'
           ]
         },
-        { cmd: 'systemctl', argv: ['is-enabled', 'dnsmasq.service'] },
-        { cmd: 'dig', argv: ['+time=1', '+tries=1', '@127.0.0.1', 'endpoint.security.microsoft.com', 'A'] },
-        { cmd: 'dig', argv: ['+time=1', '+tries=1', '@127.0.0.1', 'smartscreen-prod.microsoft.com', 'A'] },
-        { cmd: 'dig', argv: ['+time=1', '+tries=1', '@127.0.0.1', 'smartscreen.microsoft.com', 'A'] },
-        { cmd: 'systemctl', argv: ['enable', 'ytl-linux-digabi2-examnet.service'] },
-        { cmd: 'systemctl', argv: ['enable', 'dnsmasq.service'] },
-        { cmd: 'systemctl', argv: ['enable', 'ytl-linux-digabi2-examnet-discovery.service'] },
-        { cmd: 'systemctl', argv: ['enable', 'ytl-linux-digabi2-examnet-discovery.timer'] },
-        { cmd: 'systemctl', argv: ['restart', 'systemd-resolved'] },
-        { cmd: 'systemctl', argv: ['is-enabled', 'dnsmasq.service'] },
-        { cmd: 'systemctl', argv: ['is-enabled', 'ytl-linux-digabi2-examnet.service'] },
-        { cmd: 'systemctl', argv: ['is-enabled', 'ytl-linux-digabi2-examnet-discovery.timer'] },
-        { cmd: 'systemctl', argv: ['is-enabled', 'ytl-linux-digabi2-examnet-discovery.service'] },
+        callSystemctl('is-enabled', 'dnsmasq.service'),
+        callDig('endpoint.security.microsoft.com'),
+        callDig('smartscreen-prod.microsoft.com'),
+        callDig('smartscreen.microsoft.com'),
+        callSystemctl('enable', 'ytl-linux-digabi2-examnet.service'),
+        callSystemctl('enable', 'dnsmasq.service'),
+        callSystemctl('enable', 'ytl-linux-digabi2-examnet-discovery.service'),
+        callSystemctl('enable', 'ytl-linux-digabi2-examnet-discovery.timer'),
+        callSystemctl('restart', 'systemd-resolved'),
+        callSystemctl('is-enabled', 'dnsmasq.service'),
+        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet.service'),
+        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet-discovery.timer'),
+        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet-discovery.service'),
         { cmd: 'ytl-linux-digabi2-docker-configure.sh', argv: ['127.0.0.1', '192.168.10.1'] }
       ])
     })
@@ -254,38 +213,20 @@ describe('examnet', async () => {
     test('runs when correct parameters are given', async () => {
       await runExamnet('eth0', 'eth1', 1)
       await assertCalls([
-        { cmd: 'stat', argv: ['-c', '%U:%G', mockNaksu2WorkDir] },
-        { cmd: 'ip', argv: ['link', 'show', 'eth0'] },
-        { cmd: 'ip', argv: ['link', 'show', 'eth1'] },
-        { cmd: 'ip', argv: ['-oneline', '-4', 'addr', 'show', 'scope', 'global', 'eth0'] },
-        { cmd: 'ip', argv: ['-oneline', '-4', 'addr', 'show', 'scope', 'global', 'eth1'] },
-        { cmd: 'nmcli', argv: ['connection', 'delete', 'yo-eth1'] },
-        {
-          cmd: 'nmcli',
-          argv: [
-            'connection',
-            'add',
-            'type',
-            'ethernet',
-            'ifname',
-            'eth1',
-            'con-name',
-            'yo-eth1',
-            'ip4',
-            '192.168.10.1/16',
-            'autoconnect',
-            'yes',
-            'save',
-            'yes'
-          ]
-        },
-        { cmd: 'nmcli', argv: ['connection', 'modify', 'yo-eth1', 'ipv6.method', 'disabled'] },
-        { cmd: 'nmcli', argv: ['connection', 'up', 'yo-eth1'] },
-        { cmd: 'systemctl', argv: ['restart', 'NetworkManager.service'] },
-        { cmd: 'nm-online', argv: ['-s', '-q', '--timeout=30'] },
-        { cmd: 'ipset', argv: ['create', 'ytl_internet_allowlist', 'hash:ip', 'timeout', '3600', '-exist'] },
-        { cmd: 'iptables', argv: ['-t', 'filter', '-N', 'YTL_LAN_WAN_IPSET_LOG'] },
-        { cmd: 'iptables', argv: ['-t', 'filter', '-F', 'YTL_LAN_WAN_IPSET_LOG'] },
+        callStat(mockNaksu2WorkDir),
+        callIpLinkShow('eth0'),
+        callIpLinkShow('eth1'),
+        callIpAddrShow('eth0'),
+        callIpAddrShow('eth1'),
+        callNmicliConnectionDelete('yo-eth1'),
+        callNmicliConnectionAdd('yo-eth1', '192.168.10.1/16'),
+        callNmicliConnectionModify('yo-eth1'),
+        callNmicliConnectionUp('yo-eth1'),
+        callSystemctl('restart', 'NetworkManager.service'),
+        callNmonline(),
+        callIpsetCreate('ytl_internet_allowlist'),
+        callIptablesNewChain('YTL_LAN_WAN_IPSET_LOG'),
+        callIptablesFlushChain('YTL_LAN_WAN_IPSET_LOG'),
         {
           cmd: 'iptables',
           argv: [
@@ -316,9 +257,9 @@ describe('examnet', async () => {
             '6'
           ]
         },
-        { cmd: 'iptables', argv: ['-t', 'filter', '-A', 'YTL_LAN_WAN_IPSET_LOG', '-j', 'RETURN'] },
-        { cmd: 'iptables', argv: ['-t', 'filter', '-N', 'YTL_LAN_WAN_IPSET'] },
-        { cmd: 'iptables', argv: ['-t', 'filter', '-F', 'YTL_LAN_WAN_IPSET'] },
+        callIptablesAppendRule('YTL_LAN_WAN_IPSET_LOG', 'RETURN'),
+        callIptablesNewChain('YTL_LAN_WAN_IPSET'),
+        callIptablesFlushChain('YTL_LAN_WAN_IPSET'),
         {
           cmd: 'iptables',
           argv: [
@@ -335,7 +276,7 @@ describe('examnet', async () => {
             'ACCEPT'
           ]
         },
-        { cmd: 'iptables', argv: ['-t', 'filter', '-A', 'YTL_LAN_WAN_IPSET', '-j', 'DROP'] },
+        callIptablesAppendRule('YTL_LAN_WAN_IPSET', 'DROP'),
         {
           cmd: 'iptables',
           argv: [
@@ -355,14 +296,8 @@ describe('examnet', async () => {
             'ACCEPT'
           ]
         },
-        {
-          cmd: 'iptables',
-          argv: ['-t', 'filter', '-C', 'FORWARD', '-i', 'eth1', '-o', 'eth0', '-j', 'YTL_LAN_WAN_IPSET_LOG']
-        },
-        {
-          cmd: 'iptables',
-          argv: ['-t', 'filter', '-C', 'FORWARD', '-i', 'eth1', '-o', 'eth0', '-j', 'YTL_LAN_WAN_IPSET']
-        },
+        callIptablesCheckChain('FORWARD', 'eth1', 'YTL_LAN_WAN_IPSET_LOG'),
+        callIptablesCheckChain('FORWARD', 'eth1', 'YTL_LAN_WAN_IPSET'),
         {
           cmd: 'iptables',
           argv: [
@@ -381,19 +316,19 @@ describe('examnet', async () => {
             'MASQUERADE'
           ]
         },
-        { cmd: 'systemctl', argv: ['is-enabled', 'dnsmasq.service'] },
-        { cmd: 'dig', argv: ['+time=1', '+tries=1', '@127.0.0.1', 'endpoint.security.microsoft.com', 'A'] },
-        { cmd: 'dig', argv: ['+time=1', '+tries=1', '@127.0.0.1', 'smartscreen-prod.microsoft.com', 'A'] },
-        { cmd: 'dig', argv: ['+time=1', '+tries=1', '@127.0.0.1', 'smartscreen.microsoft.com', 'A'] },
-        { cmd: 'systemctl', argv: ['enable', 'ytl-linux-digabi2-examnet.service'] },
-        { cmd: 'systemctl', argv: ['enable', 'dnsmasq.service'] },
-        { cmd: 'systemctl', argv: ['enable', 'ytl-linux-digabi2-examnet-discovery.service'] },
-        { cmd: 'systemctl', argv: ['enable', 'ytl-linux-digabi2-examnet-discovery.timer'] },
-        { cmd: 'systemctl', argv: ['restart', 'systemd-resolved'] },
-        { cmd: 'systemctl', argv: ['is-enabled', 'dnsmasq.service'] },
-        { cmd: 'systemctl', argv: ['is-enabled', 'ytl-linux-digabi2-examnet.service'] },
-        { cmd: 'systemctl', argv: ['is-enabled', 'ytl-linux-digabi2-examnet-discovery.timer'] },
-        { cmd: 'systemctl', argv: ['is-enabled', 'ytl-linux-digabi2-examnet-discovery.service'] },
+        callSystemctl('is-enabled', 'dnsmasq.service'),
+        callDig('endpoint.security.microsoft.com'),
+        callDig('smartscreen-prod.microsoft.com'),
+        callDig('smartscreen.microsoft.com'),
+        callSystemctl('enable', 'ytl-linux-digabi2-examnet.service'),
+        callSystemctl('enable', 'dnsmasq.service'),
+        callSystemctl('enable', 'ytl-linux-digabi2-examnet-discovery.service'),
+        callSystemctl('enable', 'ytl-linux-digabi2-examnet-discovery.timer'),
+        callSystemctl('restart', 'systemd-resolved'),
+        callSystemctl('is-enabled', 'dnsmasq.service'),
+        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet.service'),
+        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet-discovery.timer'),
+        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet-discovery.service'),
         { cmd: 'ytl-linux-digabi2-docker-configure.sh', argv: ['127.0.0.1', '192.168.10.1'] }
       ])
     })
@@ -522,4 +457,102 @@ async function killSubprocess(subprocess: any) {
   } finally {
     if (killTimer) clearTimeout(killTimer)
   }
+}
+
+function callStat(mockNaksu2WorkDir) {
+  return { cmd: 'stat', argv: ['-c', '%U:%G', mockNaksu2WorkDir] }
+}
+
+function callBouncer(mockNaksu2CertsDir: string) {
+  return {
+    cmd: 'ytl-linux-digabi2-bouncer',
+    argv: [
+      `    {        "config": {            "friendlyName": "foobar",             "canonicalHostname": "kamreeri-kelvokas.koe.abitti.net",             "ncsiHostnames": ["example.com"],             "searchDomain": "internal",             "serverOwnIp": "127.0.0.1",             "ports": {"discovery": 26464, "bouncer": 80}         },         "secrets": {"cert":"${mockNaksu2CertsDir}/fullchain.pem","key":"${mockNaksu2CertsDir}/key.pem"}     }`
+    ]
+  }
+}
+
+function callDiscovery(mockDnsmasqDir: string, mockConfigDir: string) {
+  return {
+    cmd: 'ytl-linux-digabi2-discovery',
+    argv: [
+      `    {\n        "config": {\n            "isProd": true,\n            "ktpDomains": [],\n            "dnsmasqConfigOutputFile": "${mockDnsmasqDir}/ytl-linux-ktp-aliases.conf",\n            "ports": {"discovery": 26464},\n            "dbPath": "${mockConfigDir}/discovery.db"\n        }\n    }`
+    ]
+  }
+}
+
+function callIpLinkShow(networkDevice: string) {
+  return { cmd: 'ip', argv: ['link', 'show', networkDevice] }
+}
+function callIpAddrShow(networkDevice: string) {
+  return { cmd: 'ip', argv: ['-oneline', '-4', 'addr', 'show', 'scope', 'global', networkDevice] }
+}
+
+function callSystemctl(cmd: string, service: string) {
+  return { cmd: 'systemctl', argv: [cmd, service] }
+}
+
+function callDig(host: string) {
+  return { cmd: 'dig', argv: ['+time=1', '+tries=1', '@127.0.0.1', host, 'A'] }
+}
+
+function callNmicliConnectionDelete(connectionName: string) {
+  return { cmd: 'nmcli', argv: ['connection', 'delete', connectionName] }
+}
+
+function callNmicliConnectionModify(connectionName: string) {
+  return { cmd: 'nmcli', argv: ['connection', 'modify', connectionName, 'ipv6.method', 'disabled'] }
+}
+
+function callNmicliConnectionAdd(connectionName: string, ipRange: string) {
+  return {
+    cmd: 'nmcli',
+    argv: [
+      'connection',
+      'add',
+      'type',
+      'ethernet',
+      'ifname',
+      'eth1',
+      'con-name',
+      connectionName,
+      'ip4',
+      ipRange,
+      'autoconnect',
+      'yes',
+      'save',
+      'yes'
+    ]
+  }
+}
+
+function callNmicliConnectionUp(deviceName: string) {
+  return { cmd: 'nmcli', argv: ['connection', 'up', deviceName] }
+}
+
+function callNmonline() {
+  return { cmd: 'nm-online', argv: ['-s', '-q', '--timeout=30'] }
+}
+
+function callIpsetCreate(listName: string) {
+  return { cmd: 'ipset', argv: ['create', listName, 'hash:ip', 'timeout', '3600', '-exist'] }
+}
+
+function callIptablesNewChain(chainName: string) {
+  return { cmd: 'iptables', argv: ['-t', 'filter', '-N', chainName] }
+}
+
+function callIptablesFlushChain(chainName: string) {
+  return { cmd: 'iptables', argv: ['-t', 'filter', '-F', chainName] }
+}
+
+function callIptablesCheckChain(chainName: string, networkDevice: string, jumpTarget: string) {
+  return {
+    cmd: 'iptables',
+    argv: ['-t', 'filter', '-C', chainName, '-i', networkDevice, '-o', 'eth0', '-j', jumpTarget]
+  }
+}
+
+function callIptablesAppendRule(chainName: string, jumpTarget: string) {
+  return { cmd: 'iptables', argv: ['-t', 'filter', '-A', chainName, '-j', jumpTarget] }
 }
