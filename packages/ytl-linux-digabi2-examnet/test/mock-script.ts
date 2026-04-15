@@ -24,6 +24,9 @@ async function main() {
       // simulate a daemon that stays running by waiting for two minutes
       await new Promise(resolve => setTimeout(resolve, 120_000))
       break
+    case 'systemctl':
+      console.log('enabled')
+      break
   }
 }
 
