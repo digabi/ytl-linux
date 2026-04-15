@@ -1,13 +1,5 @@
 #!/usr/bin/env bash
 
-# These domains and their subdomains are allowed from LAN to WAN for Windows Defender cloud verification.
-# Keep this list minimal.
-readonly INTERNET_ALLOWLIST_DOMAINS=(
-    "endpoint.security.microsoft.com"
-    "smartscreen-prod.microsoft.com"
-    "smartscreen.microsoft.com"
-)
-
 # Exit codes
 readonly EXIT_CODE_MUST_BE_ROOT=1                     # The script must be executed by root or sudo
 readonly EXIT_CODE_NETWORK_DEVICE_NAME_MISSING_WAN=2  # Network device name (internet) is missing
