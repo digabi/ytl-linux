@@ -578,12 +578,11 @@ describe('examnet', async () => {
       await assertFileExists(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf')
       await assertFileExists(mockNaksu2CertsDir, 'domain.txt')
     })
-    // TODO make sure that all essential programs are mocked
   })
 
   test('all exit codes are tested', () => {
     const sortedExitCodes = Array.from(exitCodesTested).sort((a, b) => a - b)
-    // TODO add tests for missing exit codes
+    // TODO these exit codes are currently not tested: 3, 5, 9, 10, 11, 13, 19,
     assert.deepEqual(sortedExitCodes, [1, 2, 4, 6, 7, 8, 12, 14, 15, 17, 18, 20, 21, 22, 23, 24, 25, 27, 28, 29])
   })
 
@@ -688,28 +687,34 @@ describe('examnet', async () => {
     const mockScript = await bashWrapMockScript(mockScriptTsPath)
 
     await writeToTempDir(mockBinDir, 'echo', mockScript)
-    await writeToTempDir(mockBinDir, 'nmcli', mockScript)
-    await writeToTempDir(mockBinDir, 'systemctl', mockScript)
-    await writeToTempDir(mockBinDir, 'nm-online', mockScript)
     await writeToTempDir(mockBinDir, 'ip', mockScript)
-    await writeToTempDir(mockBinDir, 'iptables', mockScript)
-    await writeToTempDir(mockBinDir, 'ipset', mockScript)
-    await writeToTempDir(mockBinDir, 'dig', mockScript)
-    await writeToTempDir(mockBinDir, 'stat', mockScript)
+    await writeToTempDir(mockBinDir, 'systemctl', mockScript)
+    await writeToTempDir(mockBinDir, 'nmcli', mockScript)
+    await writeToTempDir(mockBinDir, 'nm-online', mockScript)
     await writeToTempDir(mockBinDir, 'sed', mockScript)
-    await writeToTempDir(mockBinDir, 'rm', mockScript)
     await writeToTempDir(mockBinDir, 'openssl', mockScript)
+    await writeToTempDir(mockBinDir, 'stat', mockScript)
+    await writeToTempDir(mockBinDir, 'rm', mockScript)
     await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-bouncer', mockScript)
     await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-discovery', mockScript)
     await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-docker-configure.sh', mockScript)
+    // external programs that are not mocked:
+    // - grep
+    // - tr
+    // - cut
+    // - mkdir
+    // - xargs
+    // - chown
 
-    await writeToTempDir(mockExamnetConfigDir, 'ncsi-hostnames', 'example.com')
-    // await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '127.0.0.1')
+    await writeToTempDir(
+      mockExamnetConfigDir,
+      'ncsi-hostnames',
+      'dns.msftncsi.com,www.msftncsi.com,www.msftconnecttest.com,ipv6.msftconnecttest.com'
+    )
     await writeToTempDir(mockExamnetConfigDir, 'discovery.db', 'foo')
     await writeToTempDir(mockTemplatesDir, 'resolved.conf.template', 'foobar')
     await writeToTempDir(mockTemplatesDir, 'docker-daemon.json.template', 'foobar')
     await writeToTempDir(mockTemplatesDir, 'dnsmasq.conf.template', 'foobar')
-    // await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
     await writeToTempDir(mockNetplanConfDir, '50-cloud-init.yaml', 'baz')
     await writeToTempDir(mockEtcDir, 'hosts', '# test /etc/hosts file\n')
 
@@ -741,16 +746,16 @@ describe('examnet', async () => {
     const callsLines = calls.split('\n')
     // console.log(`expecting ${expectedCalls.length} calls to external programs`)
     const callsArray = callsLines.map(line => {
-      console.log(`parsing line ${line}`)
+      // console.log(`parsing line ${line}`)
       return JSON.parse(line)
     })
     assert.deepEqual(callsArray, expectedCalls)
   }
 })
 
-async function writeToTempDir(dir: string, name: string, script: string) {
+async function writeToTempDir(dir: string, name: string, fileContents: string) {
   const file = join(dir, name)
-  await writeFile(file, script, 'utf8')
+  await writeFile(file, fileContents, 'utf8')
   await chmod(file, 0o755)
   return file
 }
@@ -800,7 +805,7 @@ function callBouncer(mockNaksu2CertsDir: string) {
   return {
     cmd: 'ytl-linux-digabi2-bouncer',
     argv: [
-      `    {        "config": {            "friendlyName": "foobar",             "canonicalHostname": "kamreeri-kelvokas.koe.abitti.net",             "ncsiHostnames": ["example.com"],             "searchDomain": "internal",             "serverOwnIp": "127.0.0.1",             "ports": {"discovery": 26464, "bouncer": 80}         },         "secrets": {"cert":"${mockNaksu2CertsDir}/fullchain.pem","key":"${mockNaksu2CertsDir}/key.pem"}     }`
+      `    {        "config": {            "friendlyName": "foobar",             "canonicalHostname": "kamreeri-kelvokas.koe.abitti.net",             "ncsiHostnames": ["dns.msftncsi.com","www.msftncsi.com","www.msftconnecttest.com","ipv6.msftconnecttest.com"],             "searchDomain": "internal",             "serverOwnIp": "127.0.0.1",             "ports": {"discovery": 26464, "bouncer": 80}         },         "secrets": {"cert":"${mockNaksu2CertsDir}/fullchain.pem","key":"${mockNaksu2CertsDir}/key.pem"}     }`
     ]
   }
 }
@@ -823,10 +828,6 @@ function callIpAddrShow(networkDevice: string) {
 
 function callSystemctl(cmd: string, service: string, flags?: string) {
   return { cmd: 'systemctl', argv: [cmd, flags, service].filter(Boolean) }
-}
-
-function callDig(host: string) {
-  return { cmd: 'dig', argv: ['+time=1', '+tries=1', '@127.0.0.1', host, 'A'] }
 }
 
 function callNmicliConnectionDelete(connectionName: string) {
@@ -886,25 +887,31 @@ function callOpenssl(path: string) {
   return { cmd: 'openssl', argv: ['x509', '-in', `${path}/cert.pem`, '-text', '-noout'] }
 }
 
-function callIpsetCreate(listName: string) {
-  return { cmd: 'ipset', argv: ['create', listName, 'hash:ip', 'timeout', '3600', '-exist'] }
-}
-
-function callIptablesNewChain(chainName: string) {
-  return { cmd: 'iptables', argv: ['-t', 'filter', '-N', chainName] }
-}
-
-function callIptablesFlushChain(chainName: string) {
-  return { cmd: 'iptables', argv: ['-t', 'filter', '-F', chainName] }
-}
-
-function callIptablesCheckChain(chainName: string, networkDevice: string, jumpTarget: string) {
-  return {
-    cmd: 'iptables',
-    argv: ['-t', 'filter', '-C', chainName, '-i', networkDevice, '-o', 'eth0', '-j', jumpTarget]
-  }
-}
-
-function callIptablesAppendRule(chainName: string, jumpTarget: string) {
-  return { cmd: 'iptables', argv: ['-t', 'filter', '-A', chainName, '-j', jumpTarget] }
-}
+// These are not yet in use:
+//
+// function callDig(host: string) {
+//   return { cmd: 'dig', argv: ['+time=1', '+tries=1', '@127.0.0.1', host, 'A'] }
+// }
+//
+// function callIpsetCreate(listName: string) {
+//   return { cmd: 'ipset', argv: ['create', listName, 'hash:ip', 'timeout', '3600', '-exist'] }
+// }
+//
+// function callIptablesNewChain(chainName: string) {
+//   return { cmd: 'iptables', argv: ['-t', 'filter', '-N', chainName] }
+// }
+//
+// function callIptablesFlushChain(chainName: string) {
+//   return { cmd: 'iptables', argv: ['-t', 'filter', '-F', chainName] }
+// }
+//
+// function callIptablesCheckChain(chainName: string, networkDevice: string, jumpTarget: string) {
+//   return {
+//     cmd: 'iptables',
+//     argv: ['-t', 'filter', '-C', chainName, '-i', networkDevice, '-o', 'eth0', '-j', jumpTarget]
+//   }
+// }
+//
+// function callIptablesAppendRule(chainName: string, jumpTarget: string) {
+//   return { cmd: 'iptables', argv: ['-t', 'filter', '-A', chainName, '-j', jumpTarget] }
+// }
