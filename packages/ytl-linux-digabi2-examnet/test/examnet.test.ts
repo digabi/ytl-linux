@@ -875,7 +875,7 @@ function callRm(path: string) {
 function callSed(path: string) {
   return {
     cmd: 'sed',
-    argv: ['-i', '/^# BEGIN SCHOOL DOMAIN ENTRIES$/,/^# END SCHOOL DOMAIN ENTRIES$/d', path]
+    argv: ['-i', '', '/^# BEGIN SCHOOL DOMAIN ENTRIES$/,/^# END SCHOOL DOMAIN ENTRIES$/d', path]
   }
 }
 

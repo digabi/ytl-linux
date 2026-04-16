@@ -459,11 +459,10 @@ function configure_static_dns_records() {
     # (e.g. 1000.koe.abitti.net) since we cannot reasonably ascribe DNS names to these
     DOMAINS="$(
         openssl x509 -in "$PATH_NAKSU2_CERT" -text -noout |\
-        grep DNS: |\
-        xargs |\
+        grep 'DNS:' |\
         sed 's/DNS://g' |\
-        sed 's/, /\n/g' |\
-        grep -E '(.+\..+){4}'
+        tr ',' '\n' |\
+        grep -E '[^.]+\.[^.]+\.koe\.abitti\.net'
     )"
 
     debug "Configuring static DNS records for the following domains:"
@@ -512,7 +511,7 @@ function configure_static_dns_records() {
 }
 
 function remove_school_host_entries() {
-    sed -i '/^# BEGIN SCHOOL DOMAIN ENTRIES$/,/^# END SCHOOL DOMAIN ENTRIES$/d' "$PATH_ETC_HOSTS"
+    sed -i '' '/^# BEGIN SCHOOL DOMAIN ENTRIES$/,/^# END SCHOOL DOMAIN ENTRIES$/d' "$PATH_ETC_HOSTS"
 }
 
 # ---------- Main script logic starts here ---------- #
