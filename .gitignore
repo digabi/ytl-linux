@@ -5,5 +5,7 @@
 packages/**/*.deb
 packages/**/deb-root/
 packages/**/deb-scripts/
+packages/**/node_modules/
 
+.idea
 .DS_STORE
