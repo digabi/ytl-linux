@@ -1,12 +1,11 @@
-VERSION := 1.2.0
+VERSION := 1.3.0
 
 # Dependencies which are not related to any code in the
-DEPENDENCIES_META := --depends virtualbox-7.1 --depends ethtool --depends exfat-fuse --depends update-manager --depends gnome-icon-theme \
+DEPENDENCIES_META := --depends ethtool --depends exfat-fuse --depends update-manager --depends gnome-icon-theme \
 	--depends dconf-cli --depends ytl-linux-cpu-governor --depends ytl-linux-digabi1-examnet --depends ytl-linux-digabi2 --depends ytl-linux-digabi2-examnet \
 	--depends anydesk-meb --depends ytl-linux-tasks
 RECOMMENDS_META := --deb-recommends digabi-usb-monster
 
-DEPENDENCIES_NAKSU := --depends wget --depends zenity
 DEPENDENCIES_YTL-GRUB-SAFE-GRAPHICS := --depends policykit-1
 
 deb:
@@ -23,16 +22,8 @@ deb:
 	bash -c 'echo -e "#!/bin/sh\n\n" >deb-scripts/after-install.sh'
 	bash -c 'echo -e "#\!/bin/sh\n\n" >deb-scripts/after-remove.sh'
 
-	# Naksu
-	mkdir -p deb-root/usr/local/bin/
-	cp naksu/naksu deb-root/usr/local/bin/
-	chmod 755 deb-root/usr/local/bin/naksu
-
-	mkdir -p deb-root/usr/share/applications/
-	cp naksu/naksu.desktop deb-root/usr/share/applications/
-
-	mkdir -p deb-root/usr/local/lib/naksu/
-	cp naksu/naksu.png deb-root/usr/local/lib/naksu/
+	# Remove Naksu settings and system files from user "school"
+	cat naksu/after-install.sh >>deb-scripts/after-install.sh
 
 	# Qogir icons
 	mkdir -p deb-root/usr/share/icons
@@ -79,7 +70,6 @@ deb:
 		 --after-install deb-scripts/after-install.sh \
 		 --after-remove deb-scripts/after-remove.sh \
 		 $(DEPENDENCIES_META) \
-		 $(DEPENDENCIES_NAKSU) \
 		 $(DEPENDENCIES_YTL-GRUB-SAFE-GRAPHICS) \
 		 $(RECOMMENDS_META) \
 		.
