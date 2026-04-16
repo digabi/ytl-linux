@@ -41,6 +41,8 @@ readonly FRIENDLY_NAME_SEARCH_DOMAIN="internal"
 readonly DISCOVERY_PORT=26464
 readonly BOUNCER_PORT=80
 
+readonly PATH_ETC=${PATH_ETC:-/etc/}
+readonly PATH_ETC_HOSTS=${PATH_ETC}/hosts
 readonly PATH_NETPLAN=${PATH_NETPLAN:-/etc/netplan/}
 readonly PATH_NETPLAN_CONF="${PATH_NETPLAN}/50-cloud-init.yaml"
 readonly PATH_TEMPLATES=${PATH_TEMPLATES:-/etc/ytl-linux-digabi2-examnet/templates}
@@ -502,7 +504,7 @@ function configure_static_dns_records() {
     echo "# BEGIN SCHOOL DOMAIN ENTRIES"
     printf '%s\n' "${ETC_HOSTS[@]}"
     echo "# END SCHOOL DOMAIN ENTRIES"
-    } | sudo tee -a /etc/hosts > /dev/null
+    } | sudo tee -a "$PATH_ETC_HOSTS" > /dev/null
 
     debug "Configuring domain for KTP"
     debug "This server's domain based on server number ($SERVER_NUMBER) is: $THIS_SERVER_DOMAIN"
@@ -510,7 +512,7 @@ function configure_static_dns_records() {
 }
 
 function remove_school_host_entries() {
-    sed -i '/^# BEGIN SCHOOL DOMAIN ENTRIES$/,/^# END SCHOOL DOMAIN ENTRIES$/d' /etc/hosts
+    sed -i '/^# BEGIN SCHOOL DOMAIN ENTRIES$/,/^# END SCHOOL DOMAIN ENTRIES$/d' "$PATH_ETC_HOSTS"
 }
 
 # ---------- Main script logic starts here ---------- #
