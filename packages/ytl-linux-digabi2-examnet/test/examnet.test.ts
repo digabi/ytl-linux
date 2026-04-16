@@ -554,6 +554,7 @@ describe('examnet', async () => {
         callNmonline(),
         callRm(`${mockDnsmasqDir}/ytl-linux-static-dns-records.conf`),
         callOpenssl(mockNaksu2CertsDir),
+        { cmd: 'sudo', argv: ['tee', '-a', `${mockEtcDir}/hosts`] },
         callSystemctl('enable', 'ytl-linux-digabi2-examnet.service'),
         callSystemctl('enable', 'dnsmasq.service'),
         callSystemctl('enable', 'ytl-linux-digabi2-examnet-discovery.service'),
@@ -695,6 +696,7 @@ describe('examnet', async () => {
     await writeToTempDir(mockBinDir, 'openssl', mockScript)
     await writeToTempDir(mockBinDir, 'stat', mockScript)
     await writeToTempDir(mockBinDir, 'rm', mockScript)
+    await writeToTempDir(mockBinDir, 'sudo', mockScript)
     await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-bouncer', mockScript)
     await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-discovery', mockScript)
     await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-docker-configure.sh', mockScript)
