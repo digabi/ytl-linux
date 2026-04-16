@@ -1,5 +1,5 @@
 NAME := ytl-linux-tasks
-VERSION := 0.2.0
+VERSION := 0.3.0
 
 DEPENDENCIES := --depends just
 

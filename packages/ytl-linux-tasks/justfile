@@ -4,8 +4,12 @@ default:
 
 # A group of tasks essential for every healthy YTL Linux installation.
 [private]
-maintenance: migrate-package-keys
+maintenance: migrate-package-keys remove-virtualbox
 
 # Installs public keys of package sources to supported location
 migrate-package-keys:
     './scripts/2026-02-18_migrate-package-keys.py'
+
+# Remove VirtualBox 7.1 and its requirements (autopurge)
+remove-virtualbox:
+    './scripts/2026-04-16_remove-virtualbox.sh'
