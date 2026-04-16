@@ -70,9 +70,8 @@ if __name__ == "__main__":
 
     for src in sources:
         if not src.is_migrated() and not src.is_present():
-            raise SystemExit(
-                f"Missing package source {src.name!r}, refusing to continue"
-            )
+            print(f"Missing package source {src.name!r}, refusing to continue")
+            exit(0)
 
     for src in sources:
         src.migrate()
