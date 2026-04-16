@@ -715,6 +715,7 @@ configure_networkmanager "yo-$NET_DEVICE_LAN" "$NET_DEVICE_LAN" "$SERVER_OWN_IP/
 # If not removed, there might be multiple settings for built-in ethernet devices
 if [ -f "$PATH_NETPLAN_CONF" ]; then
     rm -f "$PATH_NETPLAN_CONF"
+    exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove netplan config file '$PATH_NETPLAN_CONF'"
 fi
 
 restart_networkmanager
