@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import { mkdtemp, writeFile, chmod, readFile, mkdir, unlink, truncate, access } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 
+const ENV_TEST_MODE = { TEST_MODE: 'test' }
 describe('examnet', async () => {
   let callsLog
   let mockBinDir
@@ -47,7 +48,7 @@ describe('examnet', async () => {
         await assertCalls([callStat(mockNaksu2WorkDir)])
       })
       test('when accepcting non-root-user', async () => {
-        await runExamnetReturnsExitCode(2, ['--accept-non-root-user'])
+        await runExamnetReturnsExitCode(2, [], ENV_TEST_MODE)
         await assertCalls([callStat(mockNaksu2WorkDir)])
       })
     })
@@ -57,7 +58,7 @@ describe('examnet', async () => {
         await assertCalls([callStat(mockNaksu2WorkDir)])
       })
       test('when accepcting non-root-user', async () => {
-        await runExamnetReturnsExitCode(4, ['eth0', '--accept-non-root-user'])
+        await runExamnetReturnsExitCode(4, ['eth0'], ENV_TEST_MODE)
         await assertCalls([callStat(mockNaksu2WorkDir)])
       })
     })
@@ -68,21 +69,21 @@ describe('examnet', async () => {
       })
 
       test('when accepcting non-root-user', async () => {
-        await runExamnetReturnsExitCode(7, ['eth0', 'eth1', '--accept-non-root-user'])
+        await runExamnetReturnsExitCode(7, ['eth0', 'eth1'], ENV_TEST_MODE)
         await assertCalls([callStat(mockNaksu2WorkDir)])
       })
     })
     test('returns error if server number is wrong:', () => {
       test('invalid number', async () => {
-        await runExamnetReturnsExitCode(8, ['eth0', 'eth1', 'invalidNumber', '--accept-non-root-user'])
+        await runExamnetReturnsExitCode(8, ['eth0', 'eth1', 'invalidNumber'], ENV_TEST_MODE)
         await assertCalls([callStat(mockNaksu2WorkDir), callIpLinkShow('eth0'), callIpLinkShow('eth1')])
       })
       test('too small integer (0)', async () => {
-        await runExamnetReturnsExitCode(8, ['eth0', 'eth1', '0', '--accept-non-root-user'])
+        await runExamnetReturnsExitCode(8, ['eth0', 'eth1', '0'], ENV_TEST_MODE)
         await assertCalls([callStat(mockNaksu2WorkDir), callIpLinkShow('eth0'), callIpLinkShow('eth1')])
       })
       test('too large integer (25)', async () => {
-        await runExamnetReturnsExitCode(8, ['eth0', 'eth1', '25', '--accept-non-root-user'])
+        await runExamnetReturnsExitCode(8, ['eth0', 'eth1', '25'], ENV_TEST_MODE)
         await assertCalls([callStat(mockNaksu2WorkDir), callIpLinkShow('eth0'), callIpLinkShow('eth1')])
       })
     })
@@ -94,26 +95,26 @@ describe('examnet', async () => {
 
   describe('bouncer (--daemon)', async () => {
     test('returns error if net device lan configuration is missing', async () => {
-      await runExamnetReturnsExitCode(21, ['eth0', 'eth1', '1', '--daemon', '--accept-non-root-user'])
+      await runExamnetReturnsExitCode(21, ['eth0', 'eth1', '1', '--daemon'], ENV_TEST_MODE)
       await assertCalls([callStat(mockNaksu2WorkDir)])
     })
     test('returns error if server friendly name configuration is missing', async () => {
       await writeToTempDir(mockExamnetConfigDir, 'net-device-lan', 'eth0')
-      await runExamnetReturnsExitCode(21, ['eth0', 'eth1', '1', '--daemon', '--accept-non-root-user'])
+      await runExamnetReturnsExitCode(21, ['eth0', 'eth1', '1', '--daemon'], ENV_TEST_MODE)
       await assertCalls([callStat(mockNaksu2WorkDir)])
     })
     test('returns error if LAN device does not have IP address', async () => {
       await writeToTempDir(mockExamnetConfigDir, 'net-device-lan', 'eth0')
       await writeToTempDir(mockExamnetConfigDir, 'server-friendly-name', 'foobar')
       await writeToTempDir(mockBinDir, 'ip', mockScriptWithNoOutput)
-      await runExamnetReturnsExitCode(21, ['eth0', 'eth1', '1', '--daemon', '--accept-non-root-user'])
+      await runExamnetReturnsExitCode(21, ['eth0', 'eth1', '1', '--daemon'], ENV_TEST_MODE)
       await assertCalls([callStat(mockNaksu2WorkDir), callIpAddrShow('eth0')])
     })
     test('returns error if domain.txt is missing', async () => {
       await writeToTempDir(mockExamnetConfigDir, 'net-device-lan', 'eth0')
       await writeToTempDir(mockExamnetConfigDir, 'server-friendly-name', 'foobar')
       await unlink(join(mockNaksu2CertsDir, 'domain.txt'))
-      await runExamnetReturnsExitCode(21, ['eth0', 'eth1', '1', '--daemon', '--accept-non-root-user'])
+      await runExamnetReturnsExitCode(21, ['eth0', 'eth1', '1', '--daemon'], ENV_TEST_MODE)
       await assertCalls([callStat(mockNaksu2WorkDir), callIpAddrShow('eth0')])
     })
     test('returns error if daemon exits unexpectedly', async () => {
@@ -121,7 +122,7 @@ describe('examnet', async () => {
       await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '127.0.0.1')
       await writeToTempDir(mockExamnetConfigDir, 'server-friendly-name', 'foobar')
       await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-bouncer', mockScriptWithNoOutput)
-      await runExamnetReturnsExitCode(22, ['eth0', 'eth1', '1', '--daemon', '--accept-non-root-user'])
+      await runExamnetReturnsExitCode(22, ['eth0', 'eth1', '1', '--daemon'], ENV_TEST_MODE)
       await assertCalls([callStat(mockNaksu2WorkDir), callIpAddrShow('eth0'), callBouncer(mockNaksu2CertsDir)])
     })
     test('returns error if bouncer returns error', async () => {
@@ -129,7 +130,7 @@ describe('examnet', async () => {
       await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '127.0.0.1')
       await writeToTempDir(mockExamnetConfigDir, 'server-friendly-name', 'foobar')
       await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-bouncer', mockScriptReturningErrorCode)
-      await runExamnetReturnsExitCode(22, ['eth0', 'eth1', '1', '--daemon', '--accept-non-root-user'])
+      await runExamnetReturnsExitCode(22, ['eth0', 'eth1', '1', '--daemon'], ENV_TEST_MODE)
       await assertCalls([callStat(mockNaksu2WorkDir), callIpAddrShow('eth0'), callBouncer(mockNaksu2CertsDir)])
     })
     test('starts when correct parameters are given', async () => {
@@ -162,18 +163,18 @@ describe('examnet', async () => {
 
   describe('discovery (--discover)', () => {
     test('returns error if static dns configuration is missing', async () => {
-      await runExamnetReturnsExitCode(28, ['eth0', 'eth1', '1', '--discovery', '--accept-non-root-user'])
+      await runExamnetReturnsExitCode(28, ['eth0', 'eth1', '1', '--discovery'], ENV_TEST_MODE)
       await assertCalls([callStat(mockNaksu2WorkDir)])
     })
     test('returns error if server own IP file is missing', async () => {
       await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
-      await runExamnetReturnsExitCode(28, ['eth0', 'eth1', '1', '--discovery', '--accept-non-root-user'])
+      await runExamnetReturnsExitCode(28, ['eth0', 'eth1', '1', '--discovery'], ENV_TEST_MODE)
       await assertCalls([callStat(mockNaksu2WorkDir)])
     })
     test('returns error if discovery returns error', async () => {
       await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
       await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-discovery', mockScriptReturningErrorCode)
-      await runExamnetReturnsExitCode(28, ['eth0', 'eth1', '1', '--discovery', '--accept-non-root-user'])
+      await runExamnetReturnsExitCode(28, ['eth0', 'eth1', '1', '--discovery'], ENV_TEST_MODE)
       await assertCalls([callStat(mockNaksu2WorkDir)])
     })
     test('runs when correct parameters are given', async () => {
@@ -188,7 +189,7 @@ describe('examnet', async () => {
     test('returns error if removing configuration files fails', async () => {
       await writeToTempDir(mockBinDir, 'rm', mockScriptReturningErrorCode)
       await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '127.0.0.1')
-      await runExamnetReturnsExitCode(17, ['eth0', 'eth1', '1', '--remove', '--accept-non-root-user'])
+      await runExamnetReturnsExitCode(17, ['eth0', 'eth1', '1', '--remove'], ENV_TEST_MODE)
       await assertCalls([
         callStat(mockNaksu2WorkDir),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet.service', '--now'),
@@ -201,7 +202,7 @@ describe('examnet', async () => {
     test('returns error if listing connection fails', async () => {
       await writeToTempDir(mockBinDir, 'nmcli', mockScriptReturningErrorCode)
       await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '127.0.0.1')
-      await runExamnetReturnsExitCode(18, ['eth0', 'eth1', '1', '--remove', '--accept-non-root-user'])
+      await runExamnetReturnsExitCode(18, ['eth0', 'eth1', '1', '--remove'], ENV_TEST_MODE)
       await assertCalls([
         callStat(mockNaksu2WorkDir),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet.service', '--now'),
@@ -216,7 +217,7 @@ describe('examnet', async () => {
     })
     test('returns error if disabling services fails', async () => {
       await writeToTempDir(mockBinDir, 'systemctl', mockScriptReturningErrorCode)
-      await runExamnetReturnsExitCode(23, ['eth0', 'eth1', '1', '--remove', '--accept-non-root-user'])
+      await runExamnetReturnsExitCode(23, ['eth0', 'eth1', '1', '--remove'], ENV_TEST_MODE)
       await assertCalls([
         callStat(mockNaksu2WorkDir),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet.service', '--now')
@@ -226,7 +227,7 @@ describe('examnet', async () => {
       await writeToTempDir(mockBinDir, 'nm-online', mockScriptReturningErrorCode)
       await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '127.0.0.1')
       await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
-      await runExamnetReturnsExitCode(27, ['eth0', 'eth1', '1', '--remove', '--accept-non-root-user'])
+      await runExamnetReturnsExitCode(27, ['eth0', 'eth1', '1', '--remove'], ENV_TEST_MODE)
       await assertCalls([
         callStat(mockNaksu2WorkDir),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet.service', '--now'),
@@ -285,7 +286,7 @@ describe('examnet', async () => {
 
   describe('setup (no command flag)', () => {
     test('returns error if WAN device does not have an IP address', async () => {
-      await runExamnetReturnsExitCode(15, ['eth1', 'eth0', '1', '--accept-non-root-user'])
+      await runExamnetReturnsExitCode(15, ['eth1', 'eth0', '1'], ENV_TEST_MODE)
       await assertCalls([
         callStat(mockNaksu2WorkDir),
         callIpLinkShow('eth1'),
@@ -295,11 +296,11 @@ describe('examnet', async () => {
     })
     test('returns error if same devices is used for WAN and LAN', async () => {
       await writeToTempDir(mockBinDir, 'ip', mockScriptWithNoOutput)
-      await runExamnetReturnsExitCode(6, ['eth0', 'eth0', '1', '--accept-non-root-user'])
+      await runExamnetReturnsExitCode(6, ['eth0', 'eth0', '1'], ENV_TEST_MODE)
       await assertCalls([callStat(mockNaksu2WorkDir), callIpLinkShow('eth0'), callIpLinkShow('eth0')])
     })
     test('returns error if server friendly name is invalid', async () => {
-      await runExamnetReturnsExitCode(25, ['eth0', 'eth1', '1', 'väärin-nimetty', '--accept-non-root-user'])
+      await runExamnetReturnsExitCode(25, ['eth0', 'eth1', '1', 'väärin-nimetty'], ENV_TEST_MODE)
       await assertCalls([
         callStat(mockNaksu2WorkDir),
         callIpLinkShow('eth0'),
@@ -310,7 +311,7 @@ describe('examnet', async () => {
     })
     test('returns error if network device cannot be configured', async () => {
       await writeToTempDir(mockBinDir, 'nmcli', mockScriptReturningErrorCode)
-      await runExamnetReturnsExitCode(12, ['eth0', 'eth1', '1', '--accept-non-root-user'])
+      await runExamnetReturnsExitCode(12, ['eth0', 'eth1', '1'], ENV_TEST_MODE)
       await assertCalls([
         callStat(mockNaksu2WorkDir),
         callIpLinkShow('eth0'),
@@ -323,7 +324,7 @@ describe('examnet', async () => {
     })
     test('returns error if NetworkManager cannot be restarted', async () => {
       await writeToTempDir(mockBinDir, 'systemctl', mockScriptReturningErrorCode)
-      await runExamnetReturnsExitCode(14, ['eth0', 'eth1', '1', '--accept-non-root-user'])
+      await runExamnetReturnsExitCode(14, ['eth0', 'eth1', '1'], ENV_TEST_MODE)
       await assertCalls([
         callStat(mockNaksu2WorkDir),
         callIpLinkShow('eth0'),
@@ -341,7 +342,7 @@ describe('examnet', async () => {
     test('returns error if netplan configuration cannot be removed', async () => {
       await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
       await writeToTempDir(mockBinDir, 'rm', mockScriptReturningErrorCode)
-      await runExamnetReturnsExitCode(17, ['eth0', 'eth1', '1', '--accept-non-root-user'])
+      await runExamnetReturnsExitCode(17, ['eth0', 'eth1', '1'], ENV_TEST_MODE)
       await assertCalls([
         callStat(mockNaksu2WorkDir),
         callIpLinkShow('eth0'),
@@ -359,7 +360,7 @@ describe('examnet', async () => {
       await unlink(join(mockNetplanConfDir, '50-cloud-init.yaml'))
       await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
       await writeToTempDir(mockBinDir, 'rm', mockScriptReturningErrorCode)
-      await runExamnetReturnsExitCode(17, ['eth0', 'eth1', '1', '--accept-non-root-user'])
+      await runExamnetReturnsExitCode(17, ['eth0', 'eth1', '1'], ENV_TEST_MODE)
       await assertCalls([
         callStat(mockNaksu2WorkDir),
         callIpLinkShow('eth0'),
@@ -378,7 +379,7 @@ describe('examnet', async () => {
     test('returns error if --use-static-local-dns flag is given and cert.pem is missing', async () => {
       await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
       await unlink(join(mockNaksu2CertsDir, 'cert.pem'))
-      await runExamnetReturnsExitCode(24, ['eth0', 'eth1', '1', '--use-static-local-dns', '--accept-non-root-user'])
+      await runExamnetReturnsExitCode(24, ['eth0', 'eth1', '1', '--use-static-local-dns'], ENV_TEST_MODE)
       await assertCalls([
         callStat(mockNaksu2WorkDir),
         callIpLinkShow('eth0'),
@@ -400,7 +401,7 @@ describe('examnet', async () => {
       await unlink(join(mockBinDir, 'sed'))
       await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
       await writeToTempDir(mockBinDir, 'openssl', mockScriptWithNoOutput)
-      await runExamnetReturnsExitCode(20, ['eth0', 'eth1', '1', '--use-static-local-dns', '--accept-non-root-user'])
+      await runExamnetReturnsExitCode(20, ['eth0', 'eth1', '1', '--use-static-local-dns'], ENV_TEST_MODE)
       await assertCalls([
         callStat(mockNaksu2WorkDir),
         callIpLinkShow('eth0'),
@@ -423,7 +424,7 @@ describe('examnet', async () => {
       await unlink(join(mockBinDir, 'sed'))
       await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
       await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-docker-configure.sh', mockScriptReturningErrorCode)
-      await runExamnetReturnsExitCode(29, ['eth0', 'eth1', '1', '--accept-non-root-user'])
+      await runExamnetReturnsExitCode(29, ['eth0', 'eth1', '1'], ENV_TEST_MODE)
       await assertCalls([
         callStat(mockNaksu2WorkDir),
         callIpLinkShow('eth0'),
@@ -587,7 +588,7 @@ describe('examnet', async () => {
     assert.deepEqual(sortedExitCodes, [1, 2, 4, 6, 7, 8, 12, 14, 15, 17, 18, 20, 21, 22, 23, 24, 25, 27, 28, 29])
   })
 
-  function runExamnetWithArguments(examnetArguments: string[]) {
+  function runExamnetWithArguments(examnetArguments: string[], envOverrides: NodeJS.Dict<string> = {}) {
     return execa('./ytl-linux-digabi2-examnet', examnetArguments.filter(Boolean), {
       env: {
         ...process.env,
@@ -600,15 +601,20 @@ describe('examnet', async () => {
         PATH_DNSMASQ: mockDnsmasqDir,
         NAKSU2_WORKDIR: mockNaksu2WorkDir,
         PATH_NETPLAN: mockNetplanConfDir,
-        PATH_ETC: mockEtcDir
+        PATH_ETC: mockEtcDir,
+        ...envOverrides
       },
       detached: true
     })
   }
 
-  async function runExamnetReturnsExitCode(expectedExitCode: number, examnetArguments: string[]) {
+  async function runExamnetReturnsExitCode(
+    expectedExitCode: number,
+    examnetArguments: string[],
+    env: NodeJS.Dict<string> = {}
+  ) {
     try {
-      await runExamnetWithArguments(examnetArguments)
+      await runExamnetWithArguments(examnetArguments, env)
       assert.fail('Expected runExamnet to fail, but it succeeded')
     } catch (e) {
       exitCodesTested.add(e.exitCode)
@@ -624,9 +630,8 @@ describe('examnet', async () => {
     extraFlag?: string
   ) {
     return runExamnetWithArguments(
-      [netDeviceWan, netDeviceLan, serverNumber, serverFriendlyName, extraFlag, '--accept-non-root-user'].filter(
-        Boolean
-      )
+      [netDeviceWan, netDeviceLan, serverNumber, serverFriendlyName, extraFlag].filter(Boolean),
+      ENV_TEST_MODE
     )
   }
 
