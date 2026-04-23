@@ -8,14 +8,17 @@ import path from 'node:path'
 async function main() {
   // process.argv[2] is the name of the program being called
   const cmd = path.basename(process.argv[2])
-  const entry = {
-    cmd,
-    argv: process.argv.slice(3)
-  }
+  const argv = process.argv.slice(3)
+  const argvString = argv.join(' ')
+  const entry = { cmd, argv }
   fs.appendFileSync(process.env.CALLS_LOG, JSON.stringify(entry) + '\n')
   switch (cmd) {
     case 'ip':
-      console.log(process.argv[9] === 'eth0' ? '127.0.0.1' : '')
+      if (argvString === '-oneline -4 addr show scope global eth0') {
+        console.log('127.0.0.1')
+      } else {
+        console.log('')
+      }
       break
     case 'stat':
       console.log('nobody:nobody')
