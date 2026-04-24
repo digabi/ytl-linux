@@ -3,7 +3,7 @@ VERSION := 1.3.0
 # Dependencies which are not related to any code in the
 DEPENDENCIES_META := --depends ethtool --depends exfat-fuse --depends update-manager --depends gnome-icon-theme \
 	--depends dconf-cli --depends ytl-linux-cpu-governor --depends ytl-linux-digabi1-examnet --depends ytl-linux-digabi2 --depends ytl-linux-digabi2-examnet \
-	--depends anydesk-meb --depends ytl-linux-tasks
+	--depends anydesk-meb --depends ytl-linux-tasks --depends ytl-linux-sysmon
 RECOMMENDS_META := --deb-recommends digabi-usb-monster
 
 DEPENDENCIES_YTL-GRUB-SAFE-GRAPHICS := --depends policykit-1
