@@ -757,11 +757,13 @@ describe('examnet', async () => {
     const calls = (await readFile(callsLog, 'utf8')).trim()
     const callsLines = calls.split('\n')
     // console.log(`expecting ${expectedCalls.length} calls to external programs`)
-    const callsArray = callsLines.map(line => {
-      // console.log(`parsing line ${line}`)
-      return JSON.parse(line)
-    })
-    assert.deepEqual(callsArray, expectedCalls)
+    const callsArray = callsLines
+      .map(line => {
+        // console.log(`parsing line ${line}`)
+        return line ? JSON.parse(line) : undefined
+      })
+      .filter(Boolean)
+    assert.deepEqual(callsArray, expectedCalls.filter(Boolean))
   }
 })
 
