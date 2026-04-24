@@ -23,7 +23,6 @@ describe('examnet', async () => {
   let exitCodesTested = new Set<number>()
 
   beforeEach(async () => {
-    await truncateCallsLog()
     ;({
       callsLog,
       mockBinDir,
@@ -39,6 +38,7 @@ describe('examnet', async () => {
       mockScriptWithNoOutput,
       mockScriptReturningErrorCode
     } = await initTempDir())
+    await truncateCallsLog()
   })
 
   describe('command line argument validation', () => {
@@ -655,7 +655,10 @@ describe('examnet', async () => {
       await access(callsLog)
       await truncate(callsLog)
     } catch {
-      // callsLog doesn't exist yet
+      if (callsLog) {
+        // create callsLog file
+        await writeFile(callsLog, '')
+      }
     }
   }
 
