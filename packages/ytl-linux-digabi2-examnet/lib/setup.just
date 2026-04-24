@@ -1,41 +1,42 @@
-MIN_SERVER_NUMBER := 1
-MAX_SERVER_NUMBER := 24
-SUBNETS_PER_SERVER := 10
+MIN_SERVER_NUMBER := "1"
+MAX_SERVER_NUMBER := "24"
+SUBNETS_PER_SERVER := "10"
 
 mod network 'network.just'
 
-apply net-device-wan net-device-lan server-number server-name: \
-  assert-user-is-root \
-  (assert-server-number-valid server-number)
-  (assert-server-name-valid server-name)
-  (assert-device-exists net-device-wan) \
-  (assert-device-exists net-device-lan) \
-  (assert-devices-different net-device-wan net-device-lan) \
+apply net-device-wan net-device-lan server-number server-name: (assert-server-number-valid server-number) (assert-server-name-valid server-name) (assert-device-exists net-device-wan) (assert-device-exists net-device-lan) (assert-devices-different net-device-wan net-device-lan)
   #!/usr/bin/env bash
   set -euo pipefail
 
   IP_LAN=$(just network get-device-ipv4-address "{{net-device-lan}}")
   IP_WAN=$(just network get-device-ipv4-address "{{net-device-wan}}")
   IP_LAN_PREFIX=$(just network get-lan-ip-prefix "$IP_WAN")
+  export IP_LAN
+  export IP_WAN
+  export IP_LAN_PREFIX
 
   SERVER_HOST_NUMBER=$((SERVER_NUMBER * {{SUBNETS_PER_SERVER}}))
   SERVER_OWN_IP="$IP_LAN_PREFIX$SERVER_HOST_NUMBER.1"
+  export SERVER_OWN_IP
 
   DHCP_RANGE_START="$IP_LAN_PREFIX$SERVER_HOST_NUMBER.10"
   DHCP_RANGE_END="$IP_LAN_PREFIX$((SERVER_HOST_NUMBER + {{SUBNETS_PER_SERVER}} - 1)).254"
+  export DHCP_RANGE_START
+  export DHCP_RANGE_END
+
+  NCSI_HOSTNAMES_LIST=$(cat $PATH_EXAMNET_CONFIG/ncsi-hostnames)
+  export NCSI_HOSTNAMES_LIST
 
   just network configure-networkmanager "yo-{{net-device-lan}}" "{{net-device-lan}}" "$SERVER_OWN_IP/16"
 
+  just setup write-examnet-config "{{net-device-wan}}" "{{net-device-lan}}" "$SERVER_OWN_IP" "{{server-name}}"
+
 [private]
-assert-user-is-root:
-  #!/usr/bin/env bash
-  set -euo pipefail
-
-  if [[ $TEST_MODE != "test" && $EUID -ne 0 ]]; then
-    echo "Error: This script must be run as root"
-  fi
-
-  exit $EXIT_CODE_MUST_BE_ROOT
+write-examnet-config net-device-wan net-device-lan server-own-ip server-name:
+  just util write-file "$PATH_NET_DEVICE_LAN_CONF" "{{net-device-lan}}"
+  just util write-file "$PATH_NET_DEVICE_WAN_CONF" "{{net-device-wan}}"
+  just util write-file "$PATH_SERVER_OWN_IP_CONF" "{{server-own-ip}}"
+  just util write-file "$PATH_SERVER_FRIENDLY_NAME_CONF" "{{server-name}}"
 
 [private]
 assert-device-exists device:
