@@ -602,6 +602,8 @@ describe('examnet', async () => {
         NAKSU2_WORKDIR: mockNaksu2WorkDir,
         PATH_NETPLAN: mockNetplanConfDir,
         PATH_ETC: mockEtcDir,
+        BIN_DIGABI2_EXAMNET_BOUNCER: 'ytl-linux-digabi2-bouncer',
+        BIN_DIGABI2_EXAMNET_DISCOVERY: 'ytl-linux-digabi2-discovery',
         ...envOverrides
       },
       detached: true

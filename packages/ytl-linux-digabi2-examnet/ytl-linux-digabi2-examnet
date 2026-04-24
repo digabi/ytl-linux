@@ -67,6 +67,9 @@ readonly PATH_NET_DEVICE_WAN_CONF=$PATH_EXAMNET_CONFIG/net-device-wan
 readonly PATH_SERVER_OWN_IP=$PATH_EXAMNET_CONFIG/server-own-ip
 readonly PATH_DISCOVERY_DB=$PATH_EXAMNET_CONFIG/discovery.db
 
+readonly BIN_DIGABI2_EXAMNET_BOUNCER=${BIN_DIGABI2_EXAMNET_BOUNCER:-/usr/local/libexec/ytl-linux-digabi2-examnet/bouncer}
+readonly BIN_DIGABI2_EXAMNET_DISCOVERY=${BIN_DIGABI2_EXAMNET_DISCOVERY:-/usr/local/libexec/ytl-linux-digabi2-examnet/discovery}
+
 readonly CONST_MIN_SERVER_NUMBER=1
 readonly CONST_MAX_SERVER_NUMBER=24
 readonly CONST_SUBNETS_PER_SERVER=10
@@ -571,7 +574,7 @@ if [[ $* == *--daemon* ]]; then
     }
 EOF
     )
-    ytl-linux-digabi2-bouncer "$CONFIG"
+    $BIN_DIGABI2_EXAMNET_BOUNCER "$CONFIG"
 
     # We're not supposed to get here, so this would indicate the daemon process exited
     exit_script $EXIT_CODE_DAEMON_EXITED_UNEXPECTEDLY
@@ -603,7 +606,7 @@ if [[ $* == *--discover* ]]; then
 EOF
     )
 
-    ytl-linux-digabi2-discovery "$CONFIG"
+    $BIN_DIGABI2_EXAMNET_DISCOVERY "$CONFIG"
 
     exit_if_error $? $EXIT_CODE_CANNOT_RUN_ALIAS_DISCOVERY "Failed to run alias discovery"
     exit 0
