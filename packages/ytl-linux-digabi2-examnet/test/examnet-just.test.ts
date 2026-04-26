@@ -44,51 +44,62 @@ describe('examnet-just', async () => {
   describe('command line argument validation', () => {
     test('returns error if WAN device is missing', () => {
       test('as non-root-user', async () => {
-        await runExamnetReturnsExitCode(2, [])
+        await runExamnetReturnsExitCode(1, [])
         await assertCalls([callStat(mockNaksu2WorkDir)])
       })
       test('when accepcting non-root-user', async () => {
-        await runExamnetReturnsExitCode(2, [], ENV_TEST_MODE)
+        await runExamnetReturnsExitCode(1, [], ENV_TEST_MODE)
         await assertCalls([callStat(mockNaksu2WorkDir)])
       })
     })
     test('returns error if LAN device is missing', () => {
       test('as non-root-user', async () => {
-        await runExamnetReturnsExitCode(4, ['eth0'])
+        await runExamnetReturnsExitCode(1, ['eth0'])
         await assertCalls([callStat(mockNaksu2WorkDir)])
       })
       test('when accepcting non-root-user', async () => {
-        await runExamnetReturnsExitCode(4, ['eth0'], ENV_TEST_MODE)
+        await runExamnetReturnsExitCode(1, ['eth0'], ENV_TEST_MODE)
         await assertCalls([callStat(mockNaksu2WorkDir)])
       })
     })
     test('returns error if server number is missing', () => {
       test('as non-root-user', async () => {
-        await runExamnetReturnsExitCode(7, ['eth0', 'eth1'])
+        await runExamnetReturnsExitCode(1, ['eth0', 'eth1'])
         await assertCalls([callStat(mockNaksu2WorkDir)])
       })
 
       test('when accepcting non-root-user', async () => {
-        await runExamnetReturnsExitCode(7, ['eth0', 'eth1'], ENV_TEST_MODE)
+        await runExamnetReturnsExitCode(1, ['eth0', 'eth1'], ENV_TEST_MODE)
+        await assertCalls([callStat(mockNaksu2WorkDir)])
+      })
+    })
+    test('returns error if server friendly name is missing', () => {
+      test('as non-root-user', async () => {
+        await runExamnetReturnsExitCode(1, ['eth0', 'eth1', '1'])
+        await assertCalls([callStat(mockNaksu2WorkDir)])
+      })
+
+      test('when accepcting non-root-user', async () => {
+        await runExamnetReturnsExitCode(1, ['eth0', 'eth1', '1'], ENV_TEST_MODE)
         await assertCalls([callStat(mockNaksu2WorkDir)])
       })
     })
     test('returns error if server number is wrong:', () => {
       test('invalid number', async () => {
-        await runExamnetReturnsExitCode(8, ['eth0', 'eth1', 'invalidNumber'], ENV_TEST_MODE)
-        await assertCalls([callStat(mockNaksu2WorkDir), callIpLinkShow('eth0'), callIpLinkShow('eth1')])
+        await runExamnetReturnsExitCode(8, ['eth0', 'eth1', 'invalidNumber', 'perunakellari'], ENV_TEST_MODE)
+        await assertCalls([callStat(mockNaksu2WorkDir)])
       })
       test('too small integer (0)', async () => {
-        await runExamnetReturnsExitCode(8, ['eth0', 'eth1', '0'], ENV_TEST_MODE)
-        await assertCalls([callStat(mockNaksu2WorkDir), callIpLinkShow('eth0'), callIpLinkShow('eth1')])
+        await runExamnetReturnsExitCode(8, ['eth0', 'eth1', '0', 'perunakellari'], ENV_TEST_MODE)
+        await assertCalls([callStat(mockNaksu2WorkDir)])
       })
       test('too large integer (25)', async () => {
-        await runExamnetReturnsExitCode(8, ['eth0', 'eth1', '25'], ENV_TEST_MODE)
-        await assertCalls([callStat(mockNaksu2WorkDir), callIpLinkShow('eth0'), callIpLinkShow('eth1')])
+        await runExamnetReturnsExitCode(8, ['eth0', 'eth1', '25', 'perunakellari'], ENV_TEST_MODE)
+        await assertCalls([callStat(mockNaksu2WorkDir)])
       })
     })
     test('returns error if script is not called as root user', async () => {
-      await runExamnetReturnsExitCode(1, ['eth0', 'eth1', '1'])
+      await runExamnetReturnsExitCode(2, ['eth0', 'eth1', '1', 'perunakellari'])
       await assertCalls([callStat(mockNaksu2WorkDir)])
     })
   })
