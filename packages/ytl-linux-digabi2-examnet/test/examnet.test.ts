@@ -156,7 +156,7 @@ describe('examnet', async () => {
 
   describe('restart-bouncer (--restart-daemon)', () => {
     test('runs when correct parameters are given', async () => {
-      await runExamnet('eth0', 'eth1', '1', '--restart-daemon')
+      await runExamnet('eth1', 'eth0', '1', '--restart-daemon')
       await assertCalls([
         callStat(mockNaksu2WorkDir),
         callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet.service'),
