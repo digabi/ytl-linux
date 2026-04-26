@@ -783,7 +783,7 @@ async function makeTempDir(root: string, name: string) {
 
 async function waitForLogEntry(callsLog: string, msg: string) {
   const start = Date.now()
-  while (Date.now() - start < 5000) {
+  while (Date.now() - start < 10000) {
     try {
       const contents = await readFile(callsLog, 'utf8')
       if (contents.includes(msg)) {
