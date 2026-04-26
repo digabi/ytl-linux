@@ -606,7 +606,8 @@ describe('examnet', async () => {
         BIN_DIGABI2_EXAMNET_DISCOVERY: 'ytl-linux-digabi2-discovery',
         ...envOverrides
       },
-      detached: true
+      detached: true,
+      stdio: 'inherit'
     })
   }
 
