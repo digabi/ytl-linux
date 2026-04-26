@@ -1,3 +1,31 @@
+set working-directory := "../"
+
+[private]
+assert-user-is-root:
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  if [[ ${TEST_MODE:-} != "test" && $EUID -ne 0 ]]; then
+    echo "Error: This script must be run as root"
+    exit $EXIT_CODE_MUST_BE_ROOT
+  fi
+
+read-file path description error-code:
+  #!/usr/bin/env bash
+  set -uo pipefail
+
+  echo "DEBUG: Trying to read '{{description}}' from file '{{path}}'" >&2
+
+  if [[ ! -f "{{path}}" ]]; then
+    echo "ERROR: Could not read '{{description}}': File '{{path}}' does not exist" >&2
+    exit {{error-code}}
+  fi
+
+  if ! cat "{{path}}"; then
+    echo "ERROR: Failed to read '{{description}}' from file '{{path}}'" >&2
+    exit {{error-code}}
+  fi
+
 write-file path content owner="":
   #!/usr/bin/env bash
   set -euo pipefail
@@ -19,3 +47,51 @@ write-file path content owner="":
   if [[ -n "{{owner}}" ]]; then
     chown "{{owner}}" "{{path}}"
   fi
+
+assert-file-exists file-path error-code:
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  if [[ ! -f "{{file-path}}" ]]; then
+    echo "ERROR: Required file '{{file-path}}' does not exist"
+    exit {{error-code}}
+  fi
+
+assert-file-contents file-path expected-contents error-code:
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  just util assert-file-exists "{{file-path}}" {{error-code}}
+
+  ACTUAL_CONTENTS=$(cat "{{file-path}}")
+
+  if [[ "$ACTUAL_CONTENTS" != "{{expected-contents}}" ]]; then
+    echo "ERROR: Contents of file '{{file-path}}' do not match expected contents"
+    echo "Expected contents:"
+    echo "{{expected-contents}}"
+    echo "Actual contents:"
+    echo "$ACTUAL_CONTENTS"
+    exit {{error-code}}
+  fi
+
+assert-program-exists program-name:
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  if ! command -v "{{program-name}}" &> /dev/null; then
+    echo "ERROR: Required program '{{program-name}}' is not installed or not in PATH"
+    exit 1
+  fi
+
+assert-envs-set error-code +var-names:
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  for var_name in {{var-names}}; do
+    if [[ -z "${!var_name:-}" ]]; then
+      echo "ERROR: Required environment variable '$var_name' is not set"
+      exit {{error-code}}
+    fi
+  done
+
+# TODO where should I add [private]?

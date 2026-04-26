@@ -1,18 +1,19 @@
+[private]
+mod mod-bouncer 'lib/bouncer.just'
+[private]
 mod setup 'lib/setup.just'
+[private]
+mod network 'lib/network.just'
+[private]
+mod util 'lib/util.just'
 
 [private]
 default:
     @just --list --unsorted
 
-configure net-device-wan net-device-lan server-number server-name: assert-user-is-root
+configure net-device-wan net-device-lan server-number server-name: util::assert-user-is-root
   just setup apply {{net-device-wan}} {{net-device-lan}} {{server-number}} {{server-name}}
 
-[private]
-assert-user-is-root:
-  #!/usr/bin/env bash
-  set -euo pipefail
+bouncer net-device-wan net-device-lan server-number: util::assert-user-is-root
+  just mod-bouncer bouncer {{net-device-wan}} {{net-device-lan}} {{server-number}}
 
-  if [[ ${TEST_MODE:-} != "test" && $EUID -ne 0 ]]; then
-    echo "Error: This script must be run as root"
-    exit $EXIT_CODE_MUST_BE_ROOT
-  fi
