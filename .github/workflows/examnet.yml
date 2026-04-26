@@ -24,6 +24,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: packages/ytl-linux-digabi2-examnet/package-lock.json
+      - uses: extractions/setup-just@v4
       - name: Install Node.js dependencies
         run: npm ci --no-audit --no-fund
       - name: Run unit tests
