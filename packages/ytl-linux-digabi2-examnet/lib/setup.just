@@ -9,7 +9,7 @@ apply net-device-wan net-device-lan server-number server-name: (assert-server-nu
   set -euo pipefail
 
   IP_LAN=$(just network get-device-ipv4-address "{{net-device-lan}}")
-  IP_WAN=$(just network get-device-ipv4-address "{{net-device-wan}}")
+  IP_WAN=$(just network get-device-ipv4-address "{{net-device-wan}}" $EXIT_CODE_WAN_WITH_NO_IP)
   IP_LAN_PREFIX=$(just network get-lan-ip-prefix "$IP_WAN")
   export IP_LAN
   export IP_WAN
@@ -43,7 +43,7 @@ assert-device-exists device:
   #!/usr/bin/env bash
   set -euo pipefail
   
-  if [[ ! -d "/sys/class/net/{{device}}" ]]; then
+  if ! ifconfig "{{device}}" >/dev/null 2>&1; then
     echo "Error: Network device {{device}} does not exist"
     exit $EXIT_CODE_NO_SUCH_NETWORK_DEVICE
   fi
