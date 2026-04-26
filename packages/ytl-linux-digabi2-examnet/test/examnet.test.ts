@@ -171,24 +171,24 @@ describe('examnet', async () => {
 
   describe('discovery (--discover)', () => {
     test('returns error if static dns configuration is missing', async () => {
-      await runExamnetReturnsExitCode(28, ['eth0', 'eth1', '1', '--discovery'], ENV_TEST_MODE)
+      await runExamnetReturnsExitCode(28, ['eth0', 'eth1', '1', '--discover'], ENV_TEST_MODE)
       await assertCalls([callStat(mockNaksu2WorkDir)])
     })
     test('returns error if server own IP file is missing', async () => {
       await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
-      await runExamnetReturnsExitCode(28, ['eth0', 'eth1', '1', '--discovery'], ENV_TEST_MODE)
+      await runExamnetReturnsExitCode(28, ['eth0', 'eth1', '1', '--discover'], ENV_TEST_MODE)
       await assertCalls([callStat(mockNaksu2WorkDir)])
     })
     test('returns error if discovery returns error', async () => {
       await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
       await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-discovery', mockScriptReturningErrorCode)
-      await runExamnetReturnsExitCode(28, ['eth0', 'eth1', '1', '--discovery'], ENV_TEST_MODE)
+      await runExamnetReturnsExitCode(28, ['eth0', 'eth1', '1', '--discover'], ENV_TEST_MODE)
       await assertCalls([callStat(mockNaksu2WorkDir)])
     })
     test('runs when correct parameters are given', async () => {
       await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
       await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '10.0.10.1')
-      await runExamnet('eth0', 'eth1', '1', '--discovery')
+      await runExamnet('eth0', 'eth1', '1', '--discover')
       await assertCalls([callStat(mockNaksu2WorkDir), callDiscovery(mockDnsmasqDir, mockExamnetConfigDir)])
     })
   })

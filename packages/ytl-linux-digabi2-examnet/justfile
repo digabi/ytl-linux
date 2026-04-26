@@ -1,6 +1,8 @@
 [private]
 mod mod-bouncer 'lib/bouncer.just'
 [private]
+mod mod-discovery 'lib/discovery.just'
+[private]
 mod setup 'lib/setup.just'
 [private]
 mod network 'lib/network.just'
@@ -16,6 +18,9 @@ configure net-device-wan net-device-lan server-number server-name: util::assert-
 
 bouncer net-device-wan net-device-lan server-number: util::assert-user-is-root
   just mod-bouncer bouncer {{net-device-wan}} {{net-device-lan}} {{server-number}}
+
+discovery net-device-wan net-device-lan server-number: util::assert-user-is-root
+  just mod-discovery discovery {{net-device-wan}} {{net-device-lan}} {{server-number}}
 
 restart-bouncer net-device-wan net-device-lan server-number: util::assert-user-is-root
       #!/usr/bin/env bash
