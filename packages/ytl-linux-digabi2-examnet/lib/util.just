@@ -94,4 +94,27 @@ assert-envs-set error-code +var-names:
     fi
   done
 
-# TODO where should I add [private]?
+is-systemd-unit-enabled unit-name error-code:
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  if ! systemctl is-enabled {{unit-name}}; then
+    echo "ERROR: Failed to check if systemd unit '{{unit-name}}' is enabled" >&2
+    exit {{error-code}}
+  fi
+
+restart-systemd-unit unit-name error-code:
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  ENABLED=$(just util is-systemd-unit-enabled "{{unit-name}}" {{error-code}})
+  if [[ "$ENABLED" == "enabled" ]]; then
+    echo "DEBUG: Systemd unit '{{unit-name}}' is enabled, restarting it"
+
+    if ! systemctl restart "{{unit-name}}"; then
+      echo "ERROR: Failed to restart systemd unit '{{unit-name}}'"
+      exit {{error-code}}
+    fi
+
+    echo "INFO: Successfully restarted systemd unit '{{unit-name}}'"
+  fi

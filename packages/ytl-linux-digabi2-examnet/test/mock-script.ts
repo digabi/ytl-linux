@@ -28,7 +28,11 @@ async function main() {
       await new Promise(resolve => setTimeout(resolve, 120_000))
       break
     case 'systemctl':
-      console.log('enabled')
+      if (argvString.includes('is-enabled')) {
+        console.log('enabled')
+      } else {
+        console.log('')
+      }
       break
     case 'openssl':
       console.log(

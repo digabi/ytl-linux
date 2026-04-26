@@ -170,8 +170,13 @@ describe('examnet-just', async () => {
   })
 
   describe('restart-bouncer (--restart-daemon)', () => {
+    test('returns error when systemctl fails', async () => {
+      await writeToTempDir(mockBinDir, 'systemctl', mockScriptReturningErrorCode)
+      await runExamnetReturnsExitCode(23, ['eth1', 'eth0', '1', '--restart-daemon'], ENV_TEST_MODE)
+      await assertCalls([callStat(mockNaksu2WorkDir), callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet.service')])
+    })
     test('runs when correct parameters are given', async () => {
-      await runExamnet('eth0', 'eth1', '1', '--restart-daemon')
+      await runExamnet('eth1', 'eth0', '1', '--restart-daemon')
       await assertCalls([
         callStat(mockNaksu2WorkDir),
         callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet.service'),
