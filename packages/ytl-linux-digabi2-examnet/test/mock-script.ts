@@ -15,7 +15,7 @@ async function main() {
   switch (cmd) {
     case 'ip':
       if (argvString === '-oneline -4 addr show scope global eth0') {
-        console.log('127.0.0.1')
+        console.log('10.0.10.1')
       } else {
         console.log('')
       }
