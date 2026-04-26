@@ -30,4 +30,4 @@ configure-networkmanager connection-name interface-name ip-and-netmask:
     save yes
 
   nmcli connection modify "{{connection-name}}" ipv6.method disabled
-  nmcli connection up "$_CONNECTION_NAME"
+  nmcli connection up "{{connection-name}}"
