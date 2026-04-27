@@ -49,6 +49,25 @@ apply net-device-wan net-device-lan server-number server-name use-static-local-d
 
   just network configure-networkmanager "yo-{{net-device-lan}}" "{{net-device-lan}}" "$SERVER_OWN_IP/16"
 
+  if [[ -f "$PATH_NETPLAN_CONF" ]]; then
+    rm -f "$PATH_NETPLAN_CONF"
+  fi
+
+  just systemd restart NetworkManager
+  just network wait-for-network-online
+
+  just fs write-file "$PATH_RESOLVED_CONF" "$(envsubst < $PATH_RESOLVED_CONF_TEMPLATE)"
+
+  just fs empty-directory "$PATH_DNSMASQ"
+  just fs write-file "$PATH_DNSMASQ_CONF" "$(envsubst < $PATH_DNSMASQ_CONF_TEMPLATE)"
+
+  # FIXME: Onko tämä oikea kohta?
+  if [[ "{{use-static-local-dns}}" == "true" ]]; then
+    # TODO: Tämä logiikka
+  fi
+
+  # TODO: Examnet riviltä 745
+
   just setup write-examnet-config "{{net-device-wan}}" "{{net-device-lan}}" "$SERVER_OWN_IP" "{{server-name}}"
 
   just log info "Examnet configuration applied successfully"
