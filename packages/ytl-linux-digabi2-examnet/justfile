@@ -3,9 +3,11 @@ mod mod-bouncer 'lib/bouncer.just'
 [private]
 mod mod-discovery 'lib/discovery.just'
 [private]
-mod setup 'lib/setup.just'
-[private]
 mod network 'lib/network.just'
+[private]
+mod mod-restart-bouncer 'lib/restart-bouncer.just'
+[private]
+mod setup 'lib/setup.just'
 [private]
 mod util 'lib/util.just'
 
@@ -13,18 +15,17 @@ mod util 'lib/util.just'
 default:
     @just --list --unsorted
 
-configure net-device-wan net-device-lan server-number server-name: util::assert-user-is-root
-  just setup apply {{net-device-wan}} {{net-device-lan}} {{server-number}} {{server-name}}
-
 bouncer net-device-wan net-device-lan server-number: util::assert-user-is-root
-  just mod-bouncer bouncer {{net-device-wan}} {{net-device-lan}} {{server-number}}
-
-discovery net-device-wan net-device-lan server-number: util::assert-user-is-root
-  just mod-discovery discovery {{net-device-wan}} {{net-device-lan}} {{server-number}}
+    just mod-bouncer bouncer {{net-device-wan}} {{net-device-lan}} {{server-number}}
 
 restart-bouncer net-device-wan net-device-lan server-number: util::assert-user-is-root
-      #!/usr/bin/env bash
-      set -euo pipefail
+    just mod-restart-bouncer restart-bouncer {{net-device-wan}} {{net-device-lan}} {{server-number}}
+
+discovery net-device-wan net-device-lan server-number: util::assert-user-is-root
+    just mod-discovery discovery {{net-device-wan}} {{net-device-lan}} {{server-number}}
+
+configure net-device-wan net-device-lan server-number server-name: util::assert-user-is-root
+    just setup apply {{net-device-wan}} {{net-device-lan}} {{server-number}} {{server-name}}
 
       just util restart-systemd-unit ytl-linux-digabi2-examnet.service $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE
       just util restart-systemd-unit ytl-linux-digabi2-examnet-discovery.timer $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE
