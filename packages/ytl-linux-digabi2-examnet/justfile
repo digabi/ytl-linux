@@ -1,6 +1,8 @@
 [private]
 mod mod-bouncer 'lib/bouncer.just'
 [private]
+mod mod-destroy 'lib/destroy.just'
+[private]
 mod mod-discovery 'lib/discovery.just'
 [private]
 mod network 'lib/network.just'
@@ -27,6 +29,5 @@ discovery net-device-wan net-device-lan server-number: util::assert-user-is-root
 configure net-device-wan net-device-lan server-number server-name: util::assert-user-is-root
     just setup apply {{net-device-wan}} {{net-device-lan}} {{server-number}} {{server-name}}
 
-      just util restart-systemd-unit ytl-linux-digabi2-examnet.service $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE
-      just util restart-systemd-unit ytl-linux-digabi2-examnet-discovery.timer $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE
-      just util restart-systemd-unit ytl-linux-digabi2-examnet-discovery.service $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE
+destroy  net-device-wan net-device-lan server-number: util::assert-user-is-root
+    just mod-destroy destroy {{net-device-wan}} {{net-device-lan}} {{server-number}}

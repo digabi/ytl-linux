@@ -48,6 +48,20 @@ write-file path content owner="":
     chown "{{owner}}" "{{path}}"
   fi
 
+remove-file file-path error-code:
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  if [[ -f "{{file-path}}" ]]; then
+    echo "DEBUG: Removing file '{{file-path}}'"
+    if ! rm -f "{{file-path}}"; then
+      echo "ERROR: Failed to remove file '{{file-path}}'"
+      exit {{error-code}}
+    fi
+  else
+    echo "DEBUG: File '{{file-path}}' does not exist, skipping removal"
+  fi
+
 assert-file-exists file-path error-code:
   #!/usr/bin/env bash
   set -euo pipefail
@@ -107,14 +121,33 @@ restart-systemd-unit unit-name error-code:
   #!/usr/bin/env bash
   set -euo pipefail
 
+  echo "DEBUG: Restarting systemd unit '{{unit-name}}'"
+
+  if ! systemctl restart "{{unit-name}}"; then
+    echo "ERROR: Failed to restart systemd unit '{{unit-name}}'"
+    exit {{error-code}}
+  fi
+
+  echo "INFO: Successfully restarted systemd unit '{{unit-name}}'"
+
+restart-systemd-unit-if-enabled unit-name error-code:
+  #!/usr/bin/env bash
+  set -euo pipefail
+
   ENABLED=$(just util is-systemd-unit-enabled "{{unit-name}}" {{error-code}})
   if [[ "$ENABLED" == "enabled" ]]; then
-    echo "DEBUG: Systemd unit '{{unit-name}}' is enabled, restarting it"
+    echo "DEBUG: Systemd unit '{{unit-name}}' is enabled"
 
-    if ! systemctl restart "{{unit-name}}"; then
-      echo "ERROR: Failed to restart systemd unit '{{unit-name}}'"
-      exit {{error-code}}
-    fi
-
-    echo "INFO: Successfully restarted systemd unit '{{unit-name}}'"
+    just util restart-systemd-unit "{{unit-name}}" {{error-code}}
   fi
+
+disable-systemd-unit unit-name error-code:
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  if ! systemctl disable --now "{{unit-name}}"; then
+    echo "ERROR: Failed to disable systemd unit '{{unit-name}}'"
+    exit {{error-code}}
+  fi
+
+  echo "INFO: Successfully disabled systemd unit '{{unit-name}}'"
