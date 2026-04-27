@@ -2,9 +2,24 @@ MIN_SERVER_NUMBER := "1"
 MAX_SERVER_NUMBER := "24"
 SUBNETS_PER_SERVER := "10"
 
+mod util 'util.just'
 mod network 'network.just'
 
-apply net-device-wan net-device-lan server-number server-name: (assert-server-number-valid server-number) (assert-server-name-valid server-name) (assert-device-exists net-device-wan) (assert-device-exists net-device-lan) (assert-devices-different net-device-wan net-device-lan)
+EXIT_CODE_CANNOT_CONFIGURE_EXAMNET := env('EXIT_CODE_CANNOT_CONFIGURE_EXAMNET')
+
+apply net-device-wan net-device-lan server-number server-name: \
+  (util::assert-envs-set EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
+    "PATH_EXAMNET_CONFIG"
+    "PATH_NET_DEVICE_LAN_CONF"
+    "PATH_NET_DEVICE_WAN_CONF"
+    "PATH_SERVER_OWN_IP"
+    "PATH_SERVER_FRIENDLY_NAME_CONF"
+  ) \
+  (assert-server-number-valid server-number) \
+  (assert-server-name-valid server-name) \
+  (assert-device-exists net-device-wan) \
+  (assert-device-exists net-device-lan) \
+  (assert-devices-different net-device-wan net-device-lan)
   #!/usr/bin/env bash
   set -euo pipefail
 
@@ -15,7 +30,7 @@ apply net-device-wan net-device-lan server-number server-name: (assert-server-nu
   export IP_WAN
   export IP_LAN_PREFIX
 
-  SERVER_HOST_NUMBER=$((SERVER_NUMBER * {{SUBNETS_PER_SERVER}}))
+  SERVER_HOST_NUMBER=$(({{server-number}} * {{SUBNETS_PER_SERVER}}))
   SERVER_OWN_IP="$IP_LAN_PREFIX$SERVER_HOST_NUMBER.1"
   export SERVER_OWN_IP
 
@@ -35,7 +50,7 @@ apply net-device-wan net-device-lan server-number server-name: (assert-server-nu
 write-examnet-config net-device-wan net-device-lan server-own-ip server-name:
   just util write-file "$PATH_NET_DEVICE_LAN_CONF" "{{net-device-lan}}"
   just util write-file "$PATH_NET_DEVICE_WAN_CONF" "{{net-device-wan}}"
-  just util write-file "$PATH_SERVER_OWN_IP_CONF" "{{server-own-ip}}"
+  just util write-file "$PATH_SERVER_OWN_IP" "{{server-own-ip}}"
   just util write-file "$PATH_SERVER_FRIENDLY_NAME_CONF" "{{server-name}}"
 
 [private]
@@ -43,7 +58,7 @@ assert-device-exists device:
   #!/usr/bin/env bash
   set -euo pipefail
   
-  if ! ifconfig "{{device}}" >/dev/null 2>&1; then
+  if ! ip link show "{{device}}" &> /dev/null; then
     echo "Error: Network device {{device}} does not exist"
     exit $EXIT_CODE_NO_SUCH_NETWORK_DEVICE
   fi
@@ -77,3 +92,11 @@ assert-server-name-valid server-name:
     echo "Error: Server name may only contain lowercase letters a-z and digits 0-9"
     exit $EXIT_CODE_INVALID_SERVER_NAME
   fi
+
+[private]
+get-server-friendly-name domain-file error-code:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    DOMAIN_NAME=$(just util read-file "{{domain-file}}" "canonical server hostname" $EXIT_CODE_CANNOT_START_DAEMON)
+    echo $DOMAIN_NAME | cut -d '.' -f1

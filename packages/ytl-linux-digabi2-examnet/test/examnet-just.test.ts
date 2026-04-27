@@ -73,17 +73,18 @@ describe('examnet-just', async () => {
         await assertCalls([callStat(mockNaksu2WorkDir)])
       })
     })
-    test('returns error if server friendly name is missing', () => {
-      test('as non-root-user', async () => {
-        await runExamnetReturnsExitCode(1, ['eth0', 'eth1', '1'])
-        await assertCalls([callStat(mockNaksu2WorkDir)])
-      })
-
-      test('when accepcting non-root-user', async () => {
-        await runExamnetReturnsExitCode(1, ['eth0', 'eth1', '1'], ENV_TEST_MODE)
-        await assertCalls([callStat(mockNaksu2WorkDir)])
-      })
-    })
+    // This is no longer an error
+    // test('returns error if server friendly name is missing', () => {
+    //   test('as non-root-user', async () => {
+    //     await runExamnetReturnsExitCode(1, ['eth0', 'eth1', '1'])
+    //     await assertCalls([callStat(mockNaksu2WorkDir)])
+    //   })
+    //
+    //   test('when accepcting non-root-user', async () => {
+    //     await runExamnetReturnsExitCode(1, ['eth0', 'eth1', '1'], ENV_TEST_MODE)
+    //     await assertCalls([callStat(mockNaksu2WorkDir)])
+    //   })
+    // })
     test('returns error if server number is wrong:', () => {
       test('invalid number', async () => {
         await runExamnetReturnsExitCode(8, ['eth0', 'eth1', 'invalidNumber', 'perunakellari'], ENV_TEST_MODE)
@@ -415,10 +416,10 @@ describe('examnet-just', async () => {
         callRm(`${mockDnsmasqDir}/ytl-linux-static-dns-records.conf`)
       ])
     })
-    test('returns error if --use-static-local-dns flag is given and cert.pem is missing', async () => {
+    test('returns error if cert.pem is missing', async () => {
       await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
       await unlink(join(mockNaksu2CertsDir, 'cert.pem'))
-      await runExamnetReturnsExitCode(24, ['eth0', 'eth1', '1', '--use-static-local-dns'], ENV_TEST_MODE)
+      await runExamnetReturnsExitCode(24, ['eth0', 'eth1', '1'], ENV_TEST_MODE)
       await assertCalls([
         callStat(mockNaksu2WorkDir),
         callIpLinkShow('eth0'),
@@ -435,12 +436,12 @@ describe('examnet-just', async () => {
         callRm(`${mockDnsmasqDir}/ytl-linux-static-dns-records.conf`)
       ])
     })
-    test('returns error if --use-static-local-dns flag is given and certificate did not contain valid domain for server number', async () => {
+    test('returns error if certificate did not contain valid domain for server number', async () => {
       // use real sed to parse cert.pem
       await unlink(join(mockBinDir, 'sed'))
       await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
       await writeToTempDir(mockBinDir, 'openssl', mockScriptWithNoOutput)
-      await runExamnetReturnsExitCode(20, ['eth0', 'eth1', '1', '--use-static-local-dns'], ENV_TEST_MODE)
+      await runExamnetReturnsExitCode(20, ['eth0', 'eth1', '1'], ENV_TEST_MODE)
       await assertCalls([
         callStat(mockNaksu2WorkDir),
         callIpLinkShow('eth0'),
@@ -574,11 +575,11 @@ describe('examnet-just', async () => {
       await assertFileExists(mockDnsmasqDir, 'ytl-linux.conf')
       await assertFileExists(mockNaksu2CertsDir, 'domain.txt')
     })
-    test('runs when correct parameters are given with friendly name and --use-static-local-dns', async () => {
+    test('runs when correct parameters are given with friendly name', async () => {
       // use real sed to parse cert.pem
       await unlink(join(mockBinDir, 'sed'))
       await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
-      await runExamnet('eth0', 'eth1', '1', 'perunakellari', '--use-static-local-dns')
+      await runExamnet('eth0', 'eth1', '1', 'perunakellari')
       await assertCalls([
         callStat(mockNaksu2WorkDir),
         callIpLinkShow('eth0'),

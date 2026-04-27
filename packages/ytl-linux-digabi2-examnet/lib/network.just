@@ -56,7 +56,6 @@ delete-connection connection-name connection-uuid error-code:
         exit {{error-code}}
     fi
 
-
 wait-for-network-online exit-code timeout="30":
     #!/usr/bin/env bash
     set -euo pipefail
