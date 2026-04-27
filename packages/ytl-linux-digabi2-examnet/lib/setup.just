@@ -1,14 +1,16 @@
+mod log
+mod util
+mod network
+mod fs
+mod systemd
+
 MIN_SERVER_NUMBER := "1"
 MAX_SERVER_NUMBER := "24"
 SUBNETS_PER_SERVER := "10"
 
-mod log 'log.just'
-mod util 'util.just'
-mod network 'network.just'
-
 EXIT_CODE_CANNOT_CONFIGURE_EXAMNET := env('EXIT_CODE_CANNOT_CONFIGURE_EXAMNET')
 
-apply net-device-wan net-device-lan server-number server-name: \
+apply net-device-wan net-device-lan server-number server-name use-static-local-dns: \
   (util::assert-envs-set EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
     "PATH_EXAMNET_CONFIG"
     "PATH_NET_DEVICE_LAN_CONF"
@@ -53,10 +55,10 @@ apply net-device-wan net-device-lan server-number server-name: \
 
 [private]
 write-examnet-config net-device-wan net-device-lan server-own-ip server-name:
-  just util write-file "$PATH_NET_DEVICE_LAN_CONF" "{{net-device-lan}}"
-  just util write-file "$PATH_NET_DEVICE_WAN_CONF" "{{net-device-wan}}"
-  just util write-file "$PATH_SERVER_OWN_IP" "{{server-own-ip}}"
-  just util write-file "$PATH_SERVER_FRIENDLY_NAME_CONF" "{{server-name}}"
+  just fs write-file "$PATH_NET_DEVICE_LAN_CONF" "{{net-device-lan}}"
+  just fs write-file "$PATH_NET_DEVICE_WAN_CONF" "{{net-device-wan}}"
+  just fs write-file "$PATH_SERVER_OWN_IP" "{{server-own-ip}}"
+  just fs write-file "$PATH_SERVER_FRIENDLY_NAME_CONF" "{{server-name}}"
 
 [private]
 assert-device-exists device:
@@ -111,5 +113,5 @@ get-server-friendly-name domain-file error-code:
     #!/usr/bin/env bash
     set -euo pipefail
 
-    DOMAIN_NAME=$(just util read-file "{{domain-file}}" "canonical server hostname" $EXIT_CODE_CANNOT_START_DAEMON)
+    DOMAIN_NAME=$(just fs read-file "{{domain-file}}" "canonical server hostname" {{error-code}})
     echo $DOMAIN_NAME | cut -d '.' -f1

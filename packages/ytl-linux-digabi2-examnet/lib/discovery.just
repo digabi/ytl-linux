@@ -1,5 +1,6 @@
-mod log 'log.just'
-mod util 'util.just'
+mod log
+mod util
+mod fs
 
 EXIT_CODE_CANNOT_RUN_ALIAS_DISCOVERY := env('EXIT_CODE_CANNOT_RUN_ALIAS_DISCOVERY')
 
@@ -13,8 +14,8 @@ discovery net-device-wan net-device-lan server-number: \
     "PATH_DISCOVERY_DB"
     "BIN_DIGABI2_EXAMNET_DISCOVERY"
   ) \
-  (util::assert-file-exists env("PATH_DNSMASQ_STATIC_DNS_CONF") EXIT_CODE_CANNOT_RUN_ALIAS_DISCOVERY) \
-  (util::assert-file-exists env("PATH_SERVER_OWN_IP") EXIT_CODE_CANNOT_RUN_ALIAS_DISCOVERY)
+  (fs::assert-file-exists env("PATH_DNSMASQ_STATIC_DNS_CONF") EXIT_CODE_CANNOT_RUN_ALIAS_DISCOVERY) \
+  (fs::assert-file-exists env("PATH_SERVER_OWN_IP") EXIT_CODE_CANNOT_RUN_ALIAS_DISCOVERY)
   #!/usr/bin/env bash
   set -euo pipefail
 
