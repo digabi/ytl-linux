@@ -2,6 +2,7 @@ MIN_SERVER_NUMBER := "1"
 MAX_SERVER_NUMBER := "24"
 SUBNETS_PER_SERVER := "10"
 
+mod log 'log.just'
 mod util 'util.just'
 mod network 'network.just'
 
@@ -22,6 +23,8 @@ apply net-device-wan net-device-lan server-number server-name: \
   (assert-devices-different net-device-wan net-device-lan)
   #!/usr/bin/env bash
   set -euo pipefail
+
+  just log info "Configuring examnet with WAN device '{{net-device-wan}}', LAN device '{{net-device-lan}}', server number {{server-number}} and server name '{{server-name}}'"
 
   IP_LAN=$(just network get-device-ipv4-address "{{net-device-lan}}")
   IP_WAN=$(just network get-device-ipv4-address "{{net-device-wan}}" $EXIT_CODE_WAN_WITH_NO_IP)
@@ -46,6 +49,8 @@ apply net-device-wan net-device-lan server-number server-name: \
 
   just setup write-examnet-config "{{net-device-wan}}" "{{net-device-lan}}" "$SERVER_OWN_IP" "{{server-name}}"
 
+  just log info "Examnet configuration applied successfully"
+
 [private]
 write-examnet-config net-device-wan net-device-lan server-own-ip server-name:
   just util write-file "$PATH_NET_DEVICE_LAN_CONF" "{{net-device-lan}}"
@@ -57,9 +62,11 @@ write-examnet-config net-device-wan net-device-lan server-own-ip server-name:
 assert-device-exists device:
   #!/usr/bin/env bash
   set -euo pipefail
-  
+
+  just log debug "Checking if network device {{device}} exists"
+
   if ! ip link show "{{device}}" &> /dev/null; then
-    echo "Error: Network device {{device}} does not exist"
+    just log error "Network device {{device}} does not exist"
     exit $EXIT_CODE_NO_SUCH_NETWORK_DEVICE
   fi
 
@@ -68,8 +75,10 @@ assert-devices-different wan-network-device lan-network-device:
   #!/usr/bin/env bash
   set -euo pipefail
 
+  just log debug "Checking that WAN network device '{{wan-network-device}}' and LAN network device '{{lan-network-device}}' are different"
+
   if [[ "{{wan-network-device}}" == "{{lan-network-device}}" ]]; then
-    echo "Error: Cannot select same network device for both WAN and LAN"
+    just log error "Cannot select same network device for both WAN and LAN"
     exit $EXIT_CODE_SAME_DEVICE_FOR_WAN_AND_LAN
   fi
 
@@ -78,8 +87,10 @@ assert-server-number-valid server-number:
   #!/usr/bin/env bash
   set -euo pipefail
 
+  just log debug "Checking that server number '{{server-number}}' is a number between {{MIN_SERVER_NUMBER}} and {{MAX_SERVER_NUMBER}}"
+
   if [[ ! "{{server-number}}" =~ ^[0-9]+$ ]] || [[ "{{server-number}}" -lt {{MIN_SERVER_NUMBER}} ]] || [[ "{{server-number}}" -gt {{MAX_SERVER_NUMBER}} ]]; then
-    echo "Error: Server number must be a number between {{MIN_SERVER_NUMBER}} and {{MAX_SERVER_NUMBER}}"
+    just log error "Server number must be a number between {{MIN_SERVER_NUMBER}} and {{MAX_SERVER_NUMBER}}"
     exit $EXIT_CODE_INVALID_SERVER_NUMBER
   fi
 
@@ -88,8 +99,10 @@ assert-server-name-valid server-name:
   #!/usr/bin/env bash
   set -euo pipefail
 
+  just log debug "Checking that server name '{{server-name}}' only contains lowercase letters a-z and digits 0-9"
+
   if [[ ! "{{server-name}}" =~ ^[a-z0-9]+$ ]]; then
-    echo "Error: Server name may only contain lowercase letters a-z and digits 0-9"
+    just log error "Server name may only contain lowercase letters a-z and digits 0-9"
     exit $EXIT_CODE_INVALID_SERVER_NAME
   fi
 

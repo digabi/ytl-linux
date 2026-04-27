@@ -5,6 +5,8 @@ mod mod-destroy 'lib/destroy.just'
 [private]
 mod mod-discovery 'lib/discovery.just'
 [private]
+mod log 'lib/log.just'
+[private]
 mod network 'lib/network.just'
 [private]
 mod mod-restart-bouncer 'lib/restart-bouncer.just'

@@ -1,3 +1,4 @@
+mod log 'log.just'
 mod util 'util.just'
 
 EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE := env('EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE')
@@ -25,6 +26,8 @@ destroy net-device-wan net-device-lan server-number: \
   #!/usr/bin/env bash
   set -euo pipefail
 
+  just log info "Removing all examnet settings"
+
   just util disable-systemd-unit ytl-linux-digabi2-examnet.service $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE
 
   just util disable-systemd-unit dnsmasq.service $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE
@@ -45,8 +48,10 @@ destroy net-device-wan net-device-lan server-number: \
   just util remove-file "$PATH_DNSMASQ_CONF" "$EXIT_CODE_CANNOT_REMOVE_FILES"
   just util remove-file "$PATH_DNSMASQ_STATIC_DNS_CONF" "$EXIT_CODE_CANNOT_REMOVE_FILES"
 
+  just log debug "Removing school domain entries from $PATH_ETC_HOSTS"
   sed -i '' '/^# BEGIN SCHOOL DOMAIN ENTRIES$/,/^# END SCHOOL DOMAIN ENTRIES$/d' "$PATH_ETC_HOSTS"
 
+  just log debug "Getting list of network connections"
   CONNECTIONS=$(just network get-connections $EXIT_CODE_CANNOT_REMOVE_CONNECTION)
 
   printf '%S\n' "$CONNECTIONS" | grep -E -v "^UUID" | tr -s ' ' | while read -r line ; do
@@ -72,7 +77,4 @@ destroy net-device-wan net-device-lan server-number: \
 
   just network wait-for-network-online $EXIT_CODE_NETWORK_NOT_ONLINE 5
 
-  echo "INFO: All examnet settings have been removed"
-
-
-
+  just log info "All examnet settings have been removed"
