@@ -87,20 +87,20 @@ describe('examnet-just', async () => {
     // })
     test('returns error if server number is wrong:', () => {
       test('invalid number', async () => {
-        await runExamnetReturnsExitCode(8, ['eth0', 'eth1', 'invalidNumber', 'perunakellari'], ENV_TEST_MODE)
+        await runExamnetReturnsExitCode(8, ['eth0', 'eth1', 'invalidNumber'], ENV_TEST_MODE)
         await assertCalls([callStat(mockNaksu2WorkDir)])
       })
       test('too small integer (0)', async () => {
-        await runExamnetReturnsExitCode(8, ['eth0', 'eth1', '0', 'perunakellari'], ENV_TEST_MODE)
+        await runExamnetReturnsExitCode(8, ['eth0', 'eth1', '0'], ENV_TEST_MODE)
         await assertCalls([callStat(mockNaksu2WorkDir)])
       })
       test('too large integer (25)', async () => {
-        await runExamnetReturnsExitCode(8, ['eth0', 'eth1', '25', 'perunakellari'], ENV_TEST_MODE)
+        await runExamnetReturnsExitCode(8, ['eth0', 'eth1', '25'], ENV_TEST_MODE)
         await assertCalls([callStat(mockNaksu2WorkDir)])
       })
     })
     test('returns error if script is not called as root user', async () => {
-      await runExamnetReturnsExitCode(2, ['eth0', 'eth1', '1', 'perunakellari'])
+      await runExamnetReturnsExitCode(2, ['eth0', 'eth1', '1'])
       await assertCalls([callStat(mockNaksu2WorkDir)])
     })
   })
@@ -624,8 +624,8 @@ describe('examnet-just', async () => {
 
   test('all exit codes are tested', () => {
     const sortedExitCodes = Array.from(exitCodesTested).sort((a, b) => a - b)
-    // TODO these exit codes are currently not tested: 3, 5, 9, 10, 11, 13, 19,
-    assert.deepEqual(sortedExitCodes, [1, 2, 4, 6, 7, 8, 12, 14, 15, 17, 18, 20, 21, 22, 23, 24, 25, 27, 28, 29])
+    // TODO these exit codes are currently not tested: 3, 9, 10, 11, 13, 19,
+    assert.deepEqual(sortedExitCodes, [1, 2, 4, 5, 6, 7, 8, 12, 14, 15, 17, 18, 20, 21, 22, 23, 24, 25, 27, 28, 29])
   })
 
   function runExamnetWithArguments(examnetArguments: string[], envOverrides: NodeJS.Dict<string> = {}) {
