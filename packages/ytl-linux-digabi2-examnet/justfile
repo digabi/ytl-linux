@@ -26,8 +26,17 @@ restart-bouncer net-device-wan net-device-lan server-number: util::assert-user-i
 discovery net-device-wan net-device-lan server-number: util::assert-user-is-root
     just mod-discovery discovery {{net-device-wan}} {{net-device-lan}} {{server-number}}
 
-configure net-device-wan net-device-lan server-number server-name: util::assert-user-is-root
-    just setup apply {{net-device-wan}} {{net-device-lan}} {{server-number}} {{server-name}}
+configure net-device-wan net-device-lan server-number optional-server-name="": util::assert-user-is-root
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    if [[ -n "{{optional-server-name}}" ]]; then
+      SERVER_NAME="{{optional-server-name}}"
+    else
+      SERVER_NAME=$(just setup get-server-friendly-name "$PATH_NAKSU2_DOMAIN" $EXIT_CODE_INVALID_SERVER_NAME)
+    fi
+    echo "DEBUG: Using server friendly name '$SERVER_NAME'"
+    just setup apply {{net-device-wan}} {{net-device-lan}} {{server-number}} "$SERVER_NAME"
 
 destroy  net-device-wan net-device-lan server-number: util::assert-user-is-root
     just mod-destroy destroy {{net-device-wan}} {{net-device-lan}} {{server-number}}
