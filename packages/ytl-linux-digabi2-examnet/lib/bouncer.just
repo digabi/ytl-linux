@@ -2,10 +2,10 @@ mod util 'util.just'
 mod network 'network.just'
 
 EXIT_CODE_CANNOT_START_DAEMON := env('EXIT_CODE_CANNOT_START_DAEMON')
-EXIT_CODE_DAEMON_EXITED_UNEXPECTEDLY := env('EXIT_CODE_DAEMON_EXITED_UNEXPECTEDLY')
 
 bouncer net-device-wan net-device-lan server-number: \
   (util::assert-envs-set EXIT_CODE_CANNOT_START_DAEMON
+    "EXIT_CODE_DAEMON_EXITED_UNEXPECTEDLY"
     "PATH_NET_DEVICE_LAN_CONF"
     "PATH_SERVER_FRIENDLY_NAME_CONF"
     "PATH_NAKSU2_DOMAIN"
@@ -79,4 +79,4 @@ bouncer net-device-wan net-device-lan server-number: \
   set -e
   echo "INFO: Bouncer process has exited"
 
-  exit {{EXIT_CODE_DAEMON_EXITED_UNEXPECTEDLY}}
+  exit $EXIT_CODE_DAEMON_EXITED_UNEXPECTEDLY
