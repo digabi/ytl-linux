@@ -1,3 +1,4 @@
+mod log 'log.just'
 mod util 'util.just'
 mod network 'network.just'
 
@@ -31,29 +32,29 @@ bouncer net-device-wan net-device-lan server-number: \
   set -euo pipefail
 
   IP_LAN=$(just network get-device-ipv4-address "{{net-device-lan}}" $EXIT_CODE_CANNOT_START_DAEMON)
-  echo "DEBUG: Detected LAN IP address '$IP_LAN' for device {{net-device-lan}}"
+  just log debug "Detected LAN IP address '$IP_LAN' for device {{net-device-lan}}"
 
   CONFIGURED_IP_LAN=$(just util read-file "$PATH_SERVER_OWN_IP" "configured server LAN IP" $EXIT_CODE_CANNOT_START_DAEMON)
-  echo "DEBUG: Configured LAN IP address for server is '$CONFIGURED_IP_LAN'"
+  just log debug  "Configured LAN IP address for server is '$CONFIGURED_IP_LAN'"
 
   if [[ "$IP_LAN" != "$CONFIGURED_IP_LAN" ]]; then
-    echo "ERROR: Detected LAN IP address '$IP_LAN' does not match configured LAN IP address '$CONFIGURED_IP_LAN'"
+    just log error "Detected LAN IP address '$IP_LAN' does not match configured LAN IP address '$CONFIGURED_IP_LAN'"
     exit $EXIT_CODE_CANNOT_START_DAEMON
   fi
 
   CONFIGURED_SERVER_NAME=$(just util read-file "$PATH_SERVER_FRIENDLY_NAME_CONF" "configured server friendly name" $EXIT_CODE_CANNOT_START_DAEMON)
-  echo "DEBUG: Configured server friendly name is '$CONFIGURED_SERVER_NAME'"
+  just log debug "Configured server friendly name is '$CONFIGURED_SERVER_NAME'"
 
   CANONICAL_HOSTNAME=$(just util read-file "$PATH_NAKSU2_DOMAIN" "canonical server hostname" $EXIT_CODE_CANNOT_START_DAEMON)
-  echo "DEBUG: Canonical server hostname is '$CANONICAL_HOSTNAME'"
+  just log debug "Canonical server hostname is '$CANONICAL_HOSTNAME'"
 
   if [[ -z "$CANONICAL_HOSTNAME" ]]; then
-    echo "ERROR: Canonical server hostname cannot be empty"
+    just log error "Canonical server hostname cannot be empty"
     exit $EXIT_CODE_CANNOT_START_DAEMON
   fi
 
   NCSI_HOSTNAMES=$(jq -Rc '.|split(",")|map(select(.!=""))' "$PATH_NCSI_HOSTNAMES")
-  echo "DEBUG: NCSI hostnames are '$NCSI_HOSTNAMES'"
+  just log debug "NCSI hostnames are '$NCSI_HOSTNAMES'"
 
   CONFIG=$(cat <<EOF
       {\
@@ -70,13 +71,13 @@ bouncer net-device-wan net-device-lan server-number: \
   EOF
   )
 
-  echo "INFO: Starting bouncer with LAN device {{net-device-lan}}, server number {{server-number}}, detected LAN IP $IP_LAN"
+  just log info "Starting bouncer with LAN device {{net-device-lan}}, server number {{server-number}}, detected LAN IP $IP_LAN"
 
   set +e
   if ! $BIN_DIGABI2_EXAMNET_BOUNCER "$CONFIG"; then
-    echo "ERROR: Bouncer process exited with non-zero exit code"
+    just log error "Bouncer process exited with non-zero exit code"
   fi
   set -e
-  echo "INFO: Bouncer process has exited"
+  just log info "Bouncer process has exited"
 
   exit $EXIT_CODE_DAEMON_EXITED_UNEXPECTEDLY
