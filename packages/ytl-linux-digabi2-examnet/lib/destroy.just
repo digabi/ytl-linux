@@ -1,5 +1,7 @@
-mod log 'log.just'
-mod util 'util.just'
+mod log
+mod fs
+mod systemd
+mod util
 
 EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE := env('EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE')
 
@@ -7,10 +9,6 @@ destroy net-device-wan net-device-lan server-number: \
   (util::assert-envs-set EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE
     "EXIT_CODE_CANNOT_REMOVE_CONNECTION"
     "EXIT_CODE_NETWORK_NOT_ONLINE"
-    "EXIT_CODE_CANNOT_RESTART_RESOLVED"
-    "EXIT_CODE_CANNOT_RESTART_DNSMASQ"
-    "EXIT_CODE_CANNOT_RESTART_NM"
-    "EXIT_CODE_CANNOT_RESTART_DOCKER"
     "EXIT_CODE_CANNOT_REMOVE_FILES"
     "PATH_RESOLVED_CONF"
     "PATH_DOCKER_DAEMON_CONF"
@@ -28,25 +26,16 @@ destroy net-device-wan net-device-lan server-number: \
 
   just log info "Removing all examnet settings"
 
-  just util disable-systemd-unit ytl-linux-digabi2-examnet.service $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE
+  just util disable-systemd-unit ytl-linux-digabi2-examnet
+  just util disable-systemd-unit dnsmasq
+  just util disable-systemd-unit ytl-linux-digabi2-examnet-discovery.timer
+  just util disable-systemd-unit ytl-linux-digabi2-examnet-discovery.service
 
-  just util disable-systemd-unit dnsmasq.service $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE
+  just fs remove-file "$PATH_RESOLVED_CONF"
+  just fs remove-file "$PATH_DOCKER_DAEMON_CONF"
 
-  just util disable-systemd-unit ytl-linux-digabi2-examnet-discovery.timer $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE
-  just util disable-systemd-unit ytl-linux-digabi2-examnet-discovery.service $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE
-
-  just util remove-file "$PATH_RESOLVED_CONF" "$EXIT_CODE_CANNOT_REMOVE_FILES"
-  just util remove-file "$PATH_DOCKER_DAEMON_CONF" "$EXIT_CODE_CANNOT_REMOVE_FILES"
-
-  just util remove-file "$PATH_NET_DEVICE_WAN_CONF" "$EXIT_CODE_CANNOT_REMOVE_FILES"
-  just util remove-file "$PATH_NET_DEVICE_LAN_CONF" "$EXIT_CODE_CANNOT_REMOVE_FILES"
-  just util remove-file "$PATH_SERVER_FRIENDLY_NAME_CONF" "$EXIT_CODE_CANNOT_REMOVE_FILES"
-  just util remove-file "$PATH_SERVER_OWN_IP" "$EXIT_CODE_CANNOT_REMOVE_FILES"
-
-  just util remove-file "$PATH_DISCOVERY_DB" "$EXIT_CODE_CANNOT_REMOVE_FILES"
-
-  just util remove-file "$PATH_DNSMASQ_CONF" "$EXIT_CODE_CANNOT_REMOVE_FILES"
-  just util remove-file "$PATH_DNSMASQ_STATIC_DNS_CONF" "$EXIT_CODE_CANNOT_REMOVE_FILES"
+  just fs empty-directory "$PATH_EXAMNET_CONFIG"
+  just fs empty-directory "$PATH_DNSMASQ"
 
   just log debug "Removing school domain entries from $PATH_ETC_HOSTS"
   sed -i '' '/^# BEGIN SCHOOL DOMAIN ENTRIES$/,/^# END SCHOOL DOMAIN ENTRIES$/d' "$PATH_ETC_HOSTS"
@@ -62,18 +51,10 @@ destroy net-device-wan net-device-lan server-number: \
     fi
   done
 
-  just util restart-systemd-unit systemd-resolved $EXIT_CODE_CANNOT_RESTART_RESOLVED
-
-  just util restart-systemd-unit-if-enabled dnsmasq.service $EXIT_CODE_CANNOT_RESTART_DNSMASQ
-
-  just util restart-systemd-unit NetworkManager.service $EXIT_CODE_CANNOT_RESTART_NM
-
-  just util restart-systemd-unit-if-enabled ytl-linux-digabi2-examnet.service $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE
-
-  just util restart-systemd-unit-if-enabled ytl-linux-digabi2-examnet-discovery.timer $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE
-  just util restart-systemd-unit-if-enabled ytl-linux-digabi2-examnet-discovery.service $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE
-
-  just util restart-systemd-unit docker $EXIT_CODE_CANNOT_RESTART_DOCKER
+  just systemd restart systemd-resolved
+  just systemd restart dnsmasq
+  just systemd restart NetworkManager
+  just systemd restart docker
 
   just network wait-for-network-online $EXIT_CODE_NETWORK_NOT_ONLINE 5
 

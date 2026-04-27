@@ -1,7 +1,8 @@
-mod util 'util.just'
+mod util
 
 EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE := env('EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE')
 
+# FIXME: Käyttämättömiä argumentteja
 restart-bouncer net-device-wan net-device-lan server-number:
   #!/usr/bin/env bash
   set -euo pipefail

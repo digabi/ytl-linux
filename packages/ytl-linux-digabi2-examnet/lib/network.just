@@ -1,4 +1,5 @@
-mod util 'util.just'
+mod util
+mod fs
 
 get-device-ipv4-address device error-code-if-no-ip="": (util::assert-program-exists "ip")
   #!/usr/bin/env bash
