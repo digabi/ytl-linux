@@ -3,6 +3,7 @@ mod util
 mod network
 mod fs
 mod systemd
+mod static-dns-records
 
 MIN_SERVER_NUMBER := "1"
 MAX_SERVER_NUMBER := "24"
@@ -10,7 +11,7 @@ SUBNETS_PER_SERVER := "10"
 
 EXIT_CODE_CANNOT_CONFIGURE_EXAMNET := env('EXIT_CODE_CANNOT_CONFIGURE_EXAMNET')
 
-apply net-device-wan net-device-lan server-number server-name use-static-local-dns: \
+apply net-device-wan net-device-lan server-number server-name: \
   (util::assert-envs-set EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
     "PATH_EXAMNET_CONFIG"
     "PATH_NET_DEVICE_LAN_CONF"
@@ -54,7 +55,7 @@ apply net-device-wan net-device-lan server-number server-name use-static-local-d
   fi
 
   just systemd restart NetworkManager
-  just network wait-for-network-online
+  just network wait-for-network-online $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
 
   just fs write-file "$PATH_RESOLVED_CONF" "$(envsubst < $PATH_RESOLVED_CONF_TEMPLATE)"
 
@@ -62,9 +63,7 @@ apply net-device-wan net-device-lan server-number server-name use-static-local-d
   just fs write-file "$PATH_DNSMASQ_CONF" "$(envsubst < $PATH_DNSMASQ_CONF_TEMPLATE)"
 
   # FIXME: Onko tämä oikea kohta?
-  if [[ "{{use-static-local-dns}}" == "true" ]]; then
-    # TODO: Tämä logiikka
-  fi
+  just static-dns-records configure {{net-device-wan}} {{server-number}} {{SUBNETS_PER_SERVER}} $SERVER_OWN_IP $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
 
   # TODO: Examnet riviltä 745
 

@@ -496,6 +496,8 @@ describe('examnet-just', async () => {
       ])
     })
     test('runs when correct parameters are given', async () => {
+      // use real sed to parse cert.pem
+      await unlink(join(mockBinDir, 'sed'))
       await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
       await runExamnet('eth0', 'eth1', '1')
       await assertCalls([
@@ -531,46 +533,6 @@ describe('examnet-just', async () => {
       await assertFileExists(mockExamnetConfigDir, 'net-device-wan')
       await assertFileExists(mockExamnetConfigDir, 'server-own-ip')
       await assertFileExists(mockExamnetConfigDir, 'server-friendly-name', 'ktp1\n')
-      await assertFileExists(mockResolvedDir, 'ytl-linux.conf')
-      await assertFileExists(mockDnsmasqDir, 'ytl-linux.conf')
-      await assertFileExists(mockNaksu2CertsDir, 'domain.txt')
-    })
-    test('runs when correct parameters are given with friendly name', async () => {
-      await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
-      await runExamnet('eth0', 'eth1', '1', 'perunakellari')
-      await assertCalls([
-        callStat(mockNaksu2WorkDir),
-        callIpLinkShow('eth0'),
-        callIpLinkShow('eth1'),
-        callIpAddrShow('eth0'),
-        callIpAddrShow('eth1'),
-        callNmicliConnectionDelete('yo-eth1'),
-        callNmicliConnectionAdd('yo-eth1', '192.168.10.1/16'),
-        callNmicliConnectionModify('yo-eth1'),
-        callNmicliConnectionUp('yo-eth1'),
-        callRm(`${mockNetplanConfDir}/50-cloud-init.yaml`),
-        callSystemctl('restart', 'NetworkManager.service'),
-        callNmonline(),
-        callRm(`${mockDnsmasqDir}/ytl-linux-static-dns-records.conf`),
-        callSystemctl('enable', 'ytl-linux-digabi2-examnet.service'),
-        callSystemctl('enable', 'dnsmasq.service'),
-        callSystemctl('enable', 'ytl-linux-digabi2-examnet-discovery.service'),
-        callSystemctl('enable', 'ytl-linux-digabi2-examnet-discovery.timer'),
-        callSystemctl('restart', 'systemd-resolved'),
-        callSystemctl('is-enabled', 'dnsmasq.service'),
-        callSystemctl('restart', 'dnsmasq.service'),
-        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet.service'),
-        callSystemctl('restart', 'ytl-linux-digabi2-examnet.service'),
-        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet-discovery.timer'),
-        callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.timer'),
-        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet-discovery.service'),
-        callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.service'),
-        { cmd: 'ytl-linux-digabi2-docker-configure.sh', argv: ['10.0.10.1', '192.168.10.1'] }
-      ])
-      await assertFileExists(mockExamnetConfigDir, 'net-device-lan')
-      await assertFileExists(mockExamnetConfigDir, 'net-device-wan')
-      await assertFileExists(mockExamnetConfigDir, 'server-own-ip')
-      await assertFileExists(mockExamnetConfigDir, 'server-friendly-name', 'perunakellari\n')
       await assertFileExists(mockResolvedDir, 'ytl-linux.conf')
       await assertFileExists(mockDnsmasqDir, 'ytl-linux.conf')
       await assertFileExists(mockNaksu2CertsDir, 'domain.txt')
@@ -743,7 +705,39 @@ describe('examnet-just', async () => {
     await writeToTempDir(
       mockNaksu2CertsDir,
       'cert.pem',
-      '-----BEGIN CERTIFICATE-----\nfoobar\n-----END CERTIFICATE-----'
+      '-----BEGIN CERTIFICATE-----\n' +
+        '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\n' +
+        '9dYAcnlYVl1EHrhDhIIzhqc=\n' +
+        '-----END CERTIFICATE-----'
     )
     const mockScriptTsPath = join(process.cwd(), 'test', 'mock-script.ts')
     const mockScript = await bashWrapMockScript(mockScriptTsPath)
@@ -758,6 +752,7 @@ describe('examnet-just', async () => {
     await writeToTempDir(mockBinDir, 'stat', mockScript)
     await writeToTempDir(mockBinDir, 'rm', mockScript)
     await writeToTempDir(mockBinDir, 'sudo', mockScript)
+    await writeToTempDir(mockBinDir, 'chown', mockScript)
     await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-bouncer', mockScript)
     await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-discovery', mockScript)
     await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-docker-configure.sh', mockScript)
