@@ -1,8 +1,8 @@
-debug message:
-    @echo "DEBUG: {{ message }}"
+debug +messages:
+    @echo "DEBUG: {{ messages }}"
 
-info message:
-    @echo "INFO: {{ message }}"
+info +messages:
+    @echo "INFO: {{ messages }}"
 
-error message:
-    @echo "ERROR: {{ message }}" >&2
+error +messages:
+    @echo "ERROR: {{ messages }}" >&2
