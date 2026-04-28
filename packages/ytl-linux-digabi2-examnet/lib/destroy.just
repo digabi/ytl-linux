@@ -37,8 +37,7 @@ destroy net-device-wan net-device-lan server-number: \
   just fs empty-directory "$PATH_EXAMNET_CONFIG"
   just fs empty-directory "$PATH_DNSMASQ"
 
-  just log debug "Removing school domain entries from $PATH_ETC_HOSTS"
-  sed -i '' '/^# BEGIN SCHOOL DOMAIN ENTRIES$/,/^# END SCHOOL DOMAIN ENTRIES$/d' "$PATH_ETC_HOSTS"
+  just etc-hosts remove-school-domain-entries "$PATH_ETC_HOSTS"
 
   just log debug "Getting list of network connections"
   CONNECTIONS=$(just network get-connections $EXIT_CODE_CANNOT_REMOVE_CONNECTION)

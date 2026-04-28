@@ -101,3 +101,15 @@ assert-file-contents file-path expected-contents error-code:
     just log error "$ACTUAL_CONTENTS"
     exit {{error-code}}
   fi
+
+[private]
+get-dir-owner path error-code:
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  if [[ ! -d "{{path}}" ]]; then
+    just log error "Directory '{{path}}' does not exist"
+    exit {{error-code}}
+  fi
+
+  stat -c '%U:%G' "{{path}}"

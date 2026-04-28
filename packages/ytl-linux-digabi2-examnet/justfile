@@ -5,6 +5,10 @@ mod mod-destroy 'lib/destroy.just'
 [private]
 mod mod-discovery 'lib/discovery.just'
 [private]
+mod etc-hosts 'lib/etc-hosts.just'
+[private]
+mod fs 'lib/fs.just'
+[private]
 mod log 'lib/log.just'
 [private]
 mod network 'lib/network.just'
@@ -12,6 +16,10 @@ mod network 'lib/network.just'
 mod mod-restart-bouncer 'lib/restart-bouncer.just'
 [private]
 mod setup 'lib/setup.just'
+[private]
+mod systemd 'lib/systemd.just'
+[private]
+mod static-dns-records 'lib/static-dns-records.just'
 [private]
 mod util 'lib/util.just'
 
