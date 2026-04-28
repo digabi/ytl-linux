@@ -185,14 +185,14 @@ describe('examnet-just', async () => {
     test('returns error when systemctl fails', async () => {
       await writeToTempDir(mockBinDir, 'systemctl', mockScriptReturningErrorCode)
       await runExamnetReturnsExitCode(23, ['eth1', 'eth0', '1', '--restart-daemon'], ENV_TEST_MODE)
-      await assertCalls([callStat(mockNaksu2WorkDir), callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet.service')])
+      await assertCalls([callStat(mockNaksu2WorkDir), callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet')])
     })
     test('runs when correct parameters are given', async () => {
       await runExamnet('eth1', 'eth0', '1', '--restart-daemon')
       await assertCalls([
         callStat(mockNaksu2WorkDir),
-        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet.service'),
-        callSystemctl('restart', 'ytl-linux-digabi2-examnet.service'),
+        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet'),
+        callSystemctl('restart', 'ytl-linux-digabi2-examnet'),
         callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet-discovery.timer'),
         callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.timer'),
         callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet-discovery.service'),
@@ -232,11 +232,11 @@ describe('examnet-just', async () => {
       await runExamnetReturnsExitCode(17, ['eth0', 'eth1', '1', '--remove'], ENV_TEST_MODE)
       await assertCalls([
         callStat(mockNaksu2WorkDir),
-        callSystemctl('disable', 'ytl-linux-digabi2-examnet.service', '--now'),
-        callSystemctl('disable', 'dnsmasq.service', '--now'),
+        callSystemctl('disable', 'ytl-linux-digabi2-examnet', '--now'),
+        callSystemctl('disable', 'dnsmasq', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.timer', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.service', '--now'),
-        callRm(`${mockExamnetConfigDir}/server-own-ip`)
+        callRmRecursive(`${mockExamnetConfigDir}/*`)
       ])
     })
     test('returns error if listing connection fails', async () => {
@@ -245,12 +245,12 @@ describe('examnet-just', async () => {
       await runExamnetReturnsExitCode(18, ['eth0', 'eth1', '1', '--remove'], ENV_TEST_MODE)
       await assertCalls([
         callStat(mockNaksu2WorkDir),
-        callSystemctl('disable', 'ytl-linux-digabi2-examnet.service', '--now'),
-        callSystemctl('disable', 'dnsmasq.service', '--now'),
+        callSystemctl('disable', 'ytl-linux-digabi2-examnet', '--now'),
+        callSystemctl('disable', 'dnsmasq', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.timer', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.service', '--now'),
-        callRm(`${mockExamnetConfigDir}/server-own-ip`),
-        callRm(`${mockExamnetConfigDir}/discovery.db`),
+        callRmRecursive(`${mockExamnetConfigDir}/*`),
+        callRmRecursive(`${mockDnsmasqDir}/*`),
         callSed(`${mockEtcDir}/hosts`),
         callNmcli()
       ])
@@ -258,10 +258,7 @@ describe('examnet-just', async () => {
     test('returns error if disabling services fails', async () => {
       await writeToTempDir(mockBinDir, 'systemctl', mockScriptReturningErrorCode)
       await runExamnetReturnsExitCode(23, ['eth0', 'eth1', '1', '--remove'], ENV_TEST_MODE)
-      await assertCalls([
-        callStat(mockNaksu2WorkDir),
-        callSystemctl('disable', 'ytl-linux-digabi2-examnet.service', '--now')
-      ])
+      await assertCalls([callStat(mockNaksu2WorkDir), callSystemctl('disable', 'ytl-linux-digabi2-examnet', '--now')])
     })
     test('returns error if waiting for network online fails', async () => {
       await writeToTempDir(mockBinDir, 'nm-online', mockScriptReturningErrorCode)
@@ -270,25 +267,17 @@ describe('examnet-just', async () => {
       await runExamnetReturnsExitCode(27, ['eth0', 'eth1', '1', '--remove'], ENV_TEST_MODE)
       await assertCalls([
         callStat(mockNaksu2WorkDir),
-        callSystemctl('disable', 'ytl-linux-digabi2-examnet.service', '--now'),
-        callSystemctl('disable', 'dnsmasq.service', '--now'),
+        callSystemctl('disable', 'ytl-linux-digabi2-examnet', '--now'),
+        callSystemctl('disable', 'dnsmasq', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.timer', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.service', '--now'),
-        callRm(`${mockExamnetConfigDir}/server-own-ip`),
-        callRm(`${mockExamnetConfigDir}/discovery.db`),
-        callRm(`${mockDnsmasqDir}/ytl-linux-static-dns-records.conf`),
+        callRmRecursive(`${mockExamnetConfigDir}/*`),
+        callRmRecursive(`${mockDnsmasqDir}/*`),
         callSed(`${mockEtcDir}/hosts`),
         callNmcli(),
         callSystemctl('restart', 'systemd-resolved'),
-        callSystemctl('is-enabled', 'dnsmasq.service'),
-        callSystemctl('restart', 'dnsmasq.service'),
-        callSystemctl('restart', 'NetworkManager.service'),
-        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet.service'),
-        callSystemctl('restart', 'ytl-linux-digabi2-examnet.service'),
-        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet-discovery.timer'),
-        callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.timer'),
-        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet-discovery.service'),
-        callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.service'),
+        callSystemctl('restart', 'dnsmasq'),
+        callSystemctl('restart', 'NetworkManager'),
         { cmd: 'systemctl', argv: ['restart', 'docker'] },
         callNmonline(5)
       ])
@@ -299,25 +288,17 @@ describe('examnet-just', async () => {
       await runExamnet('eth0', 'eth1', '1', '--remove')
       await assertCalls([
         callStat(mockNaksu2WorkDir),
-        callSystemctl('disable', 'ytl-linux-digabi2-examnet.service', '--now'),
-        callSystemctl('disable', 'dnsmasq.service', '--now'),
+        callSystemctl('disable', 'ytl-linux-digabi2-examnet', '--now'),
+        callSystemctl('disable', 'dnsmasq', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.timer', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.service', '--now'),
-        callRm(`${mockExamnetConfigDir}/server-own-ip`),
-        callRm(`${mockExamnetConfigDir}/discovery.db`),
-        callRm(`${mockDnsmasqDir}/ytl-linux-static-dns-records.conf`),
+        callRmRecursive(`${mockExamnetConfigDir}/*`),
+        callRmRecursive(`${mockDnsmasqDir}/*`),
         callSed(`${mockEtcDir}/hosts`),
         callNmcli(),
         callSystemctl('restart', 'systemd-resolved'),
-        callSystemctl('is-enabled', 'dnsmasq.service'),
-        callSystemctl('restart', 'dnsmasq.service'),
-        callSystemctl('restart', 'NetworkManager.service'),
-        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet.service'),
-        callSystemctl('restart', 'ytl-linux-digabi2-examnet.service'),
-        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet-discovery.timer'),
-        callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.timer'),
-        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet-discovery.service'),
-        callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.service'),
+        callSystemctl('restart', 'dnsmasq'),
+        callSystemctl('restart', 'NetworkManager'),
         { cmd: 'systemctl', argv: ['restart', 'docker'] },
         callNmonline(5)
       ])
@@ -376,7 +357,7 @@ describe('examnet-just', async () => {
         callNmicliConnectionModify('yo-eth1'),
         callNmicliConnectionUp('yo-eth1'),
         callRm(`${mockNetplanConfDir}/50-cloud-init.yaml`),
-        callSystemctl('restart', 'NetworkManager.service')
+        callSystemctl('restart', 'NetworkManager')
       ])
     })
     test('returns error if netplan configuration cannot be removed', async () => {
@@ -411,7 +392,7 @@ describe('examnet-just', async () => {
         callNmicliConnectionAdd('yo-eth1', '192.168.10.1/16'),
         callNmicliConnectionModify('yo-eth1'),
         callNmicliConnectionUp('yo-eth1'),
-        callSystemctl('restart', 'NetworkManager.service'),
+        callSystemctl('restart', 'NetworkManager'),
         callNmonline(),
         callRm(`${mockDnsmasqDir}/ytl-linux-static-dns-records.conf`)
       ])
@@ -431,7 +412,7 @@ describe('examnet-just', async () => {
         callNmicliConnectionModify('yo-eth1'),
         callNmicliConnectionUp('yo-eth1'),
         callRm(`${mockNetplanConfDir}/50-cloud-init.yaml`),
-        callSystemctl('restart', 'NetworkManager.service'),
+        callSystemctl('restart', 'NetworkManager'),
         callNmonline(),
         callRm(`${mockDnsmasqDir}/ytl-linux-static-dns-records.conf`)
       ])
@@ -453,7 +434,7 @@ describe('examnet-just', async () => {
         callNmicliConnectionModify('yo-eth1'),
         callNmicliConnectionUp('yo-eth1'),
         callRm(`${mockNetplanConfDir}/50-cloud-init.yaml`),
-        callSystemctl('restart', 'NetworkManager.service'),
+        callSystemctl('restart', 'NetworkManager'),
         callNmonline(),
         callRm(`${mockDnsmasqDir}/ytl-linux-static-dns-records.conf`),
         callOpenssl(mockNaksu2CertsDir)
@@ -476,18 +457,18 @@ describe('examnet-just', async () => {
         callNmicliConnectionModify('yo-eth1'),
         callNmicliConnectionUp('yo-eth1'),
         callRm(`${mockNetplanConfDir}/50-cloud-init.yaml`),
-        callSystemctl('restart', 'NetworkManager.service'),
+        callSystemctl('restart', 'NetworkManager'),
         callNmonline(),
         callRm(`${mockDnsmasqDir}/ytl-linux-static-dns-records.conf`),
-        callSystemctl('enable', 'ytl-linux-digabi2-examnet.service'),
-        callSystemctl('enable', 'dnsmasq.service'),
+        callSystemctl('enable', 'ytl-linux-digabi2-examnet'),
+        callSystemctl('enable', 'dnsmasq'),
         callSystemctl('enable', 'ytl-linux-digabi2-examnet-discovery.service'),
         callSystemctl('enable', 'ytl-linux-digabi2-examnet-discovery.timer'),
         callSystemctl('restart', 'systemd-resolved'),
-        callSystemctl('is-enabled', 'dnsmasq.service'),
-        callSystemctl('restart', 'dnsmasq.service'),
-        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet.service'),
-        callSystemctl('restart', 'ytl-linux-digabi2-examnet.service'),
+        callSystemctl('is-enabled', 'dnsmasq'),
+        callSystemctl('restart', 'dnsmasq'),
+        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet'),
+        callSystemctl('restart', 'ytl-linux-digabi2-examnet'),
         callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet-discovery.timer'),
         callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.timer'),
         callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet-discovery.service'),
@@ -511,18 +492,18 @@ describe('examnet-just', async () => {
         callNmicliConnectionModify('yo-eth1'),
         callNmicliConnectionUp('yo-eth1'),
         callRm(`${mockNetplanConfDir}/50-cloud-init.yaml`),
-        callSystemctl('restart', 'NetworkManager.service'),
+        callSystemctl('restart', 'NetworkManager'),
         callNmonline(),
         callRm(`${mockDnsmasqDir}/ytl-linux-static-dns-records.conf`),
-        callSystemctl('enable', 'ytl-linux-digabi2-examnet.service'),
-        callSystemctl('enable', 'dnsmasq.service'),
+        callSystemctl('enable', 'ytl-linux-digabi2-examnet'),
+        callSystemctl('enable', 'dnsmasq'),
         callSystemctl('enable', 'ytl-linux-digabi2-examnet-discovery.service'),
         callSystemctl('enable', 'ytl-linux-digabi2-examnet-discovery.timer'),
         callSystemctl('restart', 'systemd-resolved'),
-        callSystemctl('is-enabled', 'dnsmasq.service'),
-        callSystemctl('restart', 'dnsmasq.service'),
-        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet.service'),
-        callSystemctl('restart', 'ytl-linux-digabi2-examnet.service'),
+        callSystemctl('is-enabled', 'dnsmasq'),
+        callSystemctl('restart', 'dnsmasq'),
+        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet'),
+        callSystemctl('restart', 'ytl-linux-digabi2-examnet'),
         callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet-discovery.timer'),
         callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.timer'),
         callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet-discovery.service'),
@@ -553,20 +534,20 @@ describe('examnet-just', async () => {
         callNmicliConnectionModify('yo-eth1'),
         callNmicliConnectionUp('yo-eth1'),
         callRm(`${mockNetplanConfDir}/50-cloud-init.yaml`),
-        callSystemctl('restart', 'NetworkManager.service'),
+        callSystemctl('restart', 'NetworkManager'),
         callNmonline(),
         callRm(`${mockDnsmasqDir}/ytl-linux-static-dns-records.conf`),
         callOpenssl(mockNaksu2CertsDir),
         { cmd: 'sudo', argv: ['tee', '-a', `${mockEtcDir}/hosts`] },
-        callSystemctl('enable', 'ytl-linux-digabi2-examnet.service'),
-        callSystemctl('enable', 'dnsmasq.service'),
+        callSystemctl('enable', 'ytl-linux-digabi2-examnet'),
+        callSystemctl('enable', 'dnsmasq'),
         callSystemctl('enable', 'ytl-linux-digabi2-examnet-discovery.service'),
         callSystemctl('enable', 'ytl-linux-digabi2-examnet-discovery.timer'),
         callSystemctl('restart', 'systemd-resolved'),
-        callSystemctl('is-enabled', 'dnsmasq.service'),
-        callSystemctl('restart', 'dnsmasq.service'),
-        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet.service'),
-        callSystemctl('restart', 'ytl-linux-digabi2-examnet.service'),
+        callSystemctl('is-enabled', 'dnsmasq'),
+        callSystemctl('restart', 'dnsmasq'),
+        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet'),
+        callSystemctl('restart', 'ytl-linux-digabi2-examnet'),
         callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet-discovery.timer'),
         callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.timer'),
         callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet-discovery.service'),
@@ -930,6 +911,10 @@ function callNmonline(timeout: number = 30) {
 
 function callRm(path: string) {
   return { cmd: 'rm', argv: ['-f', path] }
+}
+
+function callRmRecursive(path: string) {
+  return { cmd: 'rm', argv: ['-rf', path] }
 }
 
 function callSed(path: string) {

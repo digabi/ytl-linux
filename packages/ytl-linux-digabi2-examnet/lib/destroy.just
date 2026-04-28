@@ -26,10 +26,10 @@ destroy net-device-wan net-device-lan server-number: \
 
   just log info "Removing all examnet settings"
 
-  just util disable-systemd-unit ytl-linux-digabi2-examnet
-  just util disable-systemd-unit dnsmasq
-  just util disable-systemd-unit ytl-linux-digabi2-examnet-discovery.timer
-  just util disable-systemd-unit ytl-linux-digabi2-examnet-discovery.service
+  just systemd disable ytl-linux-digabi2-examnet
+  just systemd disable dnsmasq
+  just systemd disable ytl-linux-digabi2-examnet-discovery.timer
+  just systemd disable ytl-linux-digabi2-examnet-discovery.service
 
   just fs remove-file "$PATH_RESOLVED_CONF"
   just fs remove-file "$PATH_DOCKER_DAEMON_CONF"
@@ -37,7 +37,7 @@ destroy net-device-wan net-device-lan server-number: \
   just fs empty-directory "$PATH_EXAMNET_CONFIG"
   just fs empty-directory "$PATH_DNSMASQ"
 
-  just etc-hosts remove-school-domain-entries "$PATH_ETC_HOSTS"
+  just etc-hosts remove-school-domain-entries "$PATH_ETC_HOSTS" $EXIT_CODE_CANNOT_REMOVE_FILES
 
   just log debug "Getting list of network connections"
   CONNECTIONS=$(just network get-connections $EXIT_CODE_CANNOT_REMOVE_CONNECTION)
