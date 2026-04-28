@@ -9,8 +9,8 @@ restart-bouncer net-device-wan net-device-lan server-number:
 
   just log info "Restarting bouncer and discovery services for server number {{server-number}}"
 
-  just util restart-systemd-unit-if-enabled ytl-linux-digabi2-examnet.service $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE
-  just util restart-systemd-unit-if-enabled ytl-linux-digabi2-examnet-discovery.timer $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE
-  just util restart-systemd-unit-if-enabled ytl-linux-digabi2-examnet-discovery.service $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE
+  just systemd restart-if-enabled ytl-linux-digabi2-examnet
+  just systemd restart-if-enabled ytl-linux-digabi2-examnet-discovery.timer
+  just systemd restart-if-enabled ytl-linux-digabi2-examnet-discovery.service
 
   just log info "Successfully restarted bouncer and discovery services for server number {{server-number}}"
