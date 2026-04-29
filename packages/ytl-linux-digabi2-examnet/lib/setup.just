@@ -177,8 +177,8 @@ assert-server-name-valid server-name:
 
 [private]
 get-server-friendly-name domain-file error-code:
-    #!/usr/bin/env bash
-    set -euo pipefail
+  #!/usr/bin/env bash
+  set -euo pipefail
 
-    DOMAIN_NAME=$(just fs read-file "{{domain-file}}" "canonical server hostname" {{error-code}})
-    echo $DOMAIN_NAME | cut -d '.' -f1
+  DOMAIN_NAME=$(just fs read-file "{{domain-file}}" "canonical server hostname" {{error-code}})
+  echo $DOMAIN_NAME | cut -d '.' -f1
