@@ -39,7 +39,7 @@ configure net-device-wan server-number SUBNETS_PER_SERVER server-own-ip error-co
       just log debug "Server number of domain $DOMAIN is: $SERVER_NUMBER"
 
       if [ "$SERVER_NUMBER" == "{{server-number}}" ]; then
-          just log debug "This server's domain based on server number {{server-number}} is: $DOMAIN"
+          just log debug "Found this server's domain based on server number {{server-number}}: $DOMAIN"
           THIS_SERVER_DOMAIN=$DOMAIN
       fi
 
@@ -77,3 +77,5 @@ configure net-device-wan server-number SUBNETS_PER_SERVER server-own-ip error-co
   just log debug "Configuring domain for KTP"
   just log debug "This server's domain based on server number {{server-number}} is: $THIS_SERVER_DOMAIN"
   just fs write-file "$PATH_NAKSU2_DOMAIN" "$THIS_SERVER_DOMAIN" "$NAKSU2_WORKDIR_OWNER"
+
+  just log debug "Successfully configured static DNS records for server number {{server-number}}"
