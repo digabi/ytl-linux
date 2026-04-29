@@ -30,9 +30,16 @@ apply net-device-wan net-device-lan server-number server-name: \
   just log info "Configuring examnet with WAN device '{{net-device-wan}}', LAN device '{{net-device-lan}}', server number {{server-number}} and server name '{{server-name}}'"
 
   IP_LAN=$(just network get-device-ipv4-address "{{net-device-lan}}")
+  if [ -n "$IP_LAN" ]; then
+    just log info "LAN device {{net-device-lan}} already has IP address '$IP_LAN'"
+  else
+    just log debug "LAN device {{net-device-lan}} does not have an IP address yet"
+  fi
   IP_WAN=$(just network get-device-ipv4-address "{{net-device-wan}}" $EXIT_CODE_WAN_WITH_NO_IP)
+  just log debug "WAN device {{net-device-wan}} has IP address '$IP_WAN'"
   IP_LAN_PREFIX=$(just network get-lan-ip-prefix "$IP_WAN")
-  export IP_LAN
+  just log debug "Calculated LAN IP prefix '$IP_LAN_PREFIX'"
+
   export IP_WAN
   export IP_LAN_PREFIX
 
