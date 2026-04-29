@@ -6,7 +6,7 @@ read-file path description error-code:
   set -uo pipefail
 
   if [[ ! -f "{{path}}" ]]; then
-    just log error "Could not read '{{description}}': File '{{path}}' does not exist" >&2
+    just log error "Could not read '{{description}}': File '{{path}}' does not exist"
     exit {{error-code}}
   fi
 

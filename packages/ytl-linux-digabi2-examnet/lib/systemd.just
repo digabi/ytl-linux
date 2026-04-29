@@ -16,7 +16,7 @@ is-enabled unit-name:
   set -euo pipefail
 
   if ! ENABLED=$(systemctl is-enabled {{unit-name}}); then
-    just log error "Failed to check if systemd unit '{{unit-name}}' is enabled" >&2
+    just log error "Failed to check if systemd unit '{{unit-name}}' is enabled"
     exit $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE
   fi
   just log error "Returning whether systemd unit '{{unit-name}}' is enabled: $ENABLED"
