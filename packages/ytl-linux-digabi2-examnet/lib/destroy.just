@@ -42,7 +42,7 @@ destroy net-device-wan net-device-lan server-number: \
   just log debug "Getting list of network connections"
   CONNECTIONS=$(just network get-connections $EXIT_CODE_CANNOT_REMOVE_CONNECTION)
 
-  printf '%S\n' "$CONNECTIONS" | grep -E -v "^UUID" | tr -s ' ' | while read -r line ; do
+  printf '%s\n' "$CONNECTIONS" | grep -E -v "^UUID" | tr -s ' ' | while read -r line ; do
     connection_uuid=$(echo "$line" | cut -d ' ' -f 1)
     connection_name=$(echo "$line" | cut -d ' ' -f 2)
     if [[ "$connection_name" =~ ^yo- ]]; then
