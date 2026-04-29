@@ -62,7 +62,7 @@ delete-connection connection-name connection-uuid error-code:
 
     just log debug "Deleting NetworkManager connection '{{connection-name}}' with UUID {{connection-uuid}}"
     if ! nmcli connection delete "{{connection-uuid}}"; then
-        just log error "Failed to delete NetworkManager connection '{{connection-name}}' with UUID {{connection-uuid}}" >&2
+        just log error "Failed to delete NetworkManager connection '{{connection-name}}' with UUID {{connection-uuid}}"
         exit {{error-code}}
     fi
 
@@ -74,7 +74,7 @@ wait-for-network-online error-code timeout="30":
 
     just log debug "Waiting for network to be online (timeout: {{timeout}} seconds)..."
     if ! nm-online -s -q --timeout="{{timeout}}" 2>&1; then
-        just log error "Network did not become online within timeout of {{timeout}} seconds" >&2
+        just log error "Network did not become online within timeout of {{timeout}} seconds"
         exit {{error-code}}
     fi
 
