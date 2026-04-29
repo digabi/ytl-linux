@@ -4,10 +4,20 @@ remove-school-domain-entries path-etc-hosts error-code:
 
     just log debug "Removing school domain entries from {{path-etc-hosts}}"
 
-    if ! sed -i '' '/^# BEGIN SCHOOL DOMAIN ENTRIES$/,/^# END SCHOOL DOMAIN ENTRIES$/d' "{{path-etc-hosts}}"; then
+    tmpfile="{{path-etc-hosts}}.tmp"
+    if ! sed '/^# BEGIN SCHOOL DOMAIN ENTRIES$/,/^# END SCHOOL DOMAIN ENTRIES$/d' "{{path-etc-hosts}}" > "$tmpfile"; then
       just log error "Failed to remove school domain entries from {{path-etc-hosts}}"
+      rm -f "$tmpfile"
       exit {{error-code}}
     fi
+
+    if ! cat "$tmpfile" | sudo tee "{{path-etc-hosts}}" > /dev/null; then
+      just log error "Failed to write updated hosts file to {{path-etc-hosts}} after removing school domain entries"
+      rm -f "$tmpfile"
+      exit {{error-code}}
+    fi
+
+    rm -f "$tmpfile"
 
     just log debug "Successfully removed school domain entries from {{path-etc-hosts}}"
 
