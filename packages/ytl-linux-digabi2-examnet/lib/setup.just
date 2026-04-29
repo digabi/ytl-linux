@@ -14,11 +14,23 @@ EXIT_CODE_CANNOT_CONFIGURE_EXAMNET := env('EXIT_CODE_CANNOT_CONFIGURE_EXAMNET')
 apply net-device-wan net-device-lan server-number server-name: \
   (util::assert-envs-set EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
     "EXIT_CODE_NO_IP_ON_NETWORK_DEVICE"
+    "EXIT_CODE_NETWORK_NOT_ONLINE"
+    "EXIT_CODE_NO_SUCH_NETWORK_DEVICE"
+    "EXIT_CODE_SAME_DEVICE_FOR_WAN_AND_LAN"
+    "EXIT_CODE_INVALID_SERVER_NUMBER"
+    "EXIT_CODE_INVALID_FRIENDLY_NAME"
     "PATH_EXAMNET_CONFIG"
     "PATH_NET_DEVICE_LAN_CONF"
     "PATH_NET_DEVICE_WAN_CONF"
     "PATH_SERVER_OWN_IP"
     "PATH_SERVER_FRIENDLY_NAME_CONF"
+    "PATH_NETPLAN_CONF"
+    "PATH_RESOLVED_CONF"
+    "PATH_RESOLVED_CONF_TEMPLATE"
+    "PATH_DNSMASQ_CONF"
+    "PATH_DNSMASQ_CONF_TEMPLATE"
+    "PATH_DOCKER_DAEMON_CONF"
+    "PATH_DOCKER_DAEMON_CONF_TEMPLATE"
   ) \
   (assert-server-number-valid server-number) \
   (assert-device-exists net-device-wan) \
@@ -73,7 +85,6 @@ apply net-device-wan net-device-lan server-number server-name: \
   just fs empty-directory "$PATH_DNSMASQ"
   just fs write-file "$PATH_DNSMASQ_CONF" "$(envsubst < $PATH_DNSMASQ_CONF_TEMPLATE)"
 
-  # FIXME: Onko tämä oikea kohta?
   just static-dns-records configure {{net-device-wan}} {{server-number}} {{SUBNETS_PER_SERVER}} $SERVER_OWN_IP $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
 
   DOCKER_NETWORK_PREFIX=$(just network get-available-ip-range-for-docker "$SERVER_OWN_IP" "$IP_WAN")

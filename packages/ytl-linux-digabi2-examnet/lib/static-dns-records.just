@@ -10,6 +10,8 @@ configure net-device-wan server-number SUBNETS_PER_SERVER server-own-ip error-co
     "PATH_NAKSU2_CERT"
     "PATH_ETC_HOSTS"
     "PATH_NAKSU2_DOMAIN"
+    "PATH_NAKSU2_WORKDIR"
+    "PATH_DNSMASQ_STATIC_DNS_CONF"
   ) \
   (util::assert-program-exists "openssl")
   #!/usr/bin/env bash
