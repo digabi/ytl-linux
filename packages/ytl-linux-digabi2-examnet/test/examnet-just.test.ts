@@ -198,9 +198,11 @@ describe('examnet-just', () => {
       await assertCalls([])
     })
     test('returns error if discovery returns error', async () => {
+      await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
+      await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '10.0.10.1')
       await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-discovery', mockScriptReturningErrorCode)
-      await runExamnetReturnsExitCode(28, ['eth0', 'eth1', '1', '--discover'], ENV_TEST_MODE)
-      await assertCalls([])
+      await runExamnetReturnsExitCode(22, ['eth0', 'eth1', '1', '--discover'], ENV_TEST_MODE)
+      await assertCalls([callDiscovery(mockDnsmasqDir, mockExamnetConfigDir)])
     })
     test('runs when correct parameters are given', async () => {
       await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
