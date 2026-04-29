@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { test, describe, beforeEach, after } from 'node:test'
+import { test, describe, beforeEach } from 'node:test'
 import { execa } from 'execa'
 import { join } from 'node:path'
 import { mkdtemp, writeFile, chmod, readFile, mkdir, unlink, truncate, access } from 'node:fs/promises'
