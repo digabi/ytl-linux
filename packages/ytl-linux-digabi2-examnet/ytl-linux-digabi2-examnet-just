@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+
+# TODO: Naksu uses exit codes 6, 20, 24, 25 so these should not be changed
+
+export EXIT_CODE_GENERIC_ERROR=1                # Generic unexpected errors
+export EXIT_CODE_MUST_BE_ROOT=2                 # The script must be executed by root or sudo
+export EXIT_CODE_NO_SUCH_NETWORK_DEVICE=3       # The specified network device does not exist
+export EXIT_CODE_SAME_DEVICE_FOR_WAN_AND_LAN=6  # The same network device cannot be used for both LAN and WAN
+export EXIT_CODE_NO_IP_ON_NETWORK_DEVICE=7      # The specified network device does not have an IP address
+export EXIT_CODE_INVALID_SERVER_NUMBER=8        # The specified server number is not an integer between 1 and 24
+export EXIT_CODE_CANNOT_REMOVE_FILES=17         # The script was unable to remove some files
+export EXIT_CODE_CANNOT_REMOVE_CONNECTION=18    # The script was unable to remove some network connection
+export EXIT_CODE_NO_SAN_FOR_SERVER_NUMBER=20    # The certificate does not have a SAN entry for the specified server number
+export EXIT_CODE_CANNOT_START_BOUNCER=21        # The script was unable to start the bouncer daemon
+export EXIT_CODE_DAEMON_EXITED_UNEXPECTEDLY=22  # The bouncer or discovery daemon exited unexpectedly
+export EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE=23 # The script was unable to change the state of a systemd unit
+export EXIT_CODE_MISSING_CERTIFICATE=24         # The certificate file cert.pem is missing
+export EXIT_CODE_INVALID_FRIENDLY_NAME=25       # The specified server friendly name is invalid
+export EXIT_CODE_NETWORK_NOT_ONLINE=27          # WAN device did not become online within expected time
+export EXIT_CODE_CANNOT_RUN_ALIAS_DISCOVERY=28  # The script was unable to run the alias discovery daemon
+export EXIT_CODE_CANNOT_CONFIGURE_EXAMNET=30    # The script was unable to configure the exam network
+
+export NETWORK_DEVICE_FILTER_RE="^docker|^br|^veth|^lo$"
+export DOCKER_BRIDGE_NETWORK_DNS_RESOLVER_IP="172.17.0.1"
+export FRIENDLY_NAME_SEARCH_DOMAIN="internal"
+export DISCOVERY_PORT=26464
+export BOUNCER_PORT=80
+
+export PATH_ETC=${PATH_ETC:-/etc/}
+export PATH_ETC_HOSTS="${PATH_ETC}/hosts"
+export PATH_NETPLAN=${PATH_NETPLAN:-/etc/netplan/}
+export PATH_NETPLAN_CONF="${PATH_NETPLAN}/50-cloud-init.yaml"
+export PATH_TEMPLATES=${PATH_TEMPLATES:-/etc/ytl-linux-digabi2-examnet/templates}
+export PATH_RESOLVED=${PATH_RESOLVED:-/etc/systemd/resolved.conf.d}
+export PATH_RESOLVED_CONF="$PATH_RESOLVED/ytl-linux.conf"
+export PATH_RESOLVED_CONF_TEMPLATE="$PATH_TEMPLATES/resolved.conf.template"
+export PATH_DNSMASQ=${PATH_DNSMASQ:-/etc/dnsmasq.d}
+export PATH_DNSMASQ_CONF="$PATH_DNSMASQ/ytl-linux.conf"
+export PATH_DNSMASQ_CONF_TEMPLATE="$PATH_TEMPLATES/dnsmasq.conf.template"
+export PATH_DNSMASQ_STATIC_DNS_CONF="$PATH_DNSMASQ/ytl-linux-static-dns-records.conf"
+export PATH_DNSMASQ_KTP_ALIASES_CONF="$PATH_DNSMASQ/ytl-linux-ktp-aliases.conf"
+export PATH_DOCKER=${PATH_DOCKER:-/etc/docker}
+export PATH_DOCKER_DAEMON_CONF="$PATH_DOCKER/daemon.json"
+export PATH_DOCKER_DAEMON_CONF_TEMPLATE="$PATH_TEMPLATES/docker-daemon.json.template"
+export PATH_NAKSU2_WORKDIR="${NAKSU2_WORKDIR:-/home/school/.local/share/digabi/naksu2}"
+export PATH_NAKSU2_CERTS_DIR="$PATH_NAKSU2_WORKDIR/certs"
+export PATH_NAKSU2_CERT="$PATH_NAKSU2_CERTS_DIR/cert.pem"
+export PATH_NAKSU2_FULLCHAIN_PEM="$PATH_NAKSU2_CERTS_DIR/fullchain.pem"
+export PATH_NAKSU2_KEY_PEM="$PATH_NAKSU2_CERTS_DIR/key.pem"
+export PATH_NAKSU2_DOMAIN="$PATH_NAKSU2_CERTS_DIR/domain.txt"
+export PATH_EXAMNET_CONFIG="${PATH_EXAMNET_CONFIG:-/etc/ytl-linux-digabi2-examnet/config/}"
+export PATH_SERVER_FRIENDLY_NAME_CONF="$PATH_EXAMNET_CONFIG/server-friendly-name"
+export PATH_NET_DEVICE_LAN_CONF="$PATH_EXAMNET_CONFIG/net-device-lan"
+export PATH_NET_DEVICE_WAN_CONF="$PATH_EXAMNET_CONFIG/net-device-wan"
+export PATH_SERVER_OWN_IP="$PATH_EXAMNET_CONFIG/server-own-ip"
+export PATH_DISCOVERY_DB="$PATH_EXAMNET_CONFIG/discovery.db"
+export PATH_NCSI_HOSTNAMES="$PATH_EXAMNET_CONFIG/ncsi-hostnames"
+export BIN_DIGABI2_EXAMNET_BOUNCER=${BIN_DIGABI2_EXAMNET_BOUNCER:-/usr/local/libexec/ytl-linux-digabi2-examnet/bouncer}
+export BIN_DIGABI2_EXAMNET_DISCOVERY=${BIN_DIGABI2_EXAMNET_DISCOVERY:-/usr/local/libexec/ytl-linux-digabi2-examnet/discovery}
+
+args=()
+recipe="configure"
+
+for arg in "$@"; do
+  case "$arg" in
+    --daemon)
+      recipe="bouncer"
+      ;;
+    --restart-daemon)
+      recipe="restart-bouncer"
+      ;;
+    --discover)
+      recipe="discovery"
+      ;;
+    --remove)
+      recipe="destroy"
+      ;;
+    *)
+      args+=("$arg")
+      ;;
+  esac
+done
+
+just "$recipe" "${args[@]}"

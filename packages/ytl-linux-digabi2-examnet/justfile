@@ -1,0 +1,52 @@
+[private]
+mod mod-bouncer 'lib/bouncer.just'
+[private]
+mod mod-destroy 'lib/destroy.just'
+[private]
+mod mod-discovery 'lib/discovery.just'
+[private]
+mod etc-hosts 'lib/etc-hosts.just'
+[private]
+mod fs 'lib/fs.just'
+[private]
+mod log 'lib/log.just'
+[private]
+mod network 'lib/network.just'
+[private]
+mod mod-restart-bouncer 'lib/restart-bouncer.just'
+[private]
+mod setup 'lib/setup.just'
+[private]
+mod systemd 'lib/systemd.just'
+[private]
+mod static-dns-records 'lib/static-dns-records.just'
+[private]
+mod util 'lib/util.just'
+
+[private]
+default:
+    @just --list --unsorted
+
+bouncer net-device-wan net-device-lan server-number: util::assert-user-is-root
+    just mod-bouncer bouncer {{net-device-wan}} {{net-device-lan}} {{server-number}}
+
+restart-bouncer net-device-wan net-device-lan server-number: util::assert-user-is-root
+    just mod-restart-bouncer restart-bouncer {{net-device-wan}} {{net-device-lan}} {{server-number}}
+
+discovery net-device-wan net-device-lan server-number: util::assert-user-is-root
+    just mod-discovery discovery {{net-device-wan}} {{net-device-lan}} {{server-number}}
+
+configure net-device-wan net-device-lan server-number server-name="": util::assert-user-is-root
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    if [[ -n "{{server-name}}" ]]; then
+      SERVER_NAME="{{server-name}}"
+    else
+      SERVER_NAME=$(just setup get-server-friendly-name "$PATH_NAKSU2_DOMAIN" $EXIT_CODE_INVALID_FRIENDLY_NAME)
+    fi
+
+    just setup apply {{net-device-wan}} {{net-device-lan}} {{server-number}} "$SERVER_NAME"
+
+destroy  net-device-wan net-device-lan server-number: util::assert-user-is-root
+    just mod-destroy destroy {{net-device-wan}} {{net-device-lan}} {{server-number}}
