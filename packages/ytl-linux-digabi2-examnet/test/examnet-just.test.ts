@@ -237,6 +237,8 @@ describe('examnet-just', () => {
         callRmRecursive(`${mockExamnetConfigDir}/*`),
         callRmRecursive(`${mockDnsmasqDir}/*`),
         callSed(`${mockEtcDir}/hosts`),
+        callSudoTeeWriteToFile(`${mockEtcDir}/hosts`),
+        callRm(`${mockEtcDir}/hosts.tmp`),
         callNmcli()
       ])
     })
@@ -257,6 +259,8 @@ describe('examnet-just', () => {
         callRmRecursive(`${mockExamnetConfigDir}/*`),
         callRmRecursive(`${mockDnsmasqDir}/*`),
         callSed(`${mockEtcDir}/hosts`),
+        callSudoTeeWriteToFile(`${mockEtcDir}/hosts`),
+        callRm(`${mockEtcDir}/hosts.tmp`),
         callNmcli(),
         callSystemctl('restart', 'systemd-resolved'),
         callSystemctl('restart', 'dnsmasq'),
@@ -276,6 +280,8 @@ describe('examnet-just', () => {
         callRmRecursive(`${mockExamnetConfigDir}/*`),
         callRmRecursive(`${mockDnsmasqDir}/*`),
         callSed(`${mockEtcDir}/hosts`),
+        callSudoTeeWriteToFile(`${mockEtcDir}/hosts`),
+        callRm(`${mockEtcDir}/hosts.tmp`),
         callNmcli(),
         callSystemctl('restart', 'systemd-resolved'),
         callSystemctl('restart', 'dnsmasq'),
@@ -430,7 +436,9 @@ describe('examnet-just', () => {
         callNmonline(),
         callRmRecursive(`${mockDnsmasqDir}/*`),
         callOpenssl(mockNaksu2CertsDir),
-        callSudoTeeHostsFile(mockEtcDir),
+        callSudoTeeWriteToFile(`${mockEtcDir}/hosts`),
+        callRm(`${mockEtcDir}/hosts.tmp`),
+        callSudoTeeAppendToFile(`${mockEtcDir}/hosts`),
         callStat(mockNaksu2WorkDir),
         callChown(join(mockNaksu2WorkDir, 'certs/domain.txt'))
       ])
@@ -454,7 +462,9 @@ describe('examnet-just', () => {
         callNmonline(),
         callRmRecursive(`${mockDnsmasqDir}/*`),
         callOpenssl(mockNaksu2CertsDir),
-        callSudoTeeHostsFile(mockEtcDir),
+        callSudoTeeWriteToFile(`${mockEtcDir}/hosts`),
+        callRm(`${mockEtcDir}/hosts.tmp`),
+        callSudoTeeAppendToFile(`${mockEtcDir}/hosts`),
         callStat(mockNaksu2WorkDir),
         callChown(join(mockNaksu2WorkDir, 'certs/domain.txt')),
         callSystemctl('restart', 'docker'),
@@ -496,7 +506,9 @@ describe('examnet-just', () => {
         callNmonline(),
         callRmRecursive(`${mockDnsmasqDir}/*`),
         callOpenssl(mockNaksu2CertsDir),
-        callSudoTeeHostsFile(mockEtcDir),
+        callSudoTeeWriteToFile(`${mockEtcDir}/hosts`),
+        callRm(`${mockEtcDir}/hosts.tmp`),
+        callSudoTeeAppendToFile(`${mockEtcDir}/hosts`),
         callStat(mockNaksu2WorkDir),
         callChown(join(mockNaksu2WorkDir, 'certs/domain.txt')),
         callSystemctl('restart', 'docker'),
@@ -884,7 +896,7 @@ function callRmRecursive(path: string) {
 function callSed(path: string) {
   return {
     cmd: 'sed',
-    argv: ['-i', '', '/^# BEGIN SCHOOL DOMAIN ENTRIES$/,/^# END SCHOOL DOMAIN ENTRIES$/d', path]
+    argv: ['/^# BEGIN SCHOOL DOMAIN ENTRIES$/,/^# END SCHOOL DOMAIN ENTRIES$/d', path]
   }
 }
 
@@ -896,8 +908,12 @@ function callOpenssl(path: string) {
   return { cmd: 'openssl', argv: ['x509', '-in', `${path}/cert.pem`, '-text', '-noout'] }
 }
 
-function callSudoTeeHostsFile(path: string) {
-  return { cmd: 'sudo', argv: ['tee', '-a', `${path}/hosts`] }
+function callSudoTeeAppendToFile(file: string) {
+  return { cmd: 'sudo', argv: ['tee', '-a', file] }
+}
+
+function callSudoTeeWriteToFile(file: string) {
+  return { cmd: 'sudo', argv: ['tee', file] }
 }
 
 // These are not yet in use:
