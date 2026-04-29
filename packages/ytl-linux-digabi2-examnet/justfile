@@ -43,7 +43,7 @@ configure net-device-wan net-device-lan server-number server-name="": util::asse
     if [[ -n "{{server-name}}" ]]; then
       SERVER_NAME="{{server-name}}"
     else
-      SERVER_NAME=$(just setup get-server-friendly-name "$PATH_NAKSU2_DOMAIN" $EXIT_CODE_INVALID_SERVER_NAME)
+      SERVER_NAME=$(just setup get-server-friendly-name "$PATH_NAKSU2_DOMAIN" $EXIT_CODE_INVALID_FRIENDLY_NAME)
     fi
 
     just setup apply {{net-device-wan}} {{net-device-lan}} {{server-number}} "$SERVER_NAME"

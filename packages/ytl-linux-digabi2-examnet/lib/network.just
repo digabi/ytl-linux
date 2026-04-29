@@ -43,7 +43,7 @@ get-available-ip-range-for-docker +reserved-ips:
   done
 
   just log error "Could not find an available IP range for Docker"
-  exit 1
+  exit $EXIT_CODE_GENERIC_ERROR
 
 configure-networkmanager connection-name interface-name ip-and-netmask:
   #!/usr/bin/env bash
@@ -52,19 +52,25 @@ configure-networkmanager connection-name interface-name ip-and-netmask:
   just log info "Configuring NetworkManager connection '{{connection-name}}' for interface '{{interface-name}}' with IP and netmask '{{ip-and-netmask}}'"
 
   just log debug "Checking if NetworkManager connection '{{connection-name}}' already exists"
-  if nmcli connection show "{{connection-name}}" &> /dev/null; then
+  if nmcli connection show "{{connection-name}}" > /dev/null; then
     just log debug "NetworkManager connection '{{connection-name}}' already exists, deleting it before creating a new one"
-    nmcli connection delete "{{connection-name}}"
+    if ! nmcli connection delete "{{connection-name}}"; then
+      just log error "Failed to delete existing NetworkManager connection '{{connection-name}}'"
+      exit $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
+    fi
   fi
 
   just log debug "Adding NetworkManager connection '{{connection-name}}' for interface '{{interface-name}}' with IP and netmask '{{ip-and-netmask}}'"
-  nmcli connection add \
-    type ethernet \
-    ifname "{{interface-name}}" \
-    con-name "{{connection-name}}" \
-    ip4 "{{ip-and-netmask}}" \
-    autoconnect yes \
-    save yes
+  if ! nmcli connection add \
+        type ethernet \
+        ifname "{{interface-name}}" \
+        con-name "{{connection-name}}" \
+        ip4 "{{ip-and-netmask}}" \
+        autoconnect yes \
+        save yes; then
+    just log error "Failed to add NetworkManager connection '{{connection-name}}' for interface '{{interface-name}}' with IP and netmask '{{ip-and-netmask}}'"
+    exit $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
+  fi
 
   just log debug "Disabling IPv6 for NetworkManager connection '{{connection-name}}'"
   nmcli connection modify "{{connection-name}}" ipv6.method disabled

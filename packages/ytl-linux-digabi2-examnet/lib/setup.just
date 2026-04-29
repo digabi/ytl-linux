@@ -13,6 +13,7 @@ EXIT_CODE_CANNOT_CONFIGURE_EXAMNET := env('EXIT_CODE_CANNOT_CONFIGURE_EXAMNET')
 
 apply net-device-wan net-device-lan server-number server-name: \
   (util::assert-envs-set EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
+    "EXIT_CODE_NO_IP_ON_NETWORK_DEVICE"
     "PATH_EXAMNET_CONFIG"
     "PATH_NET_DEVICE_LAN_CONF"
     "PATH_NET_DEVICE_WAN_CONF"
@@ -20,14 +21,20 @@ apply net-device-wan net-device-lan server-number server-name: \
     "PATH_SERVER_FRIENDLY_NAME_CONF"
   ) \
   (assert-server-number-valid server-number) \
-  (assert-server-name-valid server-name) \
   (assert-device-exists net-device-wan) \
   (assert-device-exists net-device-lan) \
+  (assert-server-name-valid server-name) \
   (assert-devices-different net-device-wan net-device-lan)
   #!/usr/bin/env bash
   set -euo pipefail
 
   just log info "Configuring examnet with WAN device '{{net-device-wan}}', LAN device '{{net-device-lan}}', server number {{server-number}} and server name '{{server-name}}'"
+
+  IP_WAN=$(just network get-device-ipv4-address "{{net-device-wan}}" $EXIT_CODE_NO_IP_ON_NETWORK_DEVICE)
+  just log debug "WAN device {{net-device-wan}} has IP address '$IP_WAN'"
+
+  IP_LAN_PREFIX=$(just network get-lan-ip-prefix "$IP_WAN")
+  just log debug "Calculated LAN IP prefix '$IP_LAN_PREFIX'"
 
   IP_LAN=$(just network get-device-ipv4-address "{{net-device-lan}}")
   if [ -n "$IP_LAN" ]; then
@@ -35,10 +42,6 @@ apply net-device-wan net-device-lan server-number server-name: \
   else
     just log debug "LAN device {{net-device-lan}} does not have an IP address yet"
   fi
-  IP_WAN=$(just network get-device-ipv4-address "{{net-device-wan}}" $EXIT_CODE_WAN_WITH_NO_IP)
-  just log debug "WAN device {{net-device-wan}} has IP address '$IP_WAN'"
-  IP_LAN_PREFIX=$(just network get-lan-ip-prefix "$IP_WAN")
-  just log debug "Calculated LAN IP prefix '$IP_LAN_PREFIX'"
 
   export IP_WAN
   export IP_LAN_PREFIX
@@ -57,12 +60,13 @@ apply net-device-wan net-device-lan server-number server-name: \
 
   just network configure-networkmanager "yo-{{net-device-lan}}" "{{net-device-lan}}" "$SERVER_OWN_IP/16"
 
+  just log debug "Checking if netplan configuration file '$PATH_NETPLAN_CONF' exists and removing it if it does, to avoid conflicts with NetworkManager"
   if [[ -f "$PATH_NETPLAN_CONF" ]]; then
-    rm -f "$PATH_NETPLAN_CONF"
+    just fs remove-file "$PATH_NETPLAN_CONF"
   fi
 
   just systemd restart NetworkManager
-  just network wait-for-network-online $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
+  just network wait-for-network-online $EXIT_CODE_NETWORK_NOT_ONLINE
 
   just fs write-file "$PATH_RESOLVED_CONF" "$(envsubst < $PATH_RESOLVED_CONF_TEMPLATE)"
 
@@ -80,13 +84,19 @@ apply net-device-wan net-device-lan server-number server-name: \
   export DOCKER_NETWORK_DNS_RESOLVER_IP
   export DOCKER_NETWORK_POOL_BASE_IP
 
-  just fs write-file "$PATH_DOCKER_DAEMON_CONF" "$(envsubst < $PATH_DOCKER_DAEMON_CONF_TEMPLATE)"
+  if ! DOCKER_DAEMON_CONF="$(envsubst < $PATH_DOCKER_DAEMON_CONF_TEMPLATE)"; then
+    just log error "Failed to substitute variables into Docker daemon configuration template"
+    exit $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
+  fi
+
+  just fs write-file "$PATH_DOCKER_DAEMON_CONF" "$DOCKER_DAEMON_CONF"
+  just systemd restart docker
 
   # Enable relevant systemd services
   just systemd enable ytl-linux-digabi2-examnet
   just systemd enable dnsmasq
-  just systemd enable ytl-linux-digabi2-examnet-discovery.timer
   just systemd enable ytl-linux-digabi2-examnet-discovery.service
+  just systemd enable ytl-linux-digabi2-examnet-discovery.timer
 
   # (Re)start services
   just systemd restart systemd-resolved
@@ -113,7 +123,7 @@ assert-device-exists device:
 
   just log debug "Checking if network device {{device}} exists"
 
-  if ! ip link show "{{device}}" &> /dev/null; then
+  if ! ip link show "{{device}}" > /dev/null; then
     just log error "Network device {{device}} does not exist"
     exit $EXIT_CODE_NO_SUCH_NETWORK_DEVICE
   fi
@@ -151,7 +161,7 @@ assert-server-name-valid server-name:
 
   if [[ ! "{{server-name}}" =~ ^[a-z0-9]+$ ]]; then
     just log error "Server name may only contain lowercase letters a-z and digits 0-9"
-    exit $EXIT_CODE_INVALID_SERVER_NAME
+    exit $EXIT_CODE_INVALID_FRIENDLY_NAME
   fi
 
 [private]

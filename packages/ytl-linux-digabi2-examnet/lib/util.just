@@ -17,7 +17,7 @@ assert-program-exists program-name:
 
   if ! command -v "{{program-name}}" &> /dev/null; then
     just log error "ERROR: Required program '{{program-name}}' is not installed or not in PATH"
-    exit 1
+    exit $EXIT_CODE_GENERIC_ERROR
   fi
 
 [private]

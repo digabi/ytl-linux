@@ -6,7 +6,7 @@ import { mkdtemp, writeFile, chmod, readFile, mkdir, unlink, truncate, access } 
 import { tmpdir } from 'node:os'
 
 const ENV_TEST_MODE = { TEST_MODE: 'test' }
-describe('examnet-just', async () => {
+describe('examnet-just', () => {
   let callsLog
   let mockBinDir
   let mockEtcDir
@@ -45,89 +45,77 @@ describe('examnet-just', async () => {
     test('returns error if WAN device is missing', () => {
       test('as non-root-user', async () => {
         await runExamnetReturnsExitCode(1, [])
-        await assertCalls([callStat(mockNaksu2WorkDir)])
+        await assertCalls([])
       })
       test('when accepcting non-root-user', async () => {
         await runExamnetReturnsExitCode(1, [], ENV_TEST_MODE)
-        await assertCalls([callStat(mockNaksu2WorkDir)])
+        await assertCalls([])
       })
     })
     test('returns error if LAN device is missing', () => {
       test('as non-root-user', async () => {
         await runExamnetReturnsExitCode(1, ['eth0'])
-        await assertCalls([callStat(mockNaksu2WorkDir)])
+        await assertCalls([])
       })
       test('when accepcting non-root-user', async () => {
         await runExamnetReturnsExitCode(1, ['eth0'], ENV_TEST_MODE)
-        await assertCalls([callStat(mockNaksu2WorkDir)])
+        await assertCalls([])
       })
     })
     test('returns error if server number is missing', () => {
       test('as non-root-user', async () => {
         await runExamnetReturnsExitCode(1, ['eth0', 'eth1'])
-        await assertCalls([callStat(mockNaksu2WorkDir)])
+        await assertCalls([])
       })
 
       test('when accepcting non-root-user', async () => {
         await runExamnetReturnsExitCode(1, ['eth0', 'eth1'], ENV_TEST_MODE)
-        await assertCalls([callStat(mockNaksu2WorkDir)])
+        await assertCalls([])
       })
     })
-    // This is no longer an error
-    // test('returns error if server friendly name is missing', () => {
-    //   test('as non-root-user', async () => {
-    //     await runExamnetReturnsExitCode(1, ['eth0', 'eth1', '1'])
-    //     await assertCalls([callStat(mockNaksu2WorkDir)])
-    //   })
-    //
-    //   test('when accepcting non-root-user', async () => {
-    //     await runExamnetReturnsExitCode(1, ['eth0', 'eth1', '1'], ENV_TEST_MODE)
-    //     await assertCalls([callStat(mockNaksu2WorkDir)])
-    //   })
-    // })
     test('returns error if server number is wrong:', () => {
       test('invalid number', async () => {
         await runExamnetReturnsExitCode(8, ['eth0', 'eth1', 'invalidNumber'], ENV_TEST_MODE)
-        await assertCalls([callStat(mockNaksu2WorkDir)])
+        await assertCalls([])
       })
       test('too small integer (0)', async () => {
         await runExamnetReturnsExitCode(8, ['eth0', 'eth1', '0'], ENV_TEST_MODE)
-        await assertCalls([callStat(mockNaksu2WorkDir)])
+        await assertCalls([])
       })
       test('too large integer (25)', async () => {
         await runExamnetReturnsExitCode(8, ['eth0', 'eth1', '25'], ENV_TEST_MODE)
-        await assertCalls([callStat(mockNaksu2WorkDir)])
+        await assertCalls([])
       })
     })
     test('returns error if script is not called as root user', async () => {
       await runExamnetReturnsExitCode(2, ['eth0', 'eth1', '1'])
-      await assertCalls([callStat(mockNaksu2WorkDir)])
+      await assertCalls([])
     })
   })
 
   describe('bouncer (--daemon)', () => {
     test('returns error if net device lan configuration is missing', async () => {
       await runExamnetReturnsExitCode(21, ['eth0', 'eth1', '1', '--daemon'], ENV_TEST_MODE)
-      await assertCalls([callStat(mockNaksu2WorkDir)])
+      await assertCalls([])
     })
     test('returns error if server own ip configuration is missing', async () => {
       await writeToTempDir(mockExamnetConfigDir, 'net-device-lan', 'eth0')
       await runExamnetReturnsExitCode(21, ['eth1', 'eth0', '1', '--daemon'], ENV_TEST_MODE)
-      await assertCalls([callStat(mockNaksu2WorkDir)])
+      await assertCalls([])
     })
     test('returns error if server friendly name configuration is missing', async () => {
       await writeToTempDir(mockExamnetConfigDir, 'net-device-lan', 'eth0')
       await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '10.0.10.1')
       await runExamnetReturnsExitCode(21, ['eth1', 'eth0', '1', '--daemon'], ENV_TEST_MODE)
-      await assertCalls([callStat(mockNaksu2WorkDir)])
+      await assertCalls([])
     })
     test('returns error if LAN device does not have IP address', async () => {
       await writeToTempDir(mockExamnetConfigDir, 'net-device-lan', 'eth0')
       await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '10.0.10.1')
       await writeToTempDir(mockExamnetConfigDir, 'server-friendly-name', 'foobar')
       await writeToTempDir(mockBinDir, 'ip', mockScriptWithNoOutput)
-      await runExamnetReturnsExitCode(21, ['eth1', 'eth0', '1', '--daemon'], ENV_TEST_MODE)
-      await assertCalls([callStat(mockNaksu2WorkDir), callIpAddrShow('eth0')])
+      await runExamnetReturnsExitCode(7, ['eth1', 'eth0', '1', '--daemon'], ENV_TEST_MODE)
+      await assertCalls([callIpAddrShow('eth0')])
     })
     test('returns error if domain.txt is missing', async () => {
       await writeToTempDir(mockExamnetConfigDir, 'net-device-lan', 'eth0')
@@ -135,7 +123,7 @@ describe('examnet-just', async () => {
       await writeToTempDir(mockExamnetConfigDir, 'server-friendly-name', 'foobar')
       await unlink(join(mockNaksu2CertsDir, 'domain.txt'))
       await runExamnetReturnsExitCode(21, ['eth1', 'eth0', '1', '--daemon'], ENV_TEST_MODE)
-      await assertCalls([callStat(mockNaksu2WorkDir)])
+      await assertCalls([])
     })
     test('returns error if domain.txt is empty', async () => {
       await writeToTempDir(mockExamnetConfigDir, 'net-device-lan', 'eth0')
@@ -143,7 +131,7 @@ describe('examnet-just', async () => {
       await writeToTempDir(mockExamnetConfigDir, 'server-friendly-name', 'foobar')
       await writeToTempDir(mockNaksu2CertsDir, 'domain.txt', '')
       await runExamnetReturnsExitCode(21, ['eth1', 'eth0', '1', '--daemon'], ENV_TEST_MODE)
-      await assertCalls([callStat(mockNaksu2WorkDir), callIpAddrShow('eth0')])
+      await assertCalls([callIpAddrShow('eth0')])
     })
     test('returns error if daemon exits unexpectedly', async () => {
       await writeToTempDir(mockExamnetConfigDir, 'net-device-lan', 'eth0')
@@ -151,7 +139,7 @@ describe('examnet-just', async () => {
       await writeToTempDir(mockExamnetConfigDir, 'server-friendly-name', 'foobar')
       await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-bouncer', mockScriptWithNoOutput)
       await runExamnetReturnsExitCode(22, ['eth1', 'eth0', '1', '--daemon'], ENV_TEST_MODE)
-      await assertCalls([callStat(mockNaksu2WorkDir), callIpAddrShow('eth0'), callBouncer(mockNaksu2CertsDir)])
+      await assertCalls([callIpAddrShow('eth0'), callBouncer(mockNaksu2CertsDir)])
     })
     test('returns error if bouncer returns error', async () => {
       await writeToTempDir(mockExamnetConfigDir, 'net-device-lan', 'eth0')
@@ -159,14 +147,14 @@ describe('examnet-just', async () => {
       await writeToTempDir(mockExamnetConfigDir, 'server-friendly-name', 'foobar')
       await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-bouncer', mockScriptReturningErrorCode)
       await runExamnetReturnsExitCode(22, ['eth1', 'eth0', '1', '--daemon'], ENV_TEST_MODE)
-      await assertCalls([callStat(mockNaksu2WorkDir), callIpAddrShow('eth0'), callBouncer(mockNaksu2CertsDir)])
+      await assertCalls([callIpAddrShow('eth0'), callBouncer(mockNaksu2CertsDir)])
     })
-    test('returns error if lan ip does not match what is configured', async () => {
+    test('returns error if LAN IP does not match what is configured', async () => {
       await writeToTempDir(mockExamnetConfigDir, 'net-device-lan', 'eth0')
       await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '10.0.20.1')
       await writeToTempDir(mockExamnetConfigDir, 'server-friendly-name', 'foobar')
       await runExamnetReturnsExitCode(21, ['eth1', 'eth0', '1', '--daemon'], ENV_TEST_MODE)
-      await assertCalls([callStat(mockNaksu2WorkDir), callIpAddrShow('eth0')])
+      await assertCalls([callIpAddrShow('eth0')])
     })
     test('starts when correct parameters are given', async () => {
       await writeToTempDir(mockExamnetConfigDir, 'net-device-lan', 'eth0')
@@ -177,7 +165,7 @@ describe('examnet-just', async () => {
       const subprocess = runExamnet('eth1', 'eth0', '1', '--daemon')
       await waitForLogEntry(callsLog, '"ytl-linux-digabi2-bouncer"')
       await killSubprocess(subprocess)
-      await assertCalls([callStat(mockNaksu2WorkDir), callIpAddrShow('eth0'), callBouncer(mockNaksu2CertsDir)])
+      await assertCalls([callIpAddrShow('eth0'), callBouncer(mockNaksu2CertsDir)])
     })
   })
 
@@ -185,12 +173,11 @@ describe('examnet-just', async () => {
     test('returns error when systemctl fails', async () => {
       await writeToTempDir(mockBinDir, 'systemctl', mockScriptReturningErrorCode)
       await runExamnetReturnsExitCode(23, ['eth1', 'eth0', '1', '--restart-daemon'], ENV_TEST_MODE)
-      await assertCalls([callStat(mockNaksu2WorkDir), callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet')])
+      await assertCalls([callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet')])
     })
     test('runs when correct parameters are given', async () => {
       await runExamnet('eth1', 'eth0', '1', '--restart-daemon')
       await assertCalls([
-        callStat(mockNaksu2WorkDir),
         callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet'),
         callSystemctl('restart', 'ytl-linux-digabi2-examnet'),
         callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet-discovery.timer'),
@@ -204,24 +191,22 @@ describe('examnet-just', async () => {
   describe('discovery (--discover)', () => {
     test('returns error if static dns configuration is missing', async () => {
       await runExamnetReturnsExitCode(28, ['eth0', 'eth1', '1', '--discover'], ENV_TEST_MODE)
-      await assertCalls([callStat(mockNaksu2WorkDir)])
+      await assertCalls([])
     })
     test('returns error if server own IP file is missing', async () => {
-      await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
       await runExamnetReturnsExitCode(28, ['eth0', 'eth1', '1', '--discover'], ENV_TEST_MODE)
-      await assertCalls([callStat(mockNaksu2WorkDir)])
+      await assertCalls([])
     })
     test('returns error if discovery returns error', async () => {
-      await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
       await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-discovery', mockScriptReturningErrorCode)
       await runExamnetReturnsExitCode(28, ['eth0', 'eth1', '1', '--discover'], ENV_TEST_MODE)
-      await assertCalls([callStat(mockNaksu2WorkDir)])
+      await assertCalls([])
     })
     test('runs when correct parameters are given', async () => {
       await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
       await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '10.0.10.1')
       await runExamnet('eth0', 'eth1', '1', '--discover')
-      await assertCalls([callStat(mockNaksu2WorkDir), callDiscovery(mockDnsmasqDir, mockExamnetConfigDir)])
+      await assertCalls([callDiscovery(mockDnsmasqDir, mockExamnetConfigDir)])
     })
   })
 
@@ -231,7 +216,6 @@ describe('examnet-just', async () => {
       await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '10.0.10.1')
       await runExamnetReturnsExitCode(17, ['eth0', 'eth1', '1', '--remove'], ENV_TEST_MODE)
       await assertCalls([
-        callStat(mockNaksu2WorkDir),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet', '--now'),
         callSystemctl('disable', 'dnsmasq', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.timer', '--now'),
@@ -244,7 +228,6 @@ describe('examnet-just', async () => {
       await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '10.0.10.1')
       await runExamnetReturnsExitCode(18, ['eth0', 'eth1', '1', '--remove'], ENV_TEST_MODE)
       await assertCalls([
-        callStat(mockNaksu2WorkDir),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet', '--now'),
         callSystemctl('disable', 'dnsmasq', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.timer', '--now'),
@@ -258,15 +241,13 @@ describe('examnet-just', async () => {
     test('returns error if disabling services fails', async () => {
       await writeToTempDir(mockBinDir, 'systemctl', mockScriptReturningErrorCode)
       await runExamnetReturnsExitCode(23, ['eth0', 'eth1', '1', '--remove'], ENV_TEST_MODE)
-      await assertCalls([callStat(mockNaksu2WorkDir), callSystemctl('disable', 'ytl-linux-digabi2-examnet', '--now')])
+      await assertCalls([callSystemctl('disable', 'ytl-linux-digabi2-examnet', '--now')])
     })
     test('returns error if waiting for network online fails', async () => {
       await writeToTempDir(mockBinDir, 'nm-online', mockScriptReturningErrorCode)
       await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '10.0.10.1')
-      await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
       await runExamnetReturnsExitCode(27, ['eth0', 'eth1', '1', '--remove'], ENV_TEST_MODE)
       await assertCalls([
-        callStat(mockNaksu2WorkDir),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet', '--now'),
         callSystemctl('disable', 'dnsmasq', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.timer', '--now'),
@@ -284,10 +265,8 @@ describe('examnet-just', async () => {
     })
     test('runs when correct parameters are given', async () => {
       await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '10.0.10.1')
-      await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
       await runExamnet('eth0', 'eth1', '1', '--remove')
       await assertCalls([
-        callStat(mockNaksu2WorkDir),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet', '--now'),
         callSystemctl('disable', 'dnsmasq', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.timer', '--now'),
@@ -306,52 +285,45 @@ describe('examnet-just', async () => {
   })
 
   describe('setup (no command flag)', () => {
+    test('returns error if WAN device does not exist', async () => {
+      await writeToTempDir(mockBinDir, 'ip', mockScriptReturningErrorCode)
+      await runExamnetReturnsExitCode(3, ['eth1', 'eth0', '1'], ENV_TEST_MODE)
+      await assertCalls([callIpLinkShow('eth1')])
+    })
     test('returns error if WAN device does not have an IP address', async () => {
-      await runExamnetReturnsExitCode(15, ['eth1', 'eth0', '1'], ENV_TEST_MODE)
-      await assertCalls([
-        callStat(mockNaksu2WorkDir),
-        callIpLinkShow('eth1'),
-        callIpLinkShow('eth0'),
-        callIpAddrShow('eth1')
-      ])
+      await runExamnetReturnsExitCode(7, ['eth1', 'eth0', '1'], ENV_TEST_MODE)
+      await assertCalls([callIpLinkShow('eth1'), callIpLinkShow('eth0'), callIpAddrShow('eth1')])
     })
     test('returns error if same devices is used for WAN and LAN', async () => {
       await writeToTempDir(mockBinDir, 'ip', mockScriptWithNoOutput)
       await runExamnetReturnsExitCode(6, ['eth0', 'eth0', '1'], ENV_TEST_MODE)
-      await assertCalls([callStat(mockNaksu2WorkDir), callIpLinkShow('eth0'), callIpLinkShow('eth0')])
+      await assertCalls([callIpLinkShow('eth0')])
     })
     test('returns error if server friendly name is invalid', async () => {
       await runExamnetReturnsExitCode(25, ['eth0', 'eth1', '1', 'väärin-nimetty'], ENV_TEST_MODE)
-      await assertCalls([
-        callStat(mockNaksu2WorkDir),
-        callIpLinkShow('eth0'),
-        callIpLinkShow('eth1'),
-        callIpAddrShow('eth0'),
-        callIpAddrShow('eth1')
-      ])
+      await assertCalls([callIpLinkShow('eth0'), callIpLinkShow('eth1')])
     })
     test('returns error if network device cannot be configured', async () => {
       await writeToTempDir(mockBinDir, 'nmcli', mockScriptReturningErrorCode)
-      await runExamnetReturnsExitCode(12, ['eth0', 'eth1', '1'], ENV_TEST_MODE)
+      await runExamnetReturnsExitCode(30, ['eth0', 'eth1', '1'], ENV_TEST_MODE)
       await assertCalls([
-        callStat(mockNaksu2WorkDir),
         callIpLinkShow('eth0'),
         callIpLinkShow('eth1'),
         callIpAddrShow('eth0'),
         callIpAddrShow('eth1'),
-        callNmicliConnectionDelete('yo-eth1'),
+        callNmicliConnectionShow('yo-eth1'),
         callNmicliConnectionAdd('yo-eth1', '192.168.10.1/16')
       ])
     })
     test('returns error if NetworkManager cannot be restarted', async () => {
       await writeToTempDir(mockBinDir, 'systemctl', mockScriptReturningErrorCode)
-      await runExamnetReturnsExitCode(14, ['eth0', 'eth1', '1'], ENV_TEST_MODE)
+      await runExamnetReturnsExitCode(23, ['eth0', 'eth1', '1'], ENV_TEST_MODE)
       await assertCalls([
-        callStat(mockNaksu2WorkDir),
         callIpLinkShow('eth0'),
         callIpLinkShow('eth1'),
         callIpAddrShow('eth0'),
         callIpAddrShow('eth1'),
+        callNmicliConnectionShow('yo-eth1'),
         callNmicliConnectionDelete('yo-eth1'),
         callNmicliConnectionAdd('yo-eth1', '192.168.10.1/16'),
         callNmicliConnectionModify('yo-eth1'),
@@ -361,15 +333,14 @@ describe('examnet-just', async () => {
       ])
     })
     test('returns error if netplan configuration cannot be removed', async () => {
-      await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
       await writeToTempDir(mockBinDir, 'rm', mockScriptReturningErrorCode)
       await runExamnetReturnsExitCode(17, ['eth0', 'eth1', '1'], ENV_TEST_MODE)
       await assertCalls([
-        callStat(mockNaksu2WorkDir),
         callIpLinkShow('eth0'),
         callIpLinkShow('eth1'),
         callIpAddrShow('eth0'),
         callIpAddrShow('eth1'),
+        callNmicliConnectionShow('yo-eth1'),
         callNmicliConnectionDelete('yo-eth1'),
         callNmicliConnectionAdd('yo-eth1', '192.168.10.1/16'),
         callNmicliConnectionModify('yo-eth1'),
@@ -379,34 +350,32 @@ describe('examnet-just', async () => {
     })
     test('returns error if dnsmasq settings cannot be removed', async () => {
       await unlink(join(mockNetplanConfDir, '50-cloud-init.yaml'))
-      await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
       await writeToTempDir(mockBinDir, 'rm', mockScriptReturningErrorCode)
       await runExamnetReturnsExitCode(17, ['eth0', 'eth1', '1'], ENV_TEST_MODE)
       await assertCalls([
-        callStat(mockNaksu2WorkDir),
         callIpLinkShow('eth0'),
         callIpLinkShow('eth1'),
         callIpAddrShow('eth0'),
         callIpAddrShow('eth1'),
+        callNmicliConnectionShow('yo-eth1'),
         callNmicliConnectionDelete('yo-eth1'),
         callNmicliConnectionAdd('yo-eth1', '192.168.10.1/16'),
         callNmicliConnectionModify('yo-eth1'),
         callNmicliConnectionUp('yo-eth1'),
         callSystemctl('restart', 'NetworkManager'),
         callNmonline(),
-        callRm(`${mockDnsmasqDir}/ytl-linux-static-dns-records.conf`)
+        callRmRecursive(`${mockDnsmasqDir}/*`)
       ])
     })
     test('returns error if cert.pem is missing', async () => {
-      await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
       await unlink(join(mockNaksu2CertsDir, 'cert.pem'))
       await runExamnetReturnsExitCode(24, ['eth0', 'eth1', '1'], ENV_TEST_MODE)
       await assertCalls([
-        callStat(mockNaksu2WorkDir),
         callIpLinkShow('eth0'),
         callIpLinkShow('eth1'),
         callIpAddrShow('eth0'),
         callIpAddrShow('eth1'),
+        callNmicliConnectionShow('yo-eth1'),
         callNmicliConnectionDelete('yo-eth1'),
         callNmicliConnectionAdd('yo-eth1', '192.168.10.1/16'),
         callNmicliConnectionModify('yo-eth1'),
@@ -414,21 +383,20 @@ describe('examnet-just', async () => {
         callRm(`${mockNetplanConfDir}/50-cloud-init.yaml`),
         callSystemctl('restart', 'NetworkManager'),
         callNmonline(),
-        callRm(`${mockDnsmasqDir}/ytl-linux-static-dns-records.conf`)
+        callRmRecursive(`${mockDnsmasqDir}/*`)
       ])
     })
-    test('returns error if certificate did not contain valid domain for server number', async () => {
+    test('returns error if certificate does not contain valid domain for server number', async () => {
       // use real sed to parse cert.pem
       await unlink(join(mockBinDir, 'sed'))
-      await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
       await writeToTempDir(mockBinDir, 'openssl', mockScriptWithNoOutput)
       await runExamnetReturnsExitCode(20, ['eth0', 'eth1', '1'], ENV_TEST_MODE)
       await assertCalls([
-        callStat(mockNaksu2WorkDir),
         callIpLinkShow('eth0'),
         callIpLinkShow('eth1'),
         callIpAddrShow('eth0'),
         callIpAddrShow('eth1'),
+        callNmicliConnectionShow('yo-eth1'),
         callNmicliConnectionDelete('yo-eth1'),
         callNmicliConnectionAdd('yo-eth1', '192.168.10.1/16'),
         callNmicliConnectionModify('yo-eth1'),
@@ -436,22 +404,21 @@ describe('examnet-just', async () => {
         callRm(`${mockNetplanConfDir}/50-cloud-init.yaml`),
         callSystemctl('restart', 'NetworkManager'),
         callNmonline(),
-        callRm(`${mockDnsmasqDir}/ytl-linux-static-dns-records.conf`),
+        callRmRecursive(`${mockDnsmasqDir}/*`),
         callOpenssl(mockNaksu2CertsDir)
       ])
     })
     test('returns error if configuring docker fails', async () => {
       // use real sed to parse cert.pem
       await unlink(join(mockBinDir, 'sed'))
-      await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
-      await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-docker-configure.sh', mockScriptReturningErrorCode)
-      await runExamnetReturnsExitCode(29, ['eth0', 'eth1', '1'], ENV_TEST_MODE)
+      await unlink(join(mockTemplatesDir, 'docker-daemon.json.template'))
+      await runExamnetReturnsExitCode(30, ['eth0', 'eth1', '1'], ENV_TEST_MODE)
       await assertCalls([
-        callStat(mockNaksu2WorkDir),
         callIpLinkShow('eth0'),
         callIpLinkShow('eth1'),
         callIpAddrShow('eth0'),
         callIpAddrShow('eth1'),
+        callNmicliConnectionShow('yo-eth1'),
         callNmicliConnectionDelete('yo-eth1'),
         callNmicliConnectionAdd('yo-eth1', '192.168.10.1/16'),
         callNmicliConnectionModify('yo-eth1'),
@@ -459,34 +426,23 @@ describe('examnet-just', async () => {
         callRm(`${mockNetplanConfDir}/50-cloud-init.yaml`),
         callSystemctl('restart', 'NetworkManager'),
         callNmonline(),
-        callRm(`${mockDnsmasqDir}/ytl-linux-static-dns-records.conf`),
-        callSystemctl('enable', 'ytl-linux-digabi2-examnet'),
-        callSystemctl('enable', 'dnsmasq'),
-        callSystemctl('enable', 'ytl-linux-digabi2-examnet-discovery.service'),
-        callSystemctl('enable', 'ytl-linux-digabi2-examnet-discovery.timer'),
-        callSystemctl('restart', 'systemd-resolved'),
-        callSystemctl('is-enabled', 'dnsmasq'),
-        callSystemctl('restart', 'dnsmasq'),
-        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet'),
-        callSystemctl('restart', 'ytl-linux-digabi2-examnet'),
-        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet-discovery.timer'),
-        callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.timer'),
-        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet-discovery.service'),
-        callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.service'),
-        { cmd: 'ytl-linux-digabi2-docker-configure.sh', argv: ['10.0.10.1', '192.168.10.1'] }
+        callRmRecursive(`${mockDnsmasqDir}/*`),
+        callOpenssl(mockNaksu2CertsDir),
+        callSudoTeeHostsFile(mockEtcDir),
+        callStat(mockNaksu2WorkDir),
+        callChown(join(mockNaksu2WorkDir, 'certs/domain.txt'))
       ])
     })
     test('runs when correct parameters are given', async () => {
       // use real sed to parse cert.pem
       await unlink(join(mockBinDir, 'sed'))
-      await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
       await runExamnet('eth0', 'eth1', '1')
       await assertCalls([
-        callStat(mockNaksu2WorkDir),
         callIpLinkShow('eth0'),
         callIpLinkShow('eth1'),
         callIpAddrShow('eth0'),
         callIpAddrShow('eth1'),
+        callNmicliConnectionShow('yo-eth1'),
         callNmicliConnectionDelete('yo-eth1'),
         callNmicliConnectionAdd('yo-eth1', '192.168.10.1/16'),
         callNmicliConnectionModify('yo-eth1'),
@@ -494,21 +450,21 @@ describe('examnet-just', async () => {
         callRm(`${mockNetplanConfDir}/50-cloud-init.yaml`),
         callSystemctl('restart', 'NetworkManager'),
         callNmonline(),
-        callRm(`${mockDnsmasqDir}/ytl-linux-static-dns-records.conf`),
+        callRmRecursive(`${mockDnsmasqDir}/*`),
+        callOpenssl(mockNaksu2CertsDir),
+        callSudoTeeHostsFile(mockEtcDir),
+        callStat(mockNaksu2WorkDir),
+        callChown(join(mockNaksu2WorkDir, 'certs/domain.txt')),
+        callSystemctl('restart', 'docker'),
         callSystemctl('enable', 'ytl-linux-digabi2-examnet'),
         callSystemctl('enable', 'dnsmasq'),
         callSystemctl('enable', 'ytl-linux-digabi2-examnet-discovery.service'),
         callSystemctl('enable', 'ytl-linux-digabi2-examnet-discovery.timer'),
         callSystemctl('restart', 'systemd-resolved'),
-        callSystemctl('is-enabled', 'dnsmasq'),
         callSystemctl('restart', 'dnsmasq'),
-        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet'),
         callSystemctl('restart', 'ytl-linux-digabi2-examnet'),
-        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet-discovery.timer'),
         callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.timer'),
-        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet-discovery.service'),
-        callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.service'),
-        { cmd: 'ytl-linux-digabi2-docker-configure.sh', argv: ['10.0.10.1', '192.168.10.1'] }
+        callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.service')
       ])
       await assertFileExists(mockExamnetConfigDir, 'net-device-lan')
       await assertFileExists(mockExamnetConfigDir, 'net-device-wan')
@@ -516,19 +472,19 @@ describe('examnet-just', async () => {
       await assertFileExists(mockExamnetConfigDir, 'server-friendly-name', 'ktp1\n')
       await assertFileExists(mockResolvedDir, 'ytl-linux.conf')
       await assertFileExists(mockDnsmasqDir, 'ytl-linux.conf')
+      await assertFileExists(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf')
       await assertFileExists(mockNaksu2CertsDir, 'domain.txt')
     })
     test('runs when correct parameters are given with friendly name', async () => {
       // use real sed to parse cert.pem
       await unlink(join(mockBinDir, 'sed'))
-      await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
       await runExamnet('eth0', 'eth1', '1', 'perunakellari')
       await assertCalls([
-        callStat(mockNaksu2WorkDir),
         callIpLinkShow('eth0'),
         callIpLinkShow('eth1'),
         callIpAddrShow('eth0'),
         callIpAddrShow('eth1'),
+        callNmicliConnectionShow('yo-eth1'),
         callNmicliConnectionDelete('yo-eth1'),
         callNmicliConnectionAdd('yo-eth1', '192.168.10.1/16'),
         callNmicliConnectionModify('yo-eth1'),
@@ -536,24 +492,23 @@ describe('examnet-just', async () => {
         callRm(`${mockNetplanConfDir}/50-cloud-init.yaml`),
         callSystemctl('restart', 'NetworkManager'),
         callNmonline(),
-        callRm(`${mockDnsmasqDir}/ytl-linux-static-dns-records.conf`),
+        callRmRecursive(`${mockDnsmasqDir}/*`),
         callOpenssl(mockNaksu2CertsDir),
-        { cmd: 'sudo', argv: ['tee', '-a', `${mockEtcDir}/hosts`] },
+        callSudoTeeHostsFile(mockEtcDir),
+        callStat(mockNaksu2WorkDir),
+        callChown(join(mockNaksu2WorkDir, 'certs/domain.txt')),
+        callSystemctl('restart', 'docker'),
         callSystemctl('enable', 'ytl-linux-digabi2-examnet'),
         callSystemctl('enable', 'dnsmasq'),
         callSystemctl('enable', 'ytl-linux-digabi2-examnet-discovery.service'),
         callSystemctl('enable', 'ytl-linux-digabi2-examnet-discovery.timer'),
         callSystemctl('restart', 'systemd-resolved'),
-        callSystemctl('is-enabled', 'dnsmasq'),
         callSystemctl('restart', 'dnsmasq'),
-        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet'),
         callSystemctl('restart', 'ytl-linux-digabi2-examnet'),
-        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet-discovery.timer'),
         callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.timer'),
-        callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet-discovery.service'),
-        callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.service'),
-        { cmd: 'ytl-linux-digabi2-docker-configure.sh', argv: ['10.0.10.1', '192.168.10.1'] }
+        callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.service')
       ])
+
       await assertFileExists(mockExamnetConfigDir, 'net-device-lan')
       await assertFileExists(mockExamnetConfigDir, 'net-device-wan')
       await assertFileExists(mockExamnetConfigDir, 'server-own-ip')
@@ -567,8 +522,7 @@ describe('examnet-just', async () => {
 
   test('all exit codes are tested', () => {
     const sortedExitCodes = Array.from(exitCodesTested).sort((a, b) => a - b)
-    // TODO these exit codes are currently not tested: 3, 9, 10, 11, 13, 19,
-    assert.deepEqual(sortedExitCodes, [1, 2, 4, 5, 6, 7, 8, 12, 14, 15, 17, 18, 20, 21, 22, 23, 24, 25, 27, 28, 29])
+    assert.deepEqual(sortedExitCodes, [1, 2, 3, 6, 7, 8, 17, 18, 20, 21, 22, 23, 24, 25, 27, 28, 30])
   })
 
   function runExamnetWithArguments(examnetArguments: string[], envOverrides: NodeJS.Dict<string> = {}) {
@@ -838,8 +792,12 @@ async function killSubprocess(subprocess: any) {
   }
 }
 
-function callStat(_mockNaksu2WorkDir) {
-  return undefined
+function callStat(mockNaksu2WorkDir) {
+  return { cmd: 'stat', argv: ['-c', '%U:%G', mockNaksu2WorkDir] }
+}
+
+function callChown(file) {
+  return { cmd: 'chown', argv: ['nobody:nobody', file] }
 }
 
 function callBouncer(mockNaksu2CertsDir: string) {
@@ -869,6 +827,10 @@ function callIpAddrShow(networkDevice: string) {
 
 function callSystemctl(cmd: string, service: string, flags?: string) {
   return { cmd: 'systemctl', argv: [cmd, flags, service].filter(Boolean) }
+}
+
+function callNmicliConnectionShow(connectionName: string) {
+  return { cmd: 'nmcli', argv: ['connection', 'show', connectionName] }
 }
 
 function callNmicliConnectionDelete(connectionName: string) {
@@ -930,6 +892,10 @@ function callNmcli() {
 
 function callOpenssl(path: string) {
   return { cmd: 'openssl', argv: ['x509', '-in', `${path}/cert.pem`, '-text', '-noout'] }
+}
+
+function callSudoTeeHostsFile(path: string) {
+  return { cmd: 'sudo', argv: ['tee', '-a', `${path}/hosts`] }
 }
 
 // These are not yet in use:
