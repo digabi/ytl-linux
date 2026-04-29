@@ -65,7 +65,27 @@ apply net-device-wan net-device-lan server-number server-name: \
   # FIXME: Onko tämä oikea kohta?
   just static-dns-records configure {{net-device-wan}} {{server-number}} {{SUBNETS_PER_SERVER}} $SERVER_OWN_IP $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
 
-  # TODO: Examnet riviltä 745
+  DOCKER_NETWORK_PREFIX=$(just network get-available-ip-range-for-docker "$IP_LAN" "$IP_WAN")
+  DOCKER_NETWORK_DNS_RESOLVER_IP="$DOCKER_NETWORK_PREFIX"0.1
+  DOCKER_NETWORK_POOL_BASE_IP="$DOCKER_NETWORK_PREFIX"0.0
+
+  export DOCKER_NETWORK_DNS_RESOLVER_IP
+  export DOCKER_NETWORK_POOL_BASE_IP
+
+  just fs write-file "$PATH_DOCKER_DAEMON_CONF" "$(envsubst < $PATH_DOCKER_DAEMON_CONF_TEMPLATE)"
+
+  # Enable relevant systemd services
+  just systemd enable ytl-linux-digabi2-examnet
+  just systemd enable dnsmasq
+  just systemd enable ytl-linux-digabi2-examnet-discovery.timer
+  just systemd enable ytl-linux-digabi2-examnet-discovery.service
+
+  # (Re)start services
+  just systemd restart systemd-resolved
+  just systemd restart dnsmasq
+  just systemd restart ytl-linux-digabi2-examnet
+  just systemd restart ytl-linux-digabi2-examnet-discovery.timer
+  just systemd restart ytl-linux-digabi2-examnet-discovery.service
 
   just setup write-examnet-config "{{net-device-wan}}" "{{net-device-lan}}" "$SERVER_OWN_IP" "{{server-name}}"
 
