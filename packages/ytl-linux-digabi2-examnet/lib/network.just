@@ -1,5 +1,8 @@
 mod util
 mod fs
+mod log
+
+ALLOWED_DOCKER_IP_RANGES := "10.0. 192.168. 172.17."
 
 get-device-ipv4-address device error-code-if-no-ip="": (util::assert-program-exists "ip")
   #!/usr/bin/env bash
@@ -15,6 +18,32 @@ get-device-ipv4-address device error-code-if-no-ip="": (util::assert-program-exi
 
 get-lan-ip-prefix wan-ip:
     if [[ "{{wan-ip}}" =~ ^192\.168\. ]]; then echo "10.0."; else echo "192.168."; fi
+
+get-available-ip-range-for-docker:
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  IFS=' ' read -r -a RANGES <<< "{{ALLOWED_DOCKER_IP_RANGES}}"
+
+  for range in "${RANGES[@]}"; do
+    _USED=false
+
+    for reserved in "$@"; do
+      if [[ $reserved == $range* ]]; then
+        _USED=true
+        break
+      fi
+    done
+
+    if [[ "$_USED" == false ]]; then
+      # return the first available
+      echo "$range"
+      return
+    fi
+  done
+
+  just log error "Could not find an available IP range for Docker"
+  exit 1
 
 configure-networkmanager connection-name interface-name ip-and-netmask:
   #!/usr/bin/env bash
