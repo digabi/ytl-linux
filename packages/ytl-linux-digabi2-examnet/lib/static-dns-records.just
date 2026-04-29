@@ -11,12 +11,16 @@ configure net-device-wan server-number SUBNETS_PER_SERVER server-own-ip error-co
     "PATH_ETC_HOSTS"
     "PATH_NAKSU2_DOMAIN"
   ) \
-  (util::assert-program-exists "openssl") \
-  (fs::assert-file-exists env("PATH_DNSMASQ_STATIC_DNS_CONF") env("EXIT_CODE_MISSING_CERTIFICATE"))
+  (util::assert-program-exists "openssl")
   #!/usr/bin/env bash
   set -euo pipefail
 
   just log info "Configuring static DNS records for server number {{server-number}}"
+
+  if [ ! -f "$PATH_NAKSU2_CERT" ]; then
+      just log error "Certificate file not found at $PATH_NAKSU2_CERT"
+      exit $EXIT_CODE_MISSING_CERTIFICATE
+  fi
 
   # Parse out SANs from certificate; only include server subdomains (e.g. ktp1.1000.koe.abitti.net), not the "root subdomain"
   # (e.g. 1000.koe.abitti.net) since we cannot reasonably ascribe DNS names to these
@@ -25,8 +29,10 @@ configure net-device-wan server-number SUBNETS_PER_SERVER server-own-ip error-co
       grep 'DNS:' |\
       sed 's/DNS://g' |\
       tr ',' '\n' |\
-      grep -E '[^.]+\.[^.]+\.koe\.abitti\.net'
+      grep -E '[^.]+\.[^.]+\.koe\.abitti\.net' || echo ""
   )"
+
+  just log debug "Extracted domains from certificate: '$DOMAINS'"
 
   DNS_RECORDS=()
   ETC_HOSTS=()
@@ -54,7 +60,7 @@ configure net-device-wan server-number SUBNETS_PER_SERVER server-own-ip error-co
 
   if [ -z "$THIS_SERVER_DOMAIN" ]; then
       just log error "Certificate did not contain a valid domain for server number {{server-number}}"
-      exit_script $EXIT_CODE_NO_SAN_FOR_SERVER_NUMBER
+      exit $EXIT_CODE_NO_SAN_FOR_SERVER_NUMBER
   fi
 
   just log debug "Generated DNS records: ${DNS_RECORDS[*]}"

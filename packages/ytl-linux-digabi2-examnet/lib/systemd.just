@@ -5,7 +5,7 @@ enable unit-name:
 
   just log debug "Enabling systemd unit '{{unit-name}}'"
 
-  if ! systemctl enable {{unit-name}}; then
+  if ! systemctl enable {{unit-name}} >/dev/null; then
     just log error "Failed to enable systemd unit '{{unit-name}}'"
     exit $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE
   fi
@@ -30,7 +30,7 @@ restart unit-name:
 
   just log debug "Restarting systemd unit '{{unit-name}}'"
 
-  if ! systemctl restart "{{unit-name}}"; then
+  if ! systemctl restart "{{unit-name}}" > /dev/null; then
     just log error "Failed to restart systemd unit '{{unit-name}}'"
     exit $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE
   fi
@@ -61,7 +61,7 @@ disable unit-name:
 
   just log debug "Disabling systemd unit '{{unit-name}}'"
 
-  if ! systemctl disable --now "{{unit-name}}"; then
+  if ! systemctl disable --now "{{unit-name}}" > /dev/null; then
     just log error "Failed to disable systemd unit '{{unit-name}}'"
     exit $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE
   fi
