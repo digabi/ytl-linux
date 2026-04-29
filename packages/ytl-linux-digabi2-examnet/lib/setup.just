@@ -65,7 +65,8 @@ apply net-device-wan net-device-lan server-number server-name: \
   # FIXME: Onko tämä oikea kohta?
   just static-dns-records configure {{net-device-wan}} {{server-number}} {{SUBNETS_PER_SERVER}} $SERVER_OWN_IP $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
 
-  DOCKER_NETWORK_PREFIX=$(just network get-available-ip-range-for-docker "$IP_LAN" "$IP_WAN")
+  DOCKER_NETWORK_PREFIX=$(just network get-available-ip-range-for-docker "$SERVER_OWN_IP" "$IP_WAN")
+  just log debug "Calculated Docker network prefix is '$DOCKER_NETWORK_PREFIX'"
   DOCKER_NETWORK_DNS_RESOLVER_IP="$DOCKER_NETWORK_PREFIX"0.1
   DOCKER_NETWORK_POOL_BASE_IP="$DOCKER_NETWORK_PREFIX"0.0
 
