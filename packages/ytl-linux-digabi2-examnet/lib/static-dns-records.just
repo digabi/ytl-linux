@@ -27,11 +27,11 @@ configure net-device-wan server-number SUBNETS_PER_SERVER server-own-ip error-co
   # Parse out SANs from certificate; only include server subdomains (e.g. ktp1.1000.koe.abitti.net), not the "root subdomain"
   # (e.g. 1000.koe.abitti.net) since we cannot reasonably ascribe DNS names to these
   DOMAINS="$(
-      openssl x509 -in "$PATH_NAKSU2_CERT" -text -noout |\
-      grep 'DNS:' |\
-      sed 's/DNS://g' |\
-      tr ',' '\n' |\
-      grep -E '[^.]+\.[^.]+\.koe\.abitti\.net' || echo ""
+    openssl x509 -in "$PATH_NAKSU2_CERT" -text -noout |\
+    grep 'DNS:' |\
+    sed 's/DNS://g' |\
+    tr ',' '\n' |\
+    grep -E '[^.]+\.[^.]+\.koe\.abitti\.net' || echo ""
   )"
 
   just log debug "Extracted domains from certificate: '$DOMAINS'"
@@ -41,28 +41,28 @@ configure net-device-wan server-number SUBNETS_PER_SERVER server-own-ip error-co
   THIS_SERVER_DOMAIN=""
 
   for DOMAIN in $DOMAINS; do
-      just log debug "Generating DNS record for domain: $DOMAIN"
+    just log debug "Generating DNS record for domain: $DOMAIN"
 
-      SERVER_NUMBER="$(echo "$DOMAIN" | cut -d '.' -f1 | tr -dc '[:digit:]')"
-      just log debug "Server number of domain $DOMAIN is: $SERVER_NUMBER"
+    SERVER_NUMBER="$(echo "$DOMAIN" | cut -d '.' -f1 | tr -dc '[:digit:]')"
+    just log debug "Server number of domain $DOMAIN is: $SERVER_NUMBER"
 
-      if [ "$SERVER_NUMBER" == "{{server-number}}" ]; then
-          just log debug "Found this server's domain based on server number {{server-number}}: $DOMAIN"
-          THIS_SERVER_DOMAIN=$DOMAIN
-      fi
+    if [ "$SERVER_NUMBER" == "{{server-number}}" ]; then
+        just log debug "Found this server's domain based on server number {{server-number}}: $DOMAIN"
+        THIS_SERVER_DOMAIN=$DOMAIN
+    fi
 
-      IP="${IP_LAN_PREFIX}$((SERVER_NUMBER * {{SUBNETS_PER_SERVER}})).1"
+    IP="${IP_LAN_PREFIX}$((SERVER_NUMBER * {{SUBNETS_PER_SERVER}})).1"
 
-      just log debug "Adding DNS record for domain $DOMAIN with IP $IP"
-      DNS_RECORDS+=("host-record=$DOMAIN,$IP")
+    just log debug "Adding DNS record for domain $DOMAIN with IP $IP"
+    DNS_RECORDS+=("host-record=$DOMAIN,$IP")
 
-      just log debug "Adding /etc/hosts entry for domain $DOMAIN with IP $IP"
-      ETC_HOSTS+=("$IP $DOMAIN")
+    just log debug "Adding /etc/hosts entry for domain $DOMAIN with IP $IP"
+    ETC_HOSTS+=("$IP $DOMAIN")
   done
 
   if [ -z "$THIS_SERVER_DOMAIN" ]; then
-      just log error "Certificate did not contain a valid domain for server number {{server-number}}"
-      exit $EXIT_CODE_NO_SAN_FOR_SERVER_NUMBER
+    just log error "Certificate did not contain a valid domain for server number {{server-number}}"
+    exit $EXIT_CODE_NO_SAN_FOR_SERVER_NUMBER
   fi
 
   just log debug "Generated DNS records: ${DNS_RECORDS[*]}"

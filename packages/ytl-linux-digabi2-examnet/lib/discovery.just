@@ -35,10 +35,12 @@ discovery net-device-wan net-device-lan server-number: \
   )
 
   just log info "Running discovery for server number {{server-number}}"
+
   set +e
   if ! $BIN_DIGABI2_EXAMNET_DISCOVERY "$CONFIG"; then
       just log error "Discovery process exited with non-zero exit code"
       exit $EXIT_CODE_DAEMON_EXITED_UNEXPECTEDLY
   fi
   set -e
+
   just log info "Discovery process has exited"
