@@ -19,7 +19,7 @@ get-device-ipv4-address device error-code-if-no-ip="": (util::assert-program-exi
 get-lan-ip-prefix wan-ip:
     if [[ "{{wan-ip}}" =~ ^192\.168\. ]]; then echo "10.0."; else echo "192.168."; fi
 
-get-available-ip-range-for-docker:
+get-available-ip-range-for-docker +reserved-ips:
   #!/usr/bin/env bash
   set -euo pipefail
 
@@ -28,7 +28,7 @@ get-available-ip-range-for-docker:
   for range in "${RANGES[@]}"; do
     _USED=false
 
-    for reserved in "$@"; do
+    for reserved in "{{reserved-ips}}"; do
       if [[ $reserved == $range* ]]; then
         _USED=true
         break
@@ -38,7 +38,7 @@ get-available-ip-range-for-docker:
     if [[ "$_USED" == false ]]; then
       # return the first available
       echo "$range"
-      return
+      exit
     fi
   done
 
