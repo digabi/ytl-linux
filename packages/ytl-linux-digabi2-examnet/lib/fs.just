@@ -33,7 +33,7 @@ write-file path content owner="":
     fi
   fi
 
-  echo -e "{{content}}" > "{{path}}"
+  echo -e '{{content}}' > "{{path}}"
 
   # Change file owner
   if [[ -n "{{owner}}" ]]; then

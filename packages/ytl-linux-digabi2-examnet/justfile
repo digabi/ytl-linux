@@ -48,5 +48,5 @@ configure net-device-wan net-device-lan server-number server-name="": util::asse
 
     just setup apply {{net-device-wan}} {{net-device-lan}} {{server-number}} "$SERVER_NAME"
 
-destroy  net-device-wan net-device-lan server-number: util::assert-user-is-root
-    just mod-destroy destroy {{net-device-wan}} {{net-device-lan}} {{server-number}}
+destroy: util::assert-user-is-root
+    just mod-destroy destroy

@@ -5,7 +5,7 @@ mod util
 
 EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE := env('EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE')
 
-destroy net-device-wan net-device-lan server-number: \
+destroy: \
   (util::assert-envs-set EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE
     "EXIT_CODE_CANNOT_REMOVE_CONNECTION"
     "EXIT_CODE_NETWORK_NOT_ONLINE"
@@ -34,7 +34,12 @@ destroy net-device-wan net-device-lan server-number: \
   just fs remove-file "$PATH_RESOLVED_CONF"
   just fs remove-file "$PATH_DOCKER_DAEMON_CONF"
 
-  just fs empty-directory "$PATH_EXAMNET_CONFIG"
+  just fs remove-file "$PATH_EXAMNET_CONFIG/server-friendly-name"
+  just fs remove-file "$PATH_EXAMNET_CONFIG/server-own-ip"
+  just fs remove-file "$PATH_EXAMNET_CONFIG/net-device-lan"
+  just fs remove-file "$PATH_EXAMNET_CONFIG/net-device-wan"
+  just fs remove-file "$PATH_EXAMNET_CONFIG/discovery.db"
+
   just fs empty-directory "$PATH_DNSMASQ"
 
   just etc-hosts remove-school-domain-entries "$PATH_ETC_HOSTS" $EXIT_CODE_CANNOT_REMOVE_FILES
@@ -51,7 +56,6 @@ destroy net-device-wan net-device-lan server-number: \
   done
 
   just systemd restart systemd-resolved
-  just systemd restart dnsmasq
   just systemd restart NetworkManager
   just systemd restart docker
 
