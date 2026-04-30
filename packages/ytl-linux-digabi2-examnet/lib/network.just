@@ -110,14 +110,14 @@ delete-connection connection-name connection-uuid error-code:
 
   just log info "Successfully deleted NetworkManager connection '{{connection-name}}' with UUID {{connection-uuid}}"
 
-wait-for-network-online error-code timeout="30":
+wait-for-network-online timeout="30":
   #!/usr/bin/env bash
   set -euo pipefail
 
   just log debug "Waiting for network to be online (timeout: {{timeout}} seconds)..."
   if ! nm-online -s -q --timeout="{{timeout}}" 2>&1; then
     just log error "Network did not become online within timeout of {{timeout}} seconds"
-    exit {{error-code}}
+    exit $EXIT_CODE_NETWORK_NOT_ONLINE
   fi
 
   just log debug "Network is online"

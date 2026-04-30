@@ -78,7 +78,7 @@ apply net-device-wan net-device-lan server-number server-name: \
   fi
 
   just systemd restart NetworkManager
-  just network wait-for-network-online $EXIT_CODE_NETWORK_NOT_ONLINE
+  just network wait-for-network-online
 
   just fs write-file "$PATH_RESOLVED_CONF" "$(envsubst < $PATH_RESOLVED_CONF_TEMPLATE)"
 

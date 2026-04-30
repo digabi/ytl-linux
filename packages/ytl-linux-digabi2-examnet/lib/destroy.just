@@ -59,6 +59,6 @@ destroy: \
   just systemd restart NetworkManager
   just systemd restart docker
 
-  just network wait-for-network-online $EXIT_CODE_NETWORK_NOT_ONLINE 5
+  just network wait-for-network-online 5
 
   just log info "All examnet settings have been removed"
