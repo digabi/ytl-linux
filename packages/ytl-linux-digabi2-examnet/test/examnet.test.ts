@@ -15,6 +15,7 @@ describe('examnet (just port)', () => {
   let mockResolvedDir
   let mockDockerDir
   let mockDnsmasqDir
+  let mockSysctlDir
   let mockNaksu2WorkDir
   let mockNaksu2CertsDir
   let mockNetplanConfDir
@@ -32,6 +33,7 @@ describe('examnet (just port)', () => {
       mockResolvedDir,
       mockDockerDir,
       mockDnsmasqDir,
+      mockSysctlDir,
       mockNaksu2WorkDir,
       mockNaksu2CertsDir,
       mockNetplanConfDir,
@@ -235,6 +237,7 @@ describe('examnet (just port)', () => {
         callIpset('list', 'ytl_internet_allowlist'),
         callIpset('flush', 'ytl_internet_allowlist'),
         callIpset('destroy', 'ytl_internet_allowlist'),
+        callSysctl('0'),
         callNmcli()
       ])
     })
@@ -268,6 +271,7 @@ describe('examnet (just port)', () => {
         callIpset('list', 'ytl_internet_allowlist'),
         callIpset('flush', 'ytl_internet_allowlist'),
         callIpset('destroy', 'ytl_internet_allowlist'),
+        callSysctl('0'),
         callNmcli(),
         callSystemctl('restart', 'systemd-resolved'),
         callSystemctl('restart', 'NetworkManager'),
@@ -299,6 +303,7 @@ describe('examnet (just port)', () => {
         callIpset('list', 'ytl_internet_allowlist'),
         callIpset('flush', 'ytl_internet_allowlist'),
         callIpset('destroy', 'ytl_internet_allowlist'),
+        callSysctl('0'),
         callNmcli(),
         callSystemctl('restart', 'systemd-resolved'),
         callSystemctl('restart', 'NetworkManager'),
@@ -457,8 +462,21 @@ describe('examnet (just port)', () => {
         callSudoTeeAppendToFile(`${mockEtcDir}/hosts`),
         callStat(mockNaksu2WorkDir),
         callChown(join(mockNaksu2WorkDir, 'certs/domain.txt')),
+
         callIpLinkShow('eth0'),
         callIpLinkShow('eth1'),
+        callSysctl('1'),
+
+        callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('filter', 'FORWARD'),
+        callIptablesList('filter', 'FORWARD'),
+        callIptablesList('filter', 'YTL_LAN_WAN_IPSET'),
+
+        callIptablesFlushChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIptablesDeleteChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIptablesNewChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIpset('list', 'ytl_internet_allowlist'),
         callIpsetCreate('ytl_internet_allowlist')
       ])
     })
@@ -490,7 +508,7 @@ describe('examnet (just port)', () => {
 
         callIpLinkShow('eth0'),
         callIpLinkShow('eth1'),
-        callIpsetCreate('ytl_internet_allowlist'),
+        callSysctl('1'),
 
         callIptablesList('nat', 'POSTROUTING'),
         callIptablesList('nat', 'POSTROUTING'),
@@ -501,6 +519,10 @@ describe('examnet (just port)', () => {
         callIptablesFlushChain('filter', 'YTL_LAN_WAN_IPSET'),
         callIptablesDeleteChain('filter', 'YTL_LAN_WAN_IPSET'),
         callIptablesNewChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIpset('list', 'ytl_internet_allowlist'),
+        callIpset('flush', 'ytl_internet_allowlist'),
+        callIpset('destroy', 'ytl_internet_allowlist'),
+        callIpsetCreate('ytl_internet_allowlist'),
         callIptablesCheckChain(
           'filter',
           'YTL_LAN_WAN_IPSET',
@@ -556,7 +578,7 @@ describe('examnet (just port)', () => {
 
         callIpLinkShow('eth0'),
         callIpLinkShow('eth1'),
-        callIpsetCreate('ytl_internet_allowlist'),
+        callSysctl('1'),
 
         callIptablesList('nat', 'POSTROUTING'),
         callIptablesList('nat', 'POSTROUTING'),
@@ -567,6 +589,10 @@ describe('examnet (just port)', () => {
         callIptablesFlushChain('filter', 'YTL_LAN_WAN_IPSET'),
         callIptablesDeleteChain('filter', 'YTL_LAN_WAN_IPSET'),
         callIptablesNewChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIpset('list', 'ytl_internet_allowlist'),
+        callIpset('flush', 'ytl_internet_allowlist'),
+        callIpset('destroy', 'ytl_internet_allowlist'),
+        callIpsetCreate('ytl_internet_allowlist'),
         callIptablesCheckChain(
           'filter',
           'YTL_LAN_WAN_IPSET',
@@ -615,6 +641,8 @@ describe('examnet (just port)', () => {
       await assertFileExists(mockResolvedDir, 'ytl-linux.conf')
       await assertFileExists(mockDnsmasqDir, 'ytl-linux.conf')
       await assertFileExists(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf')
+      await assertFileExists(mockSysctlDir, '99-ytl-linux-digabi2-examnet.conf')
+      await assertFileExists(mockNaksu2CertsDir, 'domain.txt')
       await assertFileExists(
         mockDockerDir,
         'daemon.json',
@@ -675,7 +703,7 @@ describe('examnet (just port)', () => {
 
         callIpLinkShow('eth0'),
         callIpLinkShow('eth1'),
-        callIpsetCreate('ytl_internet_allowlist'),
+        callSysctl('1'),
 
         callIptablesList('nat', 'POSTROUTING'),
         callIptablesList('nat', 'POSTROUTING'),
@@ -686,6 +714,10 @@ describe('examnet (just port)', () => {
         callIptablesFlushChain('filter', 'YTL_LAN_WAN_IPSET'),
         callIptablesDeleteChain('filter', 'YTL_LAN_WAN_IPSET'),
         callIptablesNewChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIpset('list', 'ytl_internet_allowlist'),
+        callIpset('flush', 'ytl_internet_allowlist'),
+        callIpset('destroy', 'ytl_internet_allowlist'),
+        callIpsetCreate('ytl_internet_allowlist'),
         callIptablesCheckChain(
           'filter',
           'YTL_LAN_WAN_IPSET',
@@ -735,6 +767,7 @@ describe('examnet (just port)', () => {
       await assertFileExists(mockResolvedDir, 'ytl-linux.conf')
       await assertFileExists(mockDnsmasqDir, 'ytl-linux.conf')
       await assertFileExists(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf')
+      await assertFileExists(mockSysctlDir, '99-ytl-linux-digabi2-examnet.conf')
       await assertFileExists(mockNaksu2CertsDir, 'domain.txt')
       // TODO tarkista daemon.json:in sisältö
     })
@@ -756,6 +789,7 @@ describe('examnet (just port)', () => {
         PATH_RESOLVED: mockResolvedDir,
         PATH_DOCKER: mockDockerDir,
         PATH_DNSMASQ: mockDnsmasqDir,
+        PATH_SYSCTL: mockSysctlDir,
         NAKSU2_WORKDIR: mockNaksu2WorkDir,
         PATH_NETPLAN: mockNetplanConfDir,
         PATH_ETC: mockEtcDir,
@@ -844,6 +878,7 @@ describe('examnet (just port)', () => {
     const mockResolvedDir = await makeTempDir(root, 'mock-resolved-dir')
     const mockDockerDir = await makeTempDir(root, 'mock-docker-dir')
     const mockDnsmasqDir = await makeTempDir(root, 'mock-dnsmasq-dir')
+    const mockSysctlDir = await makeTempDir(root, 'mock-sysctl-dir')
     const mockNaksu2WorkDir = await makeTempDir(root, 'naksu2-work-dir')
     const mockNaksu2CertsDir = await makeTempDir(mockNaksu2WorkDir, 'certs')
     const mockNetplanConfDir = await makeTempDir(root, 'mock-etc-netplan')
@@ -911,6 +946,7 @@ describe('examnet (just port)', () => {
     await writeToTempDir(mockBinDir, 'chown', mockScript)
     await writeToTempDir(mockBinDir, 'iptables', mockScript)
     await writeToTempDir(mockBinDir, 'ipset', mockScript)
+    await writeToTempDir(mockBinDir, 'sysctl', mockScript)
     await writeToTempDir(mockBinDir, 'dig', mockScript)
     await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-bouncer', mockScript)
     await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-discovery', mockScript)
@@ -961,6 +997,7 @@ describe('examnet (just port)', () => {
       mockResolvedDir,
       mockDockerDir,
       mockDnsmasqDir,
+      mockSysctlDir,
       mockNaksu2WorkDir,
       mockNaksu2CertsDir,
       mockScriptWithNoOutput,
@@ -1142,6 +1179,10 @@ function callDig(host: string) {
 
 function callIpsetCreate(list: string) {
   return { cmd: 'ipset', argv: ['create', list, 'hash:ip', 'timeout', '3600', '-exist'] }
+}
+
+function callSysctl(value: string) {
+  return { cmd: 'sysctl', argv: ['-w', `net.ipv4.ip_forward=${value}`] }
 }
 
 function callIpset(command: string, list: string) {

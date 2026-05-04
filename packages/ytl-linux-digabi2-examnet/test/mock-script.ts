@@ -43,6 +43,12 @@ async function main() {
       // TODO mock script would need to be stateful to support testing of adding and deleting rules
       console.log('')
       break
+    case 'sysctl':
+      console.log('')
+      break
+    case 'ipset':
+      console.log('')
+      break
   }
 }
 
