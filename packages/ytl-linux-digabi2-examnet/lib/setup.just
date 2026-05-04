@@ -133,6 +133,7 @@ destroy: \
     "EXIT_CODE_CANNOT_REMOVE_CONNECTION"
     "EXIT_CODE_NETWORK_NOT_ONLINE"
     "EXIT_CODE_CANNOT_REMOVE_FILES"
+    "EXIT_CODE_CANNOT_CONFIGURE_EXAMNET"
     "PATH_RESOLVED_CONF"
     "PATH_DOCKER_DAEMON_CONF"
     "PATH_NET_DEVICE_WAN_CONF"
@@ -166,6 +167,8 @@ destroy: \
   just fs empty-directory "$PATH_DNSMASQ"
 
   just etc-hosts remove-school-domain-entries "$PATH_ETC_HOSTS" $EXIT_CODE_CANNOT_REMOVE_FILES
+
+  just internet-forwarding disable $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
 
   just log debug "Getting list of network connections"
   CONNECTIONS=$(just network get-connections $EXIT_CODE_CANNOT_REMOVE_CONNECTION)
