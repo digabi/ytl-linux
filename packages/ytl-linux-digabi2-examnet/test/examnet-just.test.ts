@@ -216,25 +216,26 @@ describe('examnet-just', () => {
     test('returns error if removing configuration files fails', async () => {
       await writeToTempDir(mockBinDir, 'rm', mockScriptReturningErrorCode)
       await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '10.0.10.1')
-      await runExamnetReturnsExitCode(17, ['eth0', 'eth1', '1', '--remove'], ENV_TEST_MODE)
+      await runExamnetReturnsExitCode(17, ['--remove'], ENV_TEST_MODE)
       await assertCalls([
         callSystemctl('disable', 'ytl-linux-digabi2-examnet', '--now'),
         callSystemctl('disable', 'dnsmasq', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.timer', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.service', '--now'),
-        callRmRecursive(`${mockExamnetConfigDir}/*`)
+        callRm(`${mockExamnetConfigDir}/server-own-ip`)
       ])
     })
     test('returns error if listing connection fails', async () => {
       await writeToTempDir(mockBinDir, 'nmcli', mockScriptReturningErrorCode)
       await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '10.0.10.1')
-      await runExamnetReturnsExitCode(18, ['eth0', 'eth1', '1', '--remove'], ENV_TEST_MODE)
+      await runExamnetReturnsExitCode(18, ['--remove'], ENV_TEST_MODE)
       await assertCalls([
         callSystemctl('disable', 'ytl-linux-digabi2-examnet', '--now'),
         callSystemctl('disable', 'dnsmasq', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.timer', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.service', '--now'),
-        callRmRecursive(`${mockExamnetConfigDir}/*`),
+        callRm(`${mockExamnetConfigDir}/server-own-ip`),
+        callRm(`${mockExamnetConfigDir}/discovery.db`),
         callRmRecursive(`${mockDnsmasqDir}/*`),
         callSed(`${mockEtcDir}/hosts`),
         callSudoTeeWriteToFile(`${mockEtcDir}/hosts`),
@@ -244,26 +245,26 @@ describe('examnet-just', () => {
     })
     test('returns error if disabling services fails', async () => {
       await writeToTempDir(mockBinDir, 'systemctl', mockScriptReturningErrorCode)
-      await runExamnetReturnsExitCode(23, ['eth0', 'eth1', '1', '--remove'], ENV_TEST_MODE)
+      await runExamnetReturnsExitCode(23, ['--remove'], ENV_TEST_MODE)
       await assertCalls([callSystemctl('disable', 'ytl-linux-digabi2-examnet', '--now')])
     })
     test('returns error if waiting for network online fails', async () => {
       await writeToTempDir(mockBinDir, 'nm-online', mockScriptReturningErrorCode)
       await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '10.0.10.1')
-      await runExamnetReturnsExitCode(27, ['eth0', 'eth1', '1', '--remove'], ENV_TEST_MODE)
+      await runExamnetReturnsExitCode(27, ['--remove'], ENV_TEST_MODE)
       await assertCalls([
         callSystemctl('disable', 'ytl-linux-digabi2-examnet', '--now'),
         callSystemctl('disable', 'dnsmasq', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.timer', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.service', '--now'),
-        callRmRecursive(`${mockExamnetConfigDir}/*`),
+        callRm(`${mockExamnetConfigDir}/server-own-ip`),
+        callRm(`${mockExamnetConfigDir}/discovery.db`),
         callRmRecursive(`${mockDnsmasqDir}/*`),
         callSed(`${mockEtcDir}/hosts`),
         callSudoTeeWriteToFile(`${mockEtcDir}/hosts`),
         callRm(`${mockEtcDir}/hosts.tmp`),
         callNmcli(),
         callSystemctl('restart', 'systemd-resolved'),
-        callSystemctl('restart', 'dnsmasq'),
         callSystemctl('restart', 'NetworkManager'),
         { cmd: 'systemctl', argv: ['restart', 'docker'] },
         callNmonline(5)
@@ -271,20 +272,20 @@ describe('examnet-just', () => {
     })
     test('runs when correct parameters are given', async () => {
       await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '10.0.10.1')
-      await runExamnet('eth0', 'eth1', '1', '--remove')
+      await runExamnetWithArguments(['--remove'], ENV_TEST_MODE)
       await assertCalls([
         callSystemctl('disable', 'ytl-linux-digabi2-examnet', '--now'),
         callSystemctl('disable', 'dnsmasq', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.timer', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.service', '--now'),
-        callRmRecursive(`${mockExamnetConfigDir}/*`),
+        callRm(`${mockExamnetConfigDir}/server-own-ip`),
+        callRm(`${mockExamnetConfigDir}/discovery.db`),
         callRmRecursive(`${mockDnsmasqDir}/*`),
         callSed(`${mockEtcDir}/hosts`),
         callSudoTeeWriteToFile(`${mockEtcDir}/hosts`),
         callRm(`${mockEtcDir}/hosts.tmp`),
         callNmcli(),
         callSystemctl('restart', 'systemd-resolved'),
-        callSystemctl('restart', 'dnsmasq'),
         callSystemctl('restart', 'NetworkManager'),
         { cmd: 'systemctl', argv: ['restart', 'docker'] },
         callNmonline(5)
