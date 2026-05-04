@@ -1,8 +1,6 @@
 [private]
 mod mod-bouncer 'lib/bouncer.just'
 [private]
-mod mod-destroy 'lib/destroy.just'
-[private]
 mod mod-discovery 'lib/discovery.just'
 [private]
 mod etc-hosts 'lib/etc-hosts.just'
@@ -12,8 +10,6 @@ mod fs 'lib/fs.just'
 mod log 'lib/log.just'
 [private]
 mod network 'lib/network.just'
-[private]
-mod mod-restart-bouncer 'lib/restart-bouncer.just'
 [private]
 mod setup 'lib/setup.just'
 [private]
@@ -26,15 +22,6 @@ mod util 'lib/util.just'
 [private]
 default:
     @just --list --unsorted
-
-bouncer net-device-wan net-device-lan server-number: util::assert-user-is-root
-    just mod-bouncer bouncer {{net-device-wan}} {{net-device-lan}} {{server-number}}
-
-restart-bouncer net-device-wan net-device-lan server-number: util::assert-user-is-root
-    just mod-restart-bouncer restart-bouncer {{net-device-wan}} {{net-device-lan}} {{server-number}}
-
-discovery net-device-wan net-device-lan server-number: util::assert-user-is-root
-    just mod-discovery discovery {{net-device-wan}} {{net-device-lan}} {{server-number}}
 
 configure net-device-wan net-device-lan server-number server-name="": util::assert-user-is-root
     #!/usr/bin/env bash
@@ -49,4 +36,13 @@ configure net-device-wan net-device-lan server-number server-name="": util::asse
     just setup apply {{net-device-wan}} {{net-device-lan}} {{server-number}} "$SERVER_NAME"
 
 destroy: util::assert-user-is-root
-    just mod-destroy destroy
+    just setup destroy
+
+bouncer: util::assert-user-is-root
+    just mod-bouncer start
+
+restart-bouncer: util::assert-user-is-root
+    just mod-bouncer restart
+
+discovery: util::assert-user-is-root
+    just mod-discovery start
