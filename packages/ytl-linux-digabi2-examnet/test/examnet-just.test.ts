@@ -95,34 +95,26 @@ describe('examnet-just', () => {
 
   describe('bouncer (--daemon)', () => {
     test('returns error if net device lan configuration is missing', async () => {
-      await runExamnetReturnsExitCode(21, ['eth0', 'eth1', '1', '--daemon'], ENV_TEST_MODE)
+      await runExamnetReturnsExitCode(21, ['--daemon'], ENV_TEST_MODE)
       await assertCalls([])
     })
     test('returns error if server own ip configuration is missing', async () => {
       await writeToTempDir(mockExamnetConfigDir, 'net-device-lan', 'eth0')
-      await runExamnetReturnsExitCode(21, ['eth1', 'eth0', '1', '--daemon'], ENV_TEST_MODE)
+      await runExamnetReturnsExitCode(21, ['--daemon'], ENV_TEST_MODE)
       await assertCalls([])
     })
     test('returns error if server friendly name configuration is missing', async () => {
       await writeToTempDir(mockExamnetConfigDir, 'net-device-lan', 'eth0')
       await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '10.0.10.1')
-      await runExamnetReturnsExitCode(21, ['eth1', 'eth0', '1', '--daemon'], ENV_TEST_MODE)
+      await runExamnetReturnsExitCode(21, ['--daemon'], ENV_TEST_MODE)
       await assertCalls([])
-    })
-    test('returns error if LAN device does not have IP address', async () => {
-      await writeToTempDir(mockExamnetConfigDir, 'net-device-lan', 'eth0')
-      await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '10.0.10.1')
-      await writeToTempDir(mockExamnetConfigDir, 'server-friendly-name', 'foobar')
-      await writeToTempDir(mockBinDir, 'ip', mockScriptWithNoOutput)
-      await runExamnetReturnsExitCode(7, ['eth1', 'eth0', '1', '--daemon'], ENV_TEST_MODE)
-      await assertCalls([callIpAddrShow('eth0')])
     })
     test('returns error if domain.txt is missing', async () => {
       await writeToTempDir(mockExamnetConfigDir, 'net-device-lan', 'eth0')
       await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '10.0.10.1')
       await writeToTempDir(mockExamnetConfigDir, 'server-friendly-name', 'foobar')
       await unlink(join(mockNaksu2CertsDir, 'domain.txt'))
-      await runExamnetReturnsExitCode(21, ['eth1', 'eth0', '1', '--daemon'], ENV_TEST_MODE)
+      await runExamnetReturnsExitCode(21, ['--daemon'], ENV_TEST_MODE)
       await assertCalls([])
     })
     test('returns error if domain.txt is empty', async () => {
@@ -130,31 +122,24 @@ describe('examnet-just', () => {
       await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '10.0.10.1')
       await writeToTempDir(mockExamnetConfigDir, 'server-friendly-name', 'foobar')
       await writeToTempDir(mockNaksu2CertsDir, 'domain.txt', '')
-      await runExamnetReturnsExitCode(21, ['eth1', 'eth0', '1', '--daemon'], ENV_TEST_MODE)
-      await assertCalls([callIpAddrShow('eth0')])
+      await runExamnetReturnsExitCode(21, ['--daemon'], ENV_TEST_MODE)
+      await assertCalls([])
     })
     test('returns error if daemon exits unexpectedly', async () => {
       await writeToTempDir(mockExamnetConfigDir, 'net-device-lan', 'eth0')
       await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '10.0.10.1')
       await writeToTempDir(mockExamnetConfigDir, 'server-friendly-name', 'foobar')
       await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-bouncer', mockScriptWithNoOutput)
-      await runExamnetReturnsExitCode(22, ['eth1', 'eth0', '1', '--daemon'], ENV_TEST_MODE)
-      await assertCalls([callIpAddrShow('eth0'), callBouncer(mockNaksu2CertsDir)])
+      await runExamnetReturnsExitCode(22, ['--daemon'], ENV_TEST_MODE)
+      await assertCalls([callBouncer(mockNaksu2CertsDir)])
     })
     test('returns error if bouncer returns error', async () => {
       await writeToTempDir(mockExamnetConfigDir, 'net-device-lan', 'eth0')
       await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '10.0.10.1')
       await writeToTempDir(mockExamnetConfigDir, 'server-friendly-name', 'foobar')
       await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-bouncer', mockScriptReturningErrorCode)
-      await runExamnetReturnsExitCode(22, ['eth1', 'eth0', '1', '--daemon'], ENV_TEST_MODE)
-      await assertCalls([callIpAddrShow('eth0'), callBouncer(mockNaksu2CertsDir)])
-    })
-    test('returns error if LAN IP does not match what is configured', async () => {
-      await writeToTempDir(mockExamnetConfigDir, 'net-device-lan', 'eth0')
-      await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '10.0.20.1')
-      await writeToTempDir(mockExamnetConfigDir, 'server-friendly-name', 'foobar')
-      await runExamnetReturnsExitCode(21, ['eth1', 'eth0', '1', '--daemon'], ENV_TEST_MODE)
-      await assertCalls([callIpAddrShow('eth0')])
+      await runExamnetReturnsExitCode(22, ['--daemon'], ENV_TEST_MODE)
+      await assertCalls([callBouncer(mockNaksu2CertsDir)])
     })
     test('starts when correct parameters are given', async () => {
       await writeToTempDir(mockExamnetConfigDir, 'net-device-lan', 'eth0')
@@ -162,21 +147,21 @@ describe('examnet-just', () => {
       await writeToTempDir(mockExamnetConfigDir, 'server-friendly-name', 'foobar')
 
       // do not await runExamnet, as it stays running in daemon mode
-      const subprocess = runExamnet('eth1', 'eth0', '1', '--daemon')
+      const subprocess = runExamnetWithArguments(['--daemon'], ENV_TEST_MODE)
       await waitForLogEntry(callsLog, '"ytl-linux-digabi2-bouncer"')
       await killSubprocess(subprocess)
-      await assertCalls([callIpAddrShow('eth0'), callBouncer(mockNaksu2CertsDir)])
+      await assertCalls([callBouncer(mockNaksu2CertsDir)])
     })
   })
 
   describe('restart-bouncer (--restart-daemon)', () => {
     test('returns error when systemctl fails', async () => {
       await writeToTempDir(mockBinDir, 'systemctl', mockScriptReturningErrorCode)
-      await runExamnetReturnsExitCode(23, ['eth1', 'eth0', '1', '--restart-daemon'], ENV_TEST_MODE)
+      await runExamnetReturnsExitCode(23, ['--restart-daemon'], ENV_TEST_MODE)
       await assertCalls([callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet')])
     })
     test('runs restart-bouncer when correct parameters are given', async () => {
-      await runExamnet('eth1', 'eth0', '1', '--restart-daemon')
+      await runExamnetWithArguments(['--restart-daemon'], ENV_TEST_MODE)
       await assertCalls([
         callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet'),
         callSystemctl('restart', 'ytl-linux-digabi2-examnet'),
@@ -190,24 +175,24 @@ describe('examnet-just', () => {
 
   describe('discovery (--discover)', () => {
     test('returns error if static dns configuration is missing', async () => {
-      await runExamnetReturnsExitCode(28, ['eth0', 'eth1', '1', '--discover'], ENV_TEST_MODE)
+      await runExamnetReturnsExitCode(28, ['--discovery'], ENV_TEST_MODE)
       await assertCalls([])
     })
     test('returns error if server own IP file is missing', async () => {
-      await runExamnetReturnsExitCode(28, ['eth0', 'eth1', '1', '--discover'], ENV_TEST_MODE)
+      await runExamnetReturnsExitCode(28, ['--discovery'], ENV_TEST_MODE)
       await assertCalls([])
     })
     test('returns error if discovery returns error', async () => {
       await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
       await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '10.0.10.1')
       await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-discovery', mockScriptReturningErrorCode)
-      await runExamnetReturnsExitCode(22, ['eth0', 'eth1', '1', '--discover'], ENV_TEST_MODE)
+      await runExamnetReturnsExitCode(22, ['--discovery'], ENV_TEST_MODE)
       await assertCalls([callDiscovery(mockDnsmasqDir, mockExamnetConfigDir)])
     })
     test('runs discovery when correct parameters are given', async () => {
       await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
       await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '10.0.10.1')
-      await runExamnet('eth0', 'eth1', '1', '--discover')
+      await runExamnetWithArguments(['--discovery'], ENV_TEST_MODE)
       await assertCalls([callDiscovery(mockDnsmasqDir, mockExamnetConfigDir)])
     })
   })
