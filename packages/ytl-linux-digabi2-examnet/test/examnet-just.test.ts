@@ -175,7 +175,7 @@ describe('examnet-just', () => {
       await runExamnetReturnsExitCode(23, ['eth1', 'eth0', '1', '--restart-daemon'], ENV_TEST_MODE)
       await assertCalls([callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet')])
     })
-    test('runs when correct parameters are given', async () => {
+    test('runs restart-bouncer when correct parameters are given', async () => {
       await runExamnet('eth1', 'eth0', '1', '--restart-daemon')
       await assertCalls([
         callSystemctl('is-enabled', 'ytl-linux-digabi2-examnet'),
@@ -204,7 +204,7 @@ describe('examnet-just', () => {
       await runExamnetReturnsExitCode(22, ['eth0', 'eth1', '1', '--discover'], ENV_TEST_MODE)
       await assertCalls([callDiscovery(mockDnsmasqDir, mockExamnetConfigDir)])
     })
-    test('runs when correct parameters are given', async () => {
+    test('runs discovery when correct parameters are given', async () => {
       await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
       await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '10.0.10.1')
       await runExamnet('eth0', 'eth1', '1', '--discover')
@@ -270,7 +270,7 @@ describe('examnet-just', () => {
         callNmonline(5)
       ])
     })
-    test('runs when correct parameters are given', async () => {
+    test('runs destroy when correct parameters are given', async () => {
       await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '10.0.10.1')
       await runExamnetWithArguments(['--remove'], ENV_TEST_MODE)
       await assertCalls([
@@ -444,7 +444,7 @@ describe('examnet-just', () => {
         callChown(join(mockNaksu2WorkDir, 'certs/domain.txt'))
       ])
     })
-    test('runs when correct parameters are given', async () => {
+    test('runs setup when correct parameters are given', async () => {
       // use real sed to parse cert.pem
       await unlink(join(mockBinDir, 'sed'))
       await runExamnet('eth0', 'eth1', '1')
@@ -488,7 +488,7 @@ describe('examnet-just', () => {
       await assertFileExists(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf')
       await assertFileExists(mockNaksu2CertsDir, 'domain.txt')
     })
-    test('runs when correct parameters are given with friendly name', async () => {
+    test('runs setup when correct parameters are given with friendly name', async () => {
       // use real sed to parse cert.pem
       await unlink(join(mockBinDir, 'sed'))
       await runExamnet('eth0', 'eth1', '1', 'perunakellari')
