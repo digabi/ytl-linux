@@ -225,6 +225,16 @@ describe('examnet (just port)', () => {
         callSed(`${mockEtcDir}/hosts`),
         callSudoTeeWriteToFile(`${mockEtcDir}/hosts`),
         callRm(`${mockEtcDir}/hosts.tmp`),
+        callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('filter', 'FORWARD'),
+        callIptablesList('filter', 'FORWARD'),
+        callIptablesList('filter', 'YTL_LAN_WAN_IPSET'),
+        callIptablesFlushChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIptablesDeleteChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIpset('list', 'ytl_internet_allowlist'),
+        callIpset('flush', 'ytl_internet_allowlist'),
+        callIpset('destroy', 'ytl_internet_allowlist'),
         callNmcli()
       ])
     })
@@ -248,6 +258,16 @@ describe('examnet (just port)', () => {
         callSed(`${mockEtcDir}/hosts`),
         callSudoTeeWriteToFile(`${mockEtcDir}/hosts`),
         callRm(`${mockEtcDir}/hosts.tmp`),
+        callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('filter', 'FORWARD'),
+        callIptablesList('filter', 'FORWARD'),
+        callIptablesList('filter', 'YTL_LAN_WAN_IPSET'),
+        callIptablesFlushChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIptablesDeleteChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIpset('list', 'ytl_internet_allowlist'),
+        callIpset('flush', 'ytl_internet_allowlist'),
+        callIpset('destroy', 'ytl_internet_allowlist'),
         callNmcli(),
         callSystemctl('restart', 'systemd-resolved'),
         callSystemctl('restart', 'NetworkManager'),
@@ -269,6 +289,16 @@ describe('examnet (just port)', () => {
         callSed(`${mockEtcDir}/hosts`),
         callSudoTeeWriteToFile(`${mockEtcDir}/hosts`),
         callRm(`${mockEtcDir}/hosts.tmp`),
+        callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('filter', 'FORWARD'),
+        callIptablesList('filter', 'FORWARD'),
+        callIptablesList('filter', 'YTL_LAN_WAN_IPSET'),
+        callIptablesFlushChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIptablesDeleteChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIpset('list', 'ytl_internet_allowlist'),
+        callIpset('flush', 'ytl_internet_allowlist'),
+        callIpset('destroy', 'ytl_internet_allowlist'),
         callNmcli(),
         callSystemctl('restart', 'systemd-resolved'),
         callSystemctl('restart', 'NetworkManager'),
@@ -402,6 +432,36 @@ describe('examnet (just port)', () => {
         callOpenssl(mockNaksu2CertsDir)
       ])
     })
+    test('returns error if running ipset fails', async () => {
+      // use real sed to parse cert.pem
+      await unlink(join(mockBinDir, 'sed'))
+      await writeToTempDir(mockBinDir, 'ipset', mockScriptReturningErrorCode)
+      await runExamnetReturnsExitCode(30, ['eth0', 'eth1', '1'], ENV_TEST_MODE)
+      await assertCalls([
+        callIpLinkShow('eth0'),
+        callIpLinkShow('eth1'),
+        callIpAddrShow('eth0'),
+        callIpAddrShow('eth1'),
+        callNmicliConnectionShow('yo-eth1'),
+        callNmicliConnectionDelete('yo-eth1'),
+        callNmicliConnectionAdd('yo-eth1', '192.168.10.1/16'),
+        callNmicliConnectionModify('yo-eth1'),
+        callNmicliConnectionUp('yo-eth1'),
+        callRm(`${mockNetplanConfDir}/50-cloud-init.yaml`),
+        callSystemctl('restart', 'NetworkManager'),
+        callNmonline(),
+        callRmRecursive(`${mockDnsmasqDir}/*`),
+        callOpenssl(mockNaksu2CertsDir),
+        callSudoTeeWriteToFile(`${mockEtcDir}/hosts`),
+        callRm(`${mockEtcDir}/hosts.tmp`),
+        callSudoTeeAppendToFile(`${mockEtcDir}/hosts`),
+        callStat(mockNaksu2WorkDir),
+        callChown(join(mockNaksu2WorkDir, 'certs/domain.txt')),
+        callIpLinkShow('eth0'),
+        callIpLinkShow('eth1'),
+        callIpsetCreate('ytl_internet_allowlist')
+      ])
+    })
     test('returns error if configuring docker fails', async () => {
       // use real sed to parse cert.pem
       await unlink(join(mockBinDir, 'sed'))
@@ -426,7 +486,47 @@ describe('examnet (just port)', () => {
         callRm(`${mockEtcDir}/hosts.tmp`),
         callSudoTeeAppendToFile(`${mockEtcDir}/hosts`),
         callStat(mockNaksu2WorkDir),
-        callChown(join(mockNaksu2WorkDir, 'certs/domain.txt'))
+        callChown(join(mockNaksu2WorkDir, 'certs/domain.txt')),
+
+        callIpLinkShow('eth0'),
+        callIpLinkShow('eth1'),
+        callIpsetCreate('ytl_internet_allowlist'),
+
+        callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('filter', 'FORWARD'),
+        callIptablesList('filter', 'FORWARD'),
+        callIptablesList('filter', 'YTL_LAN_WAN_IPSET'),
+
+        callIptablesFlushChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIptablesDeleteChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIptablesNewChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIptablesCheckChain(
+          'filter',
+          'YTL_LAN_WAN_IPSET',
+          '--match conntrack --ctstate NEW --match set --match-set ytl_internet_allowlist dst --match limit --limit 10/second --limit-burst 30 --jump LOG --log-prefix YTL_ALLOW_NEW --log-level 6'
+        ),
+        callIptablesCheckChain(
+          'filter',
+          'YTL_LAN_WAN_IPSET',
+          '--match set --match-set ytl_internet_allowlist dst --jump ACCEPT'
+        ),
+        callIptablesCheckChain('filter', 'YTL_LAN_WAN_IPSET', '--jump DROP'),
+        callIptablesCheckChain(
+          'filter',
+          'FORWARD',
+          '--in-interface eth0 --out-interface eth1 --match comment --comment ytl_internet_allowlist --match conntrack --ctstate RELATED,ESTABLISHED --jump ACCEPT'
+        ),
+        callIptablesCheckChain(
+          'filter',
+          'FORWARD',
+          '--in-interface eth1 --out-interface eth0 --match comment --comment ytl_internet_allowlist --jump YTL_LAN_WAN_IPSET'
+        ),
+        callIptablesCheckChain(
+          'nat',
+          'POSTROUTING',
+          '--out-interface eth0 --match comment --comment ytl_internet_allowlist --match set --match-set ytl_internet_allowlist dst --jump MASQUERADE'
+        )
       ])
     })
     test('runs setup when correct parameters are given', async () => {
@@ -453,6 +553,47 @@ describe('examnet (just port)', () => {
         callSudoTeeAppendToFile(`${mockEtcDir}/hosts`),
         callStat(mockNaksu2WorkDir),
         callChown(join(mockNaksu2WorkDir, 'certs/domain.txt')),
+
+        callIpLinkShow('eth0'),
+        callIpLinkShow('eth1'),
+        callIpsetCreate('ytl_internet_allowlist'),
+
+        callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('filter', 'FORWARD'),
+        callIptablesList('filter', 'FORWARD'),
+        callIptablesList('filter', 'YTL_LAN_WAN_IPSET'),
+
+        callIptablesFlushChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIptablesDeleteChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIptablesNewChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIptablesCheckChain(
+          'filter',
+          'YTL_LAN_WAN_IPSET',
+          '--match conntrack --ctstate NEW --match set --match-set ytl_internet_allowlist dst --match limit --limit 10/second --limit-burst 30 --jump LOG --log-prefix YTL_ALLOW_NEW --log-level 6'
+        ),
+        callIptablesCheckChain(
+          'filter',
+          'YTL_LAN_WAN_IPSET',
+          '--match set --match-set ytl_internet_allowlist dst --jump ACCEPT'
+        ),
+        callIptablesCheckChain('filter', 'YTL_LAN_WAN_IPSET', '--jump DROP'),
+        callIptablesCheckChain(
+          'filter',
+          'FORWARD',
+          '--in-interface eth0 --out-interface eth1 --match comment --comment ytl_internet_allowlist --match conntrack --ctstate RELATED,ESTABLISHED --jump ACCEPT'
+        ),
+        callIptablesCheckChain(
+          'filter',
+          'FORWARD',
+          '--in-interface eth1 --out-interface eth0 --match comment --comment ytl_internet_allowlist --jump YTL_LAN_WAN_IPSET'
+        ),
+        callIptablesCheckChain(
+          'nat',
+          'POSTROUTING',
+          '--out-interface eth0 --match comment --comment ytl_internet_allowlist --match set --match-set ytl_internet_allowlist dst --jump MASQUERADE'
+        ),
+
         callSystemctl('restart', 'docker'),
         callSystemctl('enable', 'ytl-linux-digabi2-examnet'),
         callSystemctl('enable', 'dnsmasq'),
@@ -462,7 +603,10 @@ describe('examnet (just port)', () => {
         callSystemctl('restart', 'dnsmasq'),
         callSystemctl('restart', 'ytl-linux-digabi2-examnet'),
         callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.timer'),
-        callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.service')
+        callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.service'),
+        callDig('endpoint.security.microsoft.com'),
+        callDig('smartscreen-prod.microsoft.com'),
+        callDig('smartscreen.microsoft.com')
       ])
       await assertFileExists(mockExamnetConfigDir, 'net-device-lan')
       await assertFileExists(mockExamnetConfigDir, 'net-device-wan')
@@ -528,6 +672,47 @@ describe('examnet (just port)', () => {
         callSudoTeeAppendToFile(`${mockEtcDir}/hosts`),
         callStat(mockNaksu2WorkDir),
         callChown(join(mockNaksu2WorkDir, 'certs/domain.txt')),
+
+        callIpLinkShow('eth0'),
+        callIpLinkShow('eth1'),
+        callIpsetCreate('ytl_internet_allowlist'),
+
+        callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('filter', 'FORWARD'),
+        callIptablesList('filter', 'FORWARD'),
+        callIptablesList('filter', 'YTL_LAN_WAN_IPSET'),
+
+        callIptablesFlushChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIptablesDeleteChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIptablesNewChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIptablesCheckChain(
+          'filter',
+          'YTL_LAN_WAN_IPSET',
+          '--match conntrack --ctstate NEW --match set --match-set ytl_internet_allowlist dst --match limit --limit 10/second --limit-burst 30 --jump LOG --log-prefix YTL_ALLOW_NEW --log-level 6'
+        ),
+        callIptablesCheckChain(
+          'filter',
+          'YTL_LAN_WAN_IPSET',
+          '--match set --match-set ytl_internet_allowlist dst --jump ACCEPT'
+        ),
+        callIptablesCheckChain('filter', 'YTL_LAN_WAN_IPSET', '--jump DROP'),
+        callIptablesCheckChain(
+          'filter',
+          'FORWARD',
+          '--in-interface eth0 --out-interface eth1 --match comment --comment ytl_internet_allowlist --match conntrack --ctstate RELATED,ESTABLISHED --jump ACCEPT'
+        ),
+        callIptablesCheckChain(
+          'filter',
+          'FORWARD',
+          '--in-interface eth1 --out-interface eth0 --match comment --comment ytl_internet_allowlist --jump YTL_LAN_WAN_IPSET'
+        ),
+        callIptablesCheckChain(
+          'nat',
+          'POSTROUTING',
+          '--out-interface eth0 --match comment --comment ytl_internet_allowlist --match set --match-set ytl_internet_allowlist dst --jump MASQUERADE'
+        ),
+
         callSystemctl('restart', 'docker'),
         callSystemctl('enable', 'ytl-linux-digabi2-examnet'),
         callSystemctl('enable', 'dnsmasq'),
@@ -537,7 +722,10 @@ describe('examnet (just port)', () => {
         callSystemctl('restart', 'dnsmasq'),
         callSystemctl('restart', 'ytl-linux-digabi2-examnet'),
         callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.timer'),
-        callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.service')
+        callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.service'),
+        callDig('endpoint.security.microsoft.com'),
+        callDig('smartscreen-prod.microsoft.com'),
+        callDig('smartscreen.microsoft.com')
       ])
 
       await assertFileExists(mockExamnetConfigDir, 'net-device-lan')
@@ -548,6 +736,7 @@ describe('examnet (just port)', () => {
       await assertFileExists(mockDnsmasqDir, 'ytl-linux.conf')
       await assertFileExists(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf')
       await assertFileExists(mockNaksu2CertsDir, 'domain.txt')
+      // TODO tarkista daemon.json:in sisältö
     })
   })
 
@@ -557,7 +746,7 @@ describe('examnet (just port)', () => {
   })
 
   function runExamnetWithArguments(examnetArguments: string[], envOverrides: NodeJS.Dict<string> = {}) {
-    return execa('./ytl-linux-digabi2-examnet', examnetArguments.filter(Boolean), {
+    return execa('./ytl-linux-digabi2-examnet-just', examnetArguments.filter(Boolean), {
       env: {
         ...process.env,
         PATH: `${mockBinDir}:${process.env.PATH}`,
@@ -720,6 +909,9 @@ describe('examnet (just port)', () => {
     await writeToTempDir(mockBinDir, 'rm', mockScript)
     await writeToTempDir(mockBinDir, 'sudo', mockScript)
     await writeToTempDir(mockBinDir, 'chown', mockScript)
+    await writeToTempDir(mockBinDir, 'iptables', mockScript)
+    await writeToTempDir(mockBinDir, 'ipset', mockScript)
+    await writeToTempDir(mockBinDir, 'dig', mockScript)
     await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-bouncer', mockScript)
     await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-discovery', mockScript)
     await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-docker-configure.sh', mockScript)
@@ -782,7 +974,7 @@ describe('examnet (just port)', () => {
     // console.log(`expecting ${expectedCalls.length} calls to external programs`)
     const callsArray = callsLines
       .map(line => {
-        // console.log(`parsing line ${line}`)
+        console.log(`parsing line ${line}`)
         return line ? JSON.parse(line) : undefined
       })
       .filter(Boolean)
@@ -944,31 +1136,40 @@ function callSudoTeeWriteToFile(file: string) {
   return { cmd: 'sudo', argv: ['tee', file] }
 }
 
-// These are not yet in use:
-//
-// function callDig(host: string) {
-//   return { cmd: 'dig', argv: ['+time=1', '+tries=1', '@10.0.10.1', host, 'A'] }
-// }
-//
-// function callIpsetCreate(listName: string) {
-//   return { cmd: 'ipset', argv: ['create', listName, 'hash:ip', 'timeout', '3600', '-exist'] }
-// }
-//
-// function callIptablesNewChain(chainName: string) {
-//   return { cmd: 'iptables', argv: ['-t', 'filter', '-N', chainName] }
-// }
-//
-// function callIptablesFlushChain(chainName: string) {
-//   return { cmd: 'iptables', argv: ['-t', 'filter', '-F', chainName] }
-// }
-//
-// function callIptablesCheckChain(chainName: string, networkDevice: string, jumpTarget: string) {
-//   return {
-//     cmd: 'iptables',
-//     argv: ['-t', 'filter', '-C', chainName, '-i', networkDevice, '-o', 'eth0', '-j', jumpTarget]
-//   }
-// }
-//
-// function callIptablesAppendRule(chainName: string, jumpTarget: string) {
-//   return { cmd: 'iptables', argv: ['-t', 'filter', '-A', chainName, '-j', jumpTarget] }
-// }
+function callDig(host: string) {
+  return { cmd: 'dig', argv: ['+time=1', '+tries=1', '@192.168.10.1', host, 'A'] }
+}
+
+function callIpsetCreate(list: string) {
+  return { cmd: 'ipset', argv: ['create', list, 'hash:ip', 'timeout', '3600', '-exist'] }
+}
+
+function callIpset(command: string, list: string) {
+  return { cmd: 'ipset', argv: [command, list] }
+}
+
+function callIptablesList(table: string, chain: string) {
+  return { cmd: 'iptables', argv: ['--wait', '--table', table, '--list', chain, '--line-numbers', '--numeric'] }
+}
+function callIptablesNewChain(table: string, chain: string) {
+  return { cmd: 'iptables', argv: ['--wait', '--table', table, '--new-chain', chain] }
+}
+
+function callIptablesFlushChain(table: string, chain: string) {
+  return { cmd: 'iptables', argv: ['--wait', '--table', table, '--flush', chain] }
+}
+
+function callIptablesDeleteChain(table: string, chain: string) {
+  return { cmd: 'iptables', argv: ['--wait', '--table', table, '--delete-chain', chain] }
+}
+
+function callIptablesCheckChain(table: string, chain: string, rulespec: string) {
+  return {
+    cmd: 'iptables',
+    argv: ['--wait', '--table', table, '--check', chain, ...rulespec.split(' ')]
+  }
+}
+
+function callIptablesAppendRule(table: string, chain: string, jumpTarget: string) {
+  return { cmd: 'iptables', argv: ['--wait', '--table', table, '--append', chain, '--jump', jumpTarget] }
+}

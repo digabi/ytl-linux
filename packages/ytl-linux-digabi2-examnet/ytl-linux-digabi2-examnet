@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
-# TODO: Naksu uses exit codes 6, 20, 24, 25 so these should not be changed
-
+# Naksu uses exit codes 6, 20, 24, 25 so these should not be changed
 export EXIT_CODE_GENERIC_ERROR=1                # Generic unexpected errors
 export EXIT_CODE_MUST_BE_ROOT=2                 # The script must be executed by root or sudo
 export EXIT_CODE_NO_SUCH_NETWORK_DEVICE=3       # The specified network device does not exist
@@ -20,16 +19,16 @@ export EXIT_CODE_NETWORK_NOT_ONLINE=27          # WAN device did not become onli
 export EXIT_CODE_CANNOT_RUN_ALIAS_DISCOVERY=28  # The script was unable to run the alias discovery daemon
 export EXIT_CODE_CANNOT_CONFIGURE_EXAMNET=30    # The script was unable to configure the exam network
 
+export INTERNET_ALLOWLIST_DOMAINS="endpoint.security.microsoft.com smartscreen-prod.microsoft.com smartscreen.microsoft.com"
+export INTERNET_ALLOWLIST_IPSET_NAME="ytl_internet_allowlist"
+export INTERNET_ALLOWLIST_FILTER_CHAIN="YTL_LAN_WAN_IPSET"
+export INTERNET_ALLOWLIST_IPSET_TIMEOUT_SECONDS=3600
+
 export NETWORK_DEVICE_FILTER_RE="^docker|^br|^veth|^lo$"
 export DOCKER_BRIDGE_NETWORK_DNS_RESOLVER_IP="172.17.0.1"
 export FRIENDLY_NAME_SEARCH_DOMAIN="internal"
 export DISCOVERY_PORT=26464
 export BOUNCER_PORT=80
-
-export ALLOWED_DOCKER_IP_RANGES="10.0. 192.168. 172.17."
-export MIN_SERVER_NUMBER="1"
-export MAX_SERVER_NUMBER="24"
-export SUBNETS_PER_SERVER="10"
 
 export PATH_ETC=${PATH_ETC:-/etc}
 export PATH_ETC_HOSTS="${PATH_ETC}/hosts"
@@ -44,6 +43,8 @@ export PATH_DNSMASQ_CONF="$PATH_DNSMASQ/ytl-linux.conf"
 export PATH_DNSMASQ_CONF_TEMPLATE="$PATH_TEMPLATES/dnsmasq.conf.template"
 export PATH_DNSMASQ_STATIC_DNS_CONF="$PATH_DNSMASQ/ytl-linux-static-dns-records.conf"
 export PATH_DNSMASQ_KTP_ALIASES_CONF="$PATH_DNSMASQ/ytl-linux-ktp-aliases.conf"
+export PATH_DNSMASQ_IPSET_ALLOWLIST_CONF="$PATH_DNSMASQ/ytl-linux-internet-allowlist-ipset.conf"
+export PATH_DNSMASQ_SERVER_ALLOWLIST_CONF="$PATH_DNSMASQ/ytl-linux-internet-allowlist-server.conf"
 export PATH_DOCKER=${PATH_DOCKER:-/etc/docker}
 export PATH_DOCKER_DAEMON_CONF="$PATH_DOCKER/daemon.json"
 export PATH_DOCKER_DAEMON_CONF_TEMPLATE="$PATH_TEMPLATES/docker-daemon.json.template"

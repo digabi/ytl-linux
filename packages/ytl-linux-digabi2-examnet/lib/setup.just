@@ -2,6 +2,7 @@ mod log
 mod util
 mod network
 mod fs
+mod internet-forwarding
 mod systemd
 mod static-dns-records
 
@@ -34,8 +35,8 @@ apply net-device-wan net-device-lan server-number server-friendly-name: \
     "ALLOWED_DOCKER_IP_RANGES"
   ) \
   (assert-server-number-valid server-number) \
-  (assert-device-exists net-device-wan) \
-  (assert-device-exists net-device-lan) \
+  (network::assert-device-exists net-device-wan) \
+  (network::assert-device-exists net-device-lan) \
   (assert-server-friendly-name-valid server-friendly-name) \
   (assert-devices-different net-device-wan net-device-lan)
   #!/usr/bin/env bash
@@ -89,6 +90,8 @@ apply net-device-wan net-device-lan server-number server-friendly-name: \
 
   just static-dns-records configure {{server-number}} $SUBNETS_PER_SERVER
 
+  just internet-forwarding enable {{net-device-wan}} {{net-device-lan}} $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
+
   DOCKER_NETWORK_PREFIX=$(just network get-available-ip-range-for-docker $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET "$SERVER_OWN_IP" "$IP_WAN")
   just log debug "Calculated Docker network prefix is '$DOCKER_NETWORK_PREFIX'"
   DOCKER_NETWORK_DNS_RESOLVER_IP="$DOCKER_NETWORK_PREFIX"0.1
@@ -119,6 +122,8 @@ apply net-device-wan net-device-lan server-number server-friendly-name: \
   just systemd restart ytl-linux-digabi2-examnet-discovery.service
 
   just setup write-examnet-config "{{net-device-wan}}" "{{net-device-lan}}" "$SERVER_OWN_IP" "{{server-friendly-name}}"
+
+  just internet-forwarding populate-ipset $SERVER_OWN_IP $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
 
   just log info "Examnet configuration applied successfully"
 
@@ -194,18 +199,6 @@ write-examnet-config net-device-wan net-device-lan server-own-ip server-friendly
   just fs write-file "$PATH_NET_DEVICE_WAN_CONF" "{{net-device-wan}}"
   just fs write-file "$PATH_SERVER_OWN_IP" "{{server-own-ip}}"
   just fs write-file "$PATH_SERVER_FRIENDLY_NAME_CONF" "{{server-friendly-name}}"
-
-[private]
-assert-device-exists device:
-  #!/usr/bin/env bash
-  set -euo pipefail
-
-  just log debug "Checking if network device {{device}} exists"
-
-  if ! ip link show "{{device}}" > /dev/null; then
-    just log error "Network device {{device}} does not exist"
-    exit $EXIT_CODE_NO_SUCH_NETWORK_DEVICE
-  fi
 
 [private]
 assert-devices-different wan-network-device lan-network-device:

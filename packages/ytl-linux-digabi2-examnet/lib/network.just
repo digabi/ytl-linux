@@ -119,3 +119,15 @@ wait-for-network-online timeout="30":
   fi
 
   just log debug "Network is online"
+
+[private]
+assert-device-exists device:
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  just log debug "Checking if network device {{device}} exists"
+
+  if ! ip link show "{{device}}" > /dev/null; then
+    just log error "Network device {{device}} does not exist"
+    exit $EXIT_CODE_NO_SUCH_NETWORK_DEVICE
+  fi
