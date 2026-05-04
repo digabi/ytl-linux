@@ -70,7 +70,7 @@ for arg in "$@"; do
     --restart-daemon)
       recipe="restart-bouncer"
       ;;
-    --discover)
+    --discovery)
       recipe="discovery"
       ;;
     --remove)
