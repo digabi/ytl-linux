@@ -66,7 +66,7 @@ empty-directory path:
 
   just log debug "Clearing directory '{{path}}'"
 
-  if ! rm -rf "{{path}}/*"; then
+  if ! rm -rf {{path}}/*; then
     just log error "Failed to clear directory '{{path}}'"
     exit $EXIT_CODE_CANNOT_REMOVE_FILES
   fi
