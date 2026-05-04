@@ -5,8 +5,7 @@ DEPENDENCIES := \
 	--depends apt \
 	--depends dnsmasq \
 	--depends jq \
-	--depends network-manager \
-	--depends zenity
+	--depends network-manager
 DEB_ROOT := deb-root
 
 deb:
