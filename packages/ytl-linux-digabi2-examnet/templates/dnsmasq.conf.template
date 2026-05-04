@@ -28,12 +28,15 @@ resolv-file=/etc/resolv.conf
 # need DNS to tell student computers where to go
 server=/koe.abitti.net/#
 
-# Forward requests to koe.ylioppilastutkinto.fi to upstream
+# Forward requests to koe.ylioppilastutkinto.fi and oma.abitti.fi to upstream
 # This is to allow other KTPs that temporarily receive DHCP from this server to still resolve the correct address and be able to
 # contact it on its external network interface (that does not lead to this KTP). If we did not do this, the KTP would get
 # koe.ylioppilastutkinto.fi => 0.0.0.0 and be unable to make the request, even on the correct network interface.
-# Student machines will not be able to contact koe.ylioppilastutkinto.fi either way, since they will get blocked by iptables
+# Student machines will not be able to contact koe.ylioppilastutkinto.fi or oma.abitti.fi either way, since they will get blocked by iptables
 server=/koe.ylioppilastutkinto.fi/#
+server=/oma.abitti.fi/#
+
+
 
 # Null-route all other traffic
 # This prevents software on the student computer from getting confused by when DNS queries work, but the TCP
