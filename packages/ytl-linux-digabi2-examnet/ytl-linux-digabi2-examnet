@@ -1,756 +1,93 @@
 #!/usr/bin/env bash
 
-# Exit codes
-readonly EXIT_CODE_MUST_BE_ROOT=1                     # The script must be executed by root or sudo
-readonly EXIT_CODE_NETWORK_DEVICE_NAME_MISSING_WAN=2  # Network device name (internet) is missing
-readonly EXIT_CODE_NETWORK_DEVICE_MISSING_WAN=3       # Given network device name (internet) does not exist
-readonly EXIT_CODE_NETWORK_DEVICE_NAME_MISSING_LAN=4  # Network device name (local network) is missing
-readonly EXIT_CODE_NETWORK_DEVICE_MISSING_LAN=5       # Given network device (local network) does not exist
-readonly EXIT_CODE_IDENT_NETWORK_DEVICE_NAMES=6       # Two ident network names were given
-readonly EXIT_CODE_MISSING_SERVER_NUMBER=7            # Server number is missing
-readonly EXIT_CODE_ILLEGAL_SERVER_NUMBER=8            # Server number is not between 1-254 (or contains other than numbers)
-readonly EXIT_CODE_BAD_FILE_PATH=9                    # When writing a file, the given path does not exist and could not be created
-readonly EXIT_CODE_CANNOT_WRITE=10                    # Cannot write to the given filename
-readonly EXIT_CODE_CANNOT_RESTART_RESOLVED=11         # Cannot restart systemd-resolved
-readonly EXIT_CODE_CANNOT_RESTART_LAN_DEVICE=12       # Cannot start local network device (nmcli connectip up fails)
-readonly EXIT_CODE_CANNOT_RESTART_DNSMASQ=13          # Cannot restart dnsmasq
-readonly EXIT_CODE_CANNOT_RESTART_NM=14               # Cannot restart NetworkManager
-readonly EXIT_CODE_WAN_WITH_NO_IP=15                  # Given WAN device does not have an IPv4 address
-readonly EXIT_CODE_CANNOT_REMOVE_FILES=17             # The script was executed with --remove, but it could not remove settings files
-readonly EXIT_CODE_CANNOT_REMOVE_CONNECTION=18        # The script was executed with --remove, but it could not remove a connection
-readonly EXIT_CODE_CANNOT_RESTART_DOCKER=19           # Cannot restart docker
-readonly EXIT_CODE_NO_SAN_FOR_SERVER_NUMBER=20        # Obtained certificate did not contain a valid domain for this server number
-readonly EXIT_CODE_CANNOT_START_DAEMON=21             # Cannot start daemon due to e.g. no network device configured by examnet, no domain in Naksu 2 workdir, etc.
-readonly EXIT_CODE_DAEMON_EXITED_UNEXPECTEDLY=22      # Daemon exited unexpectedly
-readonly EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE=23     # Cannot change service state (e.g. enable/disable/restart) due to systemd failure
-readonly EXIT_CODE_MISSING_CERTIFICATE=24             # Cannot find certificate (e.g. download failure, missing file, invalid API key)
-readonly EXIT_CODE_INVALID_FRIENDLY_NAME=25           # Friendly name contains illegal characters
-readonly EXIT_CODE_NETWORK_NOT_ONLINE=27              # Network did not come up within timeout
-readonly EXIT_CODE_CANNOT_RUN_ALIAS_DISCOVERY=28      # Cannot run alias discovery due to missing configuration
-readonly EXIT_CODE_FAILED_TO_CONFIGURE_DOCKER=29      # Failed to configure or restart Docker
-
-readonly SCRIPT_PATH=$0
-readonly PARAM_NET_DEVICE_WAN=$1
-readonly PARAM_NET_DEVICE_LAN=$2
-readonly PARAM_SERVER_NUMBER=$3
-readonly PARAM_SERVER_FRIENDLY_NAME=$4
-
-readonly NETWORK_DEVICE_FILTER_RE="^docker|^br|^veth|^lo$"
-readonly DOCKER_BRIDGE_NETWORK_DNS_RESOLVER_IP="172.17.0.1"
-readonly FRIENDLY_NAME_SEARCH_DOMAIN="internal"
-readonly DISCOVERY_PORT=26464
-readonly BOUNCER_PORT=80
-
-readonly PATH_ETC=${PATH_ETC:-/etc/}
-readonly PATH_ETC_HOSTS=${PATH_ETC}/hosts
-readonly PATH_NETPLAN=${PATH_NETPLAN:-/etc/netplan/}
-readonly PATH_NETPLAN_CONF="${PATH_NETPLAN}/50-cloud-init.yaml"
-readonly PATH_TEMPLATES=${PATH_TEMPLATES:-/etc/ytl-linux-digabi2-examnet/templates}
-readonly PATH_RESOLVED=${PATH_RESOLVED:-/etc/systemd/resolved.conf.d}
-readonly PATH_RESOLVED_CONF=$PATH_RESOLVED/ytl-linux.conf
-readonly PATH_RESOLVED_CONF_TEMPLATE=$PATH_TEMPLATES/resolved.conf.template
-readonly PATH_DNSMASQ=${PATH_DNSMASQ:-/etc/dnsmasq.d}
-readonly PATH_DNSMASQ_CONF=$PATH_DNSMASQ/ytl-linux.conf
-readonly PATH_DNSMASQ_CONF_TEMPLATE=$PATH_TEMPLATES/dnsmasq.conf.template
-readonly PATH_DNSMASQ_STATIC_DNS_CONF=$PATH_DNSMASQ/ytl-linux-static-dns-records.conf
-readonly PATH_DNSMASQ_KTP_ALIASES_CONF=$PATH_DNSMASQ/ytl-linux-ktp-aliases.conf
-readonly PATH_DOCKER=${PATH_DOCKER:-/etc/docker}
-readonly PATH_DOCKER_DAEMON_CONF=$PATH_DOCKER/daemon.json
-readonly PATH_NAKSU2_WORKDIR="${NAKSU2_WORKDIR:-/home/school/.local/share/digabi/naksu2}"
-readonly PATH_NAKSU2_CERTS_DIR="$PATH_NAKSU2_WORKDIR/certs"
-readonly PATH_NAKSU2_CERT="$PATH_NAKSU2_CERTS_DIR/cert.pem"
-readonly PATH_NAKSU2_DOMAIN="$PATH_NAKSU2_CERTS_DIR/domain.txt"
-readonly PATH_EXAMNET_CONFIG="${PATH_EXAMNET_CONFIG:-/etc/ytl-linux-digabi2-examnet/config/}"
-readonly PATH_SERVER_FRIENDLY_NAME_CONF=$PATH_EXAMNET_CONFIG/server-friendly-name
-readonly PATH_NET_DEVICE_LAN_CONF=$PATH_EXAMNET_CONFIG/net-device-lan
-readonly PATH_NET_DEVICE_WAN_CONF=$PATH_EXAMNET_CONFIG/net-device-wan
-readonly PATH_SERVER_OWN_IP=$PATH_EXAMNET_CONFIG/server-own-ip
-readonly PATH_DISCOVERY_DB=$PATH_EXAMNET_CONFIG/discovery.db
-
-readonly BIN_DIGABI2_EXAMNET_BOUNCER=${BIN_DIGABI2_EXAMNET_BOUNCER:-/usr/local/libexec/ytl-linux-digabi2-examnet/bouncer}
-readonly BIN_DIGABI2_EXAMNET_DISCOVERY=${BIN_DIGABI2_EXAMNET_DISCOVERY:-/usr/local/libexec/ytl-linux-digabi2-examnet/discovery}
-
-readonly CONST_MIN_SERVER_NUMBER=1
-readonly CONST_MAX_SERVER_NUMBER=24
-readonly CONST_SUBNETS_PER_SERVER=10
-
-function get_dir_owner() {
-    _DIR=$1
-    if [ -d "$_DIR" ]; then
-        stat -c '%U:%G' "$_DIR"
-    fi
-}
-
-readonly NAKSU2_WORKDIR_OWNER=$(get_dir_owner "$PATH_NAKSU2_WORKDIR")
-
-function debug_path() {
-    if [ -z "$DEBUG" ]; then
-        echo "/dev/null"
-    else
-        echo "$DEBUG"
-    fi
-}
-
-PATH_DEBUG=$(debug_path)
-readonly PATH_DEBUG
-
-function debug() {
-    _DEBUG_MESSAGE=$1
-    echo "$SCRIPT_PATH DEBUG: $_DEBUG_MESSAGE" #>>"$PATH_DEBUG"
-}
-
-function print_error() {
-    _ERROR_MESSAGE=$1
-    debug "ERROR: $_ERROR_MESSAGE"
-    echo "$SCRIPT_PATH error: $_ERROR_MESSAGE" >&2
-}
-
-function print_info() {
-    _INFO_MESSAGE=$1
-    debug "INFO: $_INFO_MESSAGE"
-    echo "$SCRIPT_PATH info: $_INFO_MESSAGE"
-}
-
-function print_usage() {
-    echo "usage: $SCRIPT_PATH wan-network-device local-network-device server-number [custom-server-name] [--use-static-local-dns]" >&2
-    echo "       $SCRIPT_PATH --daemon" >&2
-    echo "       $SCRIPT_PATH --restart-daemon" >&2
-    echo "       $SCRIPT_PATH --discover" >&2
-    echo "       $SCRIPT_PATH --remove" >&2
-    echo "" >&2
-    echo "example: $SCRIPT_PATH eth0 eth1 1" >&2
-}
-
-function exit_script() {
-    _EXIT_CODE=$1
-    debug "Exiting with code $_EXIT_CODE"
-    exit "$_EXIT_CODE"
-}
-
-function exit_if_error() {
-    _EXIT_CODE=$(($1))
-    _EXIT_CODE_IF_ERROR=$(($2))
-    _ERROR_MESSAGE_IF_ERROR=$3
-
-    if [ $_EXIT_CODE -gt 0 ]; then
-        debug "Got exit code $_EXIT_CODE"
-        print_error "$_ERROR_MESSAGE_IF_ERROR (original exit code: $_EXIT_CODE)"
-        exit_script $_EXIT_CODE_IF_ERROR
-    fi
-}
-
-function current_user_is_root () {
-    if [ "$EUID" == "0" ]; then
-        echo 1
-    fi
-}
-
-function network_enumerate_devices () {
-    for dir in /sys/class/net/*; do
-        device=$(basename "$dir")
-        if ! [[ "$device" =~ $NETWORK_DEVICE_FILTER_RE ]]; then
-            echo "$device "
-        fi
-    done
-}
-
-function network_device_exists() {
-    _DEVICE=$1
-    ip link show "$_DEVICE" &> /dev/null && echo "1"
-}
-
-function get_ipv4_address() {
-    _DEVICE=$1
-    _IP=$(ip -oneline -4 addr show scope global "$_DEVICE" | tr -s ' ' | tr '/' ' ' | cut -f 4 -d ' ')
-    if [[ ! "$_IP" =~ "does not exist" ]]; then
-        echo "$_IP"
-    fi
-}
-
-function check_network_device_names() {
-    _NET_DEVICE_WAN=$1
-    _NET_DEVICE_LAN=$2
-
-    if [ -z "$_NET_DEVICE_WAN" ]; then
-        print_error "Network device name (internet) is missing"
-        print_usage
-        exit_script $EXIT_CODE_NETWORK_DEVICE_NAME_MISSING_WAN
-    fi
-
-    WAN_NETWORK_DEVICE_EXISTS=$(network_device_exists "$_NET_DEVICE_WAN")
-    if [ -z "$WAN_NETWORK_DEVICE_EXISTS" ]; then
-        print_error "Given network device $_NET_DEVICE_WAN (internet) does not exist"
-        print_usage
-        exit_script $EXIT_CODE_NETWORK_DEVICE_MISSING_WAN
-    fi
-
-    if [ -z "$_NET_DEVICE_LAN" ]; then
-        print_error "Network device name (local network) is missing"
-        print_usage
-        exit_script $EXIT_CODE_NETWORK_DEVICE_NAME_MISSING_LAN
-    fi
-
-    LAN_NETWORK_DEVICE_EXISTS=$(network_device_exists "$_NET_DEVICE_LAN")
-    if [ -z "$LAN_NETWORK_DEVICE_EXISTS" ]; then
-        print_error "Given network device $_NET_DEVICE_LAN (local network) does not exist"
-        print_usage
-        exit_script $EXIT_CODE_NETWORK_DEVICE_MISSING_LAN
-    fi
-
-    if [ "$_NET_DEVICE_WAN" = "$_NET_DEVICE_LAN" ]; then
-        print_error "Two different network device names are required"
-        print_usage
-        exit_script $EXIT_CODE_IDENT_NETWORK_DEVICE_NAMES
-    fi
-}
-
-function server_number_is_valid() {
-    _SERVER_NUMBER=$1
-    if [[ "$_SERVER_NUMBER" =~ ^[0-9]+$ ]] && [ "$_SERVER_NUMBER" -ge $CONST_MIN_SERVER_NUMBER ] && [ "$_SERVER_NUMBER" -le $CONST_MAX_SERVER_NUMBER ]; then
-        echo "1"
-    fi
-}
-
-function check_server_number() {
-    _SERVER_NUMBER=$1
-
-    if [ -z "$_SERVER_NUMBER" ]; then
-        print_error "Server number is missing"
-        print_usage
-        exit_script $EXIT_CODE_MISSING_SERVER_NUMBER
-    fi
-
-    if [ -z "$(server_number_is_valid "$_SERVER_NUMBER")" ]; then
-        print_error "Server number must be $CONST_MIN_SERVER_NUMBER-$CONST_MAX_SERVER_NUMBER"
-        print_usage
-        exit_script $EXIT_CODE_ILLEGAL_SERVER_NUMBER
-    fi
-}
-
-function get_lan_ip_prefix() {
-    _IP_WAN=$1
-
-    if [[ "$_IP_WAN" =~ ^192\.168\. ]]; then
-        echo "10.0."
-    else
-        echo "192.168."
-    fi
-}
-
-function write_file() {
-    _FILE_FILENAME=$1
-    _FILE_CONTENT=$2
-    _FILE_OWNER=$3  # Optional: owner in format 'user:group'
-
-    _FILE_PATH=$(dirname "$_FILE_FILENAME")
-    if [ ! -d "$_FILE_PATH" ]; then
-        debug "Path $_FILE_PATH is missing, creating"
-        mkdir -p "$_FILE_PATH"
-        exit_if_error $? $EXIT_CODE_BAD_FILE_PATH "Failed to create directory $_FILE_PATH"
-        if [ -n "$_FILE_OWNER" ]; then
-            chown "$_FILE_OWNER" "$_FILE_PATH"
-        fi
-    else
-        debug "Path $_FILE_PATH exists"
-    fi
-
-    debug "$_FILE_FILENAME: $_FILE_CONTENT"
-    echo -e "$_FILE_CONTENT" >"$_FILE_FILENAME"
-    exit_if_error $? $EXIT_CODE_CANNOT_WRITE "Failed to write to $_FILE_FILENAME"
-
-    if [ -n "$_FILE_OWNER" ]; then
-        chown "$_FILE_OWNER" "$_FILE_FILENAME"
-    fi
-}
-
-function configure_networkmanager() {
-    _CONNECTION_NAME=$1
-    _INTERFACE_NAME=$2
-    _IP_AND_NETMASK=$3
-
-    debug "Deleting existing NetworkManager connection '$_CONNECTION_NAME'"
-    nmcli connection delete "$_CONNECTION_NAME" >>"$PATH_DEBUG" 2>&1
-    # We are not checking the exit code as this command fails if the connection does not exist
-    # This is quite normal if the script has been executed before
-
-    debug "Adding NetworkManager connection '$_CONNECTION_NAME'"
-    nmcli connection add \
-        type ethernet \
-        ifname "$_INTERFACE_NAME" \
-        con-name "$_CONNECTION_NAME" \
-        ip4 "$_IP_AND_NETMASK" \
-        autoconnect yes \
-        save yes >>"$PATH_DEBUG" 2>&1
-    exit_if_error $? $EXIT_CODE_CANNOT_RESTART_LAN_DEVICE "NetworkManager CLI: connection add $_CONNECTION_NAME failed"
-
-    debug "Disabling IPv6 in connection '$_CONNECTION_NAME'"
-    nmcli connection modify "$_CONNECTION_NAME" ipv6.method "disabled" >>"$PATH_DEBUG" 2>&1
-    exit_if_error $? $EXIT_CODE_CANNOT_RESTART_LAN_DEVICE "NetworkManager CLI: IPv6 disable failed"
-
-    debug "Starting connection '$_CONNECTION_NAME'"
-    nmcli connection up "$_CONNECTION_NAME" >>"$PATH_DEBUG" 2>&1
-    exit_if_error $? $EXIT_CODE_CANNOT_RESTART_LAN_DEVICE "Failed to start NetworkManager connection '$_CONNECTION_NAME'"
-}
-
-function remove_dnsmasq_settings() {
-    if [ -f $PATH_DNSMASQ_CONF ]; then
-        rm -f $PATH_DNSMASQ_CONF
-        exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_DNSMASQ_CONF'"
-    fi
-
-    if [ -f $PATH_DNSMASQ_STATIC_DNS_CONF ]; then
-        rm -f $PATH_DNSMASQ_STATIC_DNS_CONF
-        exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_DNSMASQ_STATIC_DNS_CONF'"
-    fi
-}
-
-function remove_all_settings() {
-    disable_systemd_services
-
-    if [ -f $PATH_RESOLVED_CONF ]; then
-        rm -f $PATH_RESOLVED_CONF
-        exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_RESOLVED_CONF'"
-    fi
-
-    if [ -f $PATH_DOCKER_DAEMON_CONF ]; then
-        rm -f $PATH_DOCKER_DAEMON_CONF
-        exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_DOCKER_DAEMON_CONF'"
-    fi
-
-    if [ -f $PATH_NET_DEVICE_WAN_CONF ]; then
-        rm -f $PATH_NET_DEVICE_WAN_CONF
-        exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_NET_DEVICE_WAN_CONF'"
-    fi
-
-    if [ -f $PATH_NET_DEVICE_LAN_CONF ]; then
-        rm -f $PATH_NET_DEVICE_LAN_CONF
-        exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_NET_DEVICE_LAN_CONF'"
-    fi
-
-    if [ -f $PATH_SERVER_FRIENDLY_NAME_CONF ]; then
-        rm -f $PATH_SERVER_FRIENDLY_NAME_CONF
-        exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_SERVER_FRIENDLY_NAME_CONF'"
-    fi
-
-    if [ -f $PATH_SERVER_OWN_IP ]; then
-        rm -f $PATH_SERVER_OWN_IP
-        exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_SERVER_OWN_IP'"
-    fi
-
-    if [ -f $PATH_DISCOVERY_DB ]; then
-        rm -f $PATH_DISCOVERY_DB
-        exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove system file '$PATH_DISCOVERY_DB'"
-    fi
-
-    remove_dnsmasq_settings
-    remove_school_host_entries
-
-    CONNECTIONS=$(nmcli -f UUID,NAME connection show)
-    exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_CONNECTION "Failed to enumerate NetworkManager connections for removal"
-
-    printf '%S\n' "$CONNECTIONS" | grep -P -v "^UUID" | tr -s ' ' | while read -r line ; do
-        connection_uuid=$(echo "$line" | cut -d ' ' -f 1)
-        connection_name=$(echo "$line" | cut -d ' ' -f 2)
-        if [[ "$connection_name" =~ ^yo- ]]; then
-            debug "Removing connection '$connection_name', uuid: $connection_uuid"
-            nmcli connection delete "$connection_uuid"
-            exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_CONNECTION "Failed to remove connection '$connection_name'"
-        fi
-    done
-}
-
-function restart_systemd_resolved() {
-    systemctl restart systemd-resolved
-    exit_if_error $? $EXIT_CODE_CANNOT_RESTART_RESOLVED "Failed to restart systemd-resolved"
-}
-
-function restart_dnsmasq() {
-    if [[ "$(systemctl is-enabled dnsmasq.service)" == "enabled" ]]; then
-        systemctl restart dnsmasq.service >>"$PATH_DEBUG" 2>&1
-        exit_if_error $? $EXIT_CODE_CANNOT_RESTART_DNSMASQ "Failed to restart dnsmasq.service"
-    fi
-}
-
-function restart_networkmanager() {
-    systemctl restart NetworkManager.service >>"$PATH_DEBUG" 2>&1
-    exit_if_error $? $EXIT_CODE_CANNOT_RESTART_NM "Failed to restart NetworkManager.service"
-}
-
-function wait_for_network_online() {
-    _TIMEOUT=$1
-
-    if [ -z "$_TIMEOUT" ]; then
-        _TIMEOUT=30
-    fi
-
-    nm-online -s -q --timeout="$_TIMEOUT" >>"$PATH_DEBUG" 2>&1
-
-    exit_if_error $? $EXIT_CODE_NETWORK_NOT_ONLINE "Network did not become online within timeout"
-}
-
-function restart_examnet_daemon() {
-    if [[ "$(systemctl is-enabled ytl-linux-digabi2-examnet.service)" == "enabled" ]]; then
-        systemctl restart ytl-linux-digabi2-examnet.service >>"$PATH_DEBUG" 2>&1
-        exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to restart ytl-linux-digabi2-examnet.service"
-    fi
-
-    if [[ "$(systemctl is-enabled ytl-linux-digabi2-examnet-discovery.timer)" == "enabled" ]]; then
-        systemctl restart ytl-linux-digabi2-examnet-discovery.timer >>"$PATH_DEBUG" 2>&1
-        exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to restart ytl-linux-digabi2-examnet-discovery.timer"
-    fi
-
-    if [[ "$(systemctl is-enabled ytl-linux-digabi2-examnet-discovery.service)" == "enabled" ]]; then
-        systemctl restart ytl-linux-digabi2-examnet-discovery.service >>"$PATH_DEBUG" 2>&1
-        exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to restart ytl-linux-digabi2-examnet-discovery.service"
-    fi
-}
-
-function restart_network_services() {
-    restart_systemd_resolved
-    restart_dnsmasq
-    restart_networkmanager
-    restart_examnet_daemon
-}
-
-function enable_systemd_services() {
-    systemctl enable ytl-linux-digabi2-examnet.service >>"$PATH_DEBUG" 2>&1
-    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to enable ytl-linux-digabi2-examnet.service"
-
-    systemctl enable dnsmasq.service >>"$PATH_DEBUG" 2>&1
-    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to enable dnsmasq.service"
-
-    systemctl enable ytl-linux-digabi2-examnet-discovery.service >>"$PATH_DEBUG" 2>&1
-    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to enable ytl-linux-digabi2-examnet-discovery.service"
-
-    systemctl enable ytl-linux-digabi2-examnet-discovery.timer >>"$PATH_DEBUG" 2>&1
-    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to enable ytl-linux-digabi2-examnet-discovery.timer"
-}
-
-function disable_systemd_services() {
-    systemctl disable --now ytl-linux-digabi2-examnet.service >>"$PATH_DEBUG" 2>&1
-    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to disable ytl-linux-digabi2-examnet.service"
-
-    systemctl disable --now dnsmasq.service >>"$PATH_DEBUG" 2>&1
-    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to disable dnsmasq.service"
-
-    systemctl disable --now ytl-linux-digabi2-examnet-discovery.timer >>"$PATH_DEBUG" 2>&1
-    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to disable ytl-linux-digabi2-examnet-discovery.timer"
-
-    systemctl disable --now ytl-linux-digabi2-examnet-discovery.service >>"$PATH_DEBUG" 2>&1
-    exit_if_error $? $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE "Failed to disable ytl-linux-digabi2-examnet-discovery.service"
-}
-
-function restart_docker() {
-    systemctl restart docker
-    exit_if_error $? $EXIT_CODE_CANNOT_RESTART_DOCKER "Failed to restart docker"
-}
-
-function configure_static_dns_records() {
-    _SERVER_NUMBER=$1
-
-    if [ ! -f "$PATH_NAKSU2_CERT" ]; then
-        print_error "Certificate file $PATH_NAKSU2_CERT does not exist, cannot configure static DNS records"
-        exit_script $EXIT_CODE_MISSING_CERTIFICATE
-    fi
-
-    debug "Configuring static DNS records"
-    debug "Parsing domains from certificate in $PATH_NAKSU2_CERT"
-
-    # Parse out SANs from certificate; only include server subdomains (e.g. ktp1.1000.koe.abitti.net), not the "root subdomain"
-    # (e.g. 1000.koe.abitti.net) since we cannot reasonably ascribe DNS names to these
-    DOMAINS="$(
-        openssl x509 -in "$PATH_NAKSU2_CERT" -text -noout |\
-        grep 'DNS:' |\
-        sed 's/DNS://g' |\
-        tr ',' '\n' |\
-        grep -E '[^.]+\.[^.]+\.koe\.abitti\.net'
-    )"
-
-    debug "Configuring static DNS records for the following domains:"
-    debug "$DOMAINS"
-
-    DNS_RECORDS=()
-    ETC_HOSTS=()
-    THIS_SERVER_DOMAIN=""
-
-    for DOMAIN in $DOMAINS; do
-        debug "Generating DNS record for domain: $DOMAIN"
-
-        SERVER_NUMBER="$(echo "$DOMAIN" | cut -d '.' -f1 | tr -dc '[:digit:]')"
-
-        if [ "$SERVER_NUMBER" == "$_SERVER_NUMBER" ]; then
-            THIS_SERVER_DOMAIN=$DOMAIN
-        fi
-
-        debug "Server number of domain $DOMAIN is: $SERVER_NUMBER"
-        IP="${IP_LAN_PREFIX}$((SERVER_NUMBER * CONST_SUBNETS_PER_SERVER)).1"
-        DNS_RECORDS+=("host-record=$DOMAIN,$IP")
-        ETC_HOSTS+=("$IP $DOMAIN")
-    done
-
-    if [ "$THIS_SERVER_DOMAIN" == "" ]; then
-        print_error "Certificate did not contain a valid domain for this server number"
-        exit_script $EXIT_CODE_NO_SAN_FOR_SERVER_NUMBER
-    fi
-
-    debug "Generated DNS records: ${DNS_RECORDS[*]}"
-    write_file $PATH_DNSMASQ_STATIC_DNS_CONF "$(IFS=$'\n'; echo "${DNS_RECORDS[*]}")"
-
-    debug "Generated /etc/hosts entries: ${ETC_HOSTS[*]}"
-
-    remove_school_host_entries
-
-    {
-    echo "# BEGIN SCHOOL DOMAIN ENTRIES"
-    printf '%s\n' "${ETC_HOSTS[@]}"
-    echo "# END SCHOOL DOMAIN ENTRIES"
-    } | sudo tee -a "$PATH_ETC_HOSTS" > /dev/null
-
-    debug "Configuring domain for KTP"
-    debug "This server's domain based on server number ($SERVER_NUMBER) is: $THIS_SERVER_DOMAIN"
-    write_file "$PATH_NAKSU2_DOMAIN" "$THIS_SERVER_DOMAIN" "$NAKSU2_WORKDIR_OWNER"
-}
-
-function remove_school_host_entries() {
-    sed -i '' '/^# BEGIN SCHOOL DOMAIN ENTRIES$/,/^# END SCHOOL DOMAIN ENTRIES$/d' "$PATH_ETC_HOSTS"
-}
-
-# ---------- Main script logic starts here ---------- #
-
-if [ -z "$PARAM_NET_DEVICE_WAN" ] || [[ $PARAM_NET_DEVICE_WAN =~ ^--.+$ ]]; then
-    print_usage
-    exit_script $EXIT_CODE_NETWORK_DEVICE_NAME_MISSING_WAN
-fi
-
-if [ -z "$PARAM_NET_DEVICE_LAN" ] || [[ $PARAM_NET_DEVICE_LAN =~ ^--.+$ ]]; then
-    print_usage
-    exit_script $EXIT_CODE_NETWORK_DEVICE_NAME_MISSING_LAN
-fi
-
-if [ -z "$PARAM_SERVER_NUMBER" ] || [[ $PARAM_SERVER_NUMBER =~ ^--.+$ ]]; then
-    print_usage
-    exit_script $EXIT_CODE_MISSING_SERVER_NUMBER
-fi
-
-if [[ $TEST_MODE != "test" && ! "$(current_user_is_root)" ]]; then
-    print_error "You're not root"
-    exit_script $EXIT_CODE_MUST_BE_ROOT
-fi
-
-if [[ $* == *--daemon* ]]; then
-    print_info "Starting in daemon mode"
-
-    if [[ ! -f $PATH_NET_DEVICE_LAN_CONF || ! -f $PATH_SERVER_FRIENDLY_NAME_CONF ]]; then
-        print_error "Examnet is not configured, daemon cannot start"
-        exit_script $EXIT_CODE_CANNOT_START_DAEMON
-    fi
-
-    _LAN_DEVICE_IP=$(get_ipv4_address "$(cat $PATH_NET_DEVICE_LAN_CONF)")
-
-    if [ -z "$_LAN_DEVICE_IP" ]; then
-        print_error "Could not find an IPv4 address for the LAN network device as configured by examnet, daemon cannot start"
-        exit_script $EXIT_CODE_CANNOT_START_DAEMON
-    fi
-
-    if [[ ! $PATH_NAKSU2_WORKDIR || ! -f $PATH_NAKSU2_DOMAIN ]]; then
-        print_error "Abitti 2 server is not configured (missing Naksu 2 workdir and/or domain.txt), daemon cannot start"
-        exit_script $EXIT_CODE_CANNOT_START_DAEMON
-    fi
-
-    CONFIG=$(cat <<EOF
-    {\
-        "config": {\
-            "friendlyName": $(jq -Rc . "$PATH_SERVER_FRIENDLY_NAME_CONF"), \
-            "canonicalHostname": $(jq -Rc . "$PATH_NAKSU2_DOMAIN"), \
-            "ncsiHostnames": $(jq -Rc '.|split(",")|map(select(.!=""))' "$PATH_EXAMNET_CONFIG/ncsi-hostnames"), \
-            "searchDomain": "$FRIENDLY_NAME_SEARCH_DOMAIN", \
-            "serverOwnIp": $(jq -Rc . "$PATH_SERVER_OWN_IP"), \
-            "ports": {"discovery": $DISCOVERY_PORT, "bouncer": $BOUNCER_PORT} \
-        }, \
-        "secrets": $(jq -nc '{cert:$cert, key:$key}' \
-            --arg cert "$PATH_NAKSU2_CERTS_DIR/fullchain.pem" \
-            --arg key "$PATH_NAKSU2_CERTS_DIR/key.pem" \
-        ) \
-    }
-EOF
-    )
-    $BIN_DIGABI2_EXAMNET_BOUNCER "$CONFIG"
-
-    # We're not supposed to get here, so this would indicate the daemon process exited
-    exit_script $EXIT_CODE_DAEMON_EXITED_UNEXPECTEDLY
-fi
-
-if [[ $* == *--restart-daemon* ]]; then
-    restart_examnet_daemon
-    exit_script 0
-fi
-
-if [[ $* == *--discover* ]]; then
-    print_info "Running alias discovery"
-
-    if [[ ! -f $PATH_DNSMASQ_STATIC_DNS_CONF || ! -f $PATH_SERVER_OWN_IP ]]; then
-        print_error "Examnet is not configured, cannot run alias discovery"
-        exit_script $EXIT_CODE_CANNOT_RUN_ALIAS_DISCOVERY
-    fi
-
-    CONFIG=$(cat <<EOF
-    {
-        "config": {
-            "isProd": true,
-            "ktpDomains": $(jq -Rcs '[. | split("\n") | .[] | match("host-record=(.+),.+").captures[0].string]' "$PATH_DNSMASQ_STATIC_DNS_CONF"),
-            "dnsmasqConfigOutputFile": "$PATH_DNSMASQ_KTP_ALIASES_CONF",
-            "ports": {"discovery": $DISCOVERY_PORT},
-            "dbPath": "$PATH_DISCOVERY_DB"
-        }
-    }
-EOF
-    )
-
-    $BIN_DIGABI2_EXAMNET_DISCOVERY "$CONFIG"
-
-    exit_if_error $? $EXIT_CODE_CANNOT_RUN_ALIAS_DISCOVERY "Failed to run alias discovery"
-    exit 0
-fi
-
-if [[ $* == *--remove* ]]; then
-    remove_all_settings
-    restart_network_services
-    restart_docker
-
-    # Using a shorter timeout for removing settings, since if the internal network device does not have DHCP (common in dedicated exam networks,
-    # since this server is acting as DHCP), the internal network connection will never activate. nm-online -s waits for connections to become
-    # active within the timeout, so if the internal network device does not have DHCP, this will never happen and we will always hit the timeout.
-    # As such, use a fairly short timeout to just give NetworkManager a little time to get the working connections up and going.
-    wait_for_network_online 5
-
-    print_info "All examnet settings have been removed"
-
-    exit_script 0
-fi
-
-USE_STATIC_LOCAL_DNS=0
-
-if [[ $* == *--use-static-local-dns* ]]; then
-    USE_STATIC_LOCAL_DNS=1
-fi
-
-NET_DEVICE_WAN=$PARAM_NET_DEVICE_WAN
-NET_DEVICE_LAN=$PARAM_NET_DEVICE_LAN
-
-debug "NET_DEVICE_WAN: $NET_DEVICE_WAN"
-debug "NET_DEVICE_LAN: $NET_DEVICE_LAN"
-check_network_device_names "$NET_DEVICE_WAN" "$NET_DEVICE_LAN"
-
-SERVER_NUMBER=$PARAM_SERVER_NUMBER
-
-debug "SERVER_NUMBER: $SERVER_NUMBER"
-check_server_number "$SERVER_NUMBER"
-
-write_file $PATH_NET_DEVICE_LAN_CONF "$NET_DEVICE_LAN"
-write_file $PATH_NET_DEVICE_WAN_CONF "$NET_DEVICE_WAN"
-
-export NET_DEVICE_WAN
-export NET_DEVICE_LAN
-
-IP_WAN=$(get_ipv4_address "$NET_DEVICE_WAN")
-readonly IP_WAN
-if [ -z "$IP_WAN" ]; then
-    print_error "Given WAN device $NET_DEVICE_WAN does not have an IPv4 address"
-    exit_script $EXIT_CODE_WAN_WITH_NO_IP
-fi
-
-IP_LAN=$(get_ipv4_address "$NET_DEVICE_LAN")
-readonly IP_LAN
-if [ -n "$IP_LAN" ]; then
-    print_info "Given local device $NET_DEVICE_LAN has already an IPv4 address $IP_LAN"
-fi
-debug "IP_WAN: $IP_WAN"
-debug "IP_LAN: $IP_LAN"
-
-export IP_WAN
-export IP_LAN
-export SERVER_NUMBER
-
-IP_LAN_PREFIX=$(get_lan_ip_prefix "$IP_WAN")
-export IP_LAN_PREFIX
-
-debug "SUBNETS_PER_SERVER: $CONST_SUBNETS_PER_SERVER"
-
-SERVER_HOST_NUMBER=$((SERVER_NUMBER * CONST_SUBNETS_PER_SERVER))
-debug "SERVER_HOST_NUMBER: $SERVER_HOST_NUMBER"
-
-SERVER_OWN_IP="$IP_LAN_PREFIX$SERVER_HOST_NUMBER.1"
-debug "SERVER_OWN_IP: $SERVER_OWN_IP"
-write_file $PATH_SERVER_OWN_IP "$SERVER_OWN_IP"
-
-export SERVER_OWN_IP
-
-DHCP_RANGE_START="$IP_LAN_PREFIX$SERVER_HOST_NUMBER.10"
-DHCP_RANGE_END="$IP_LAN_PREFIX$((SERVER_HOST_NUMBER + CONST_SUBNETS_PER_SERVER - 1)).254"
-
-debug "DHCP_RANGE_START: $DHCP_RANGE_START"
-debug "DHCP_RANGE_END: $DHCP_RANGE_END"
-
-export DHCP_RANGE_START
-export DHCP_RANGE_END
-
-NCSI_HOSTNAMES_LIST=$(cat $PATH_EXAMNET_CONFIG/ncsi-hostnames)
-debug "NCSI_HOSTNAMES_LIST: $NCSI_HOSTNAMES_LIST"
-export NCSI_HOSTNAMES_LIST
-
-if [[ ! $PARAM_SERVER_FRIENDLY_NAME =~ ^--.+$ ]]; then
-    SERVER_FRIENDLY_NAME=$PARAM_SERVER_FRIENDLY_NAME
-else
-    SERVER_FRIENDLY_NAME=""
-fi
-
-if [ -n "$SERVER_FRIENDLY_NAME" ]; then
-    if ! [[ "$SERVER_FRIENDLY_NAME" =~ ^[a-z0-9]+$ ]]; then
-        print_error "Custom server name may only contain lowercase letters a-z and digits 0-9"
-        exit_script $EXIT_CODE_INVALID_FRIENDLY_NAME
-    fi
-fi
-
-configure_networkmanager "yo-$NET_DEVICE_LAN" "$NET_DEVICE_LAN" "$SERVER_OWN_IP/16"
-
-# Remove configuration file generated by cloud-init
-# If not removed, there might be multiple settings for built-in ethernet devices
-if [ -f "$PATH_NETPLAN_CONF" ]; then
-    rm -f "$PATH_NETPLAN_CONF"
-    exit_if_error $? $EXIT_CODE_CANNOT_REMOVE_FILES "Failed to remove netplan config file '$PATH_NETPLAN_CONF'"
-fi
-
-restart_networkmanager
-wait_for_network_online
-
-if [ -z "$SERVER_FRIENDLY_NAME" ]; then
-    debug "User did not provide friendly name, falling back to static DNS name"
-    # Fallback to use server's static DNS name (e.g. ktp1)
-    SERVER_FRIENDLY_NAME=$(cat "$PATH_NAKSU2_DOMAIN" | cut -d '.' -f1)
-fi
-
-debug "SERVER_FRIENDLY_NAME: $SERVER_FRIENDLY_NAME"
-export SERVER_FRIENDLY_NAME
-
-write_file $PATH_RESOLVED_CONF "$(envsubst < $PATH_RESOLVED_CONF_TEMPLATE)"
-
-remove_dnsmasq_settings
-export FRIENDLY_NAME_SEARCH_DOMAIN
-write_file $PATH_DNSMASQ_CONF "$(envsubst < $PATH_DNSMASQ_CONF_TEMPLATE)"
-
-if [ $USE_STATIC_LOCAL_DNS -gt 0 ]; then
-    configure_static_dns_records "$SERVER_NUMBER"
-fi
-
-write_file $PATH_SERVER_FRIENDLY_NAME_CONF "$SERVER_FRIENDLY_NAME"
-
-enable_systemd_services
-restart_systemd_resolved
-restart_dnsmasq
-restart_examnet_daemon
-
-debug "Configuring Docker daemon"
-ytl-linux-digabi2-docker-configure.sh "${IP_WAN}" "${SERVER_OWN_IP}"
-exit_if_error $? $EXIT_CODE_FAILED_TO_CONFIGURE_DOCKER "Failed to configure and restart Docker"
-
-print_info "Changes made successfully"
+# TODO: Naksu uses exit codes 6, 20, 24, 25 so these should not be changed
+
+export EXIT_CODE_GENERIC_ERROR=1                # Generic unexpected errors
+export EXIT_CODE_MUST_BE_ROOT=2                 # The script must be executed by root or sudo
+export EXIT_CODE_NO_SUCH_NETWORK_DEVICE=3       # The specified network device does not exist
+export EXIT_CODE_SAME_DEVICE_FOR_WAN_AND_LAN=6  # The same network device cannot be used for both LAN and WAN
+export EXIT_CODE_NO_IP_ON_NETWORK_DEVICE=7      # The specified network device does not have an IP address
+export EXIT_CODE_INVALID_SERVER_NUMBER=8        # The specified server number is not an integer between 1 and 24
+export EXIT_CODE_CANNOT_REMOVE_FILES=17         # The script was unable to remove some files
+export EXIT_CODE_CANNOT_REMOVE_CONNECTION=18    # The script was unable to remove some network connection
+export EXIT_CODE_NO_SAN_FOR_SERVER_NUMBER=20    # The certificate does not have a SAN entry for the specified server number
+export EXIT_CODE_CANNOT_START_BOUNCER=21        # The script was unable to start the bouncer daemon
+export EXIT_CODE_DAEMON_EXITED_UNEXPECTEDLY=22  # The bouncer or discovery daemon exited unexpectedly
+export EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE=23 # The script was unable to change the state of a systemd unit
+export EXIT_CODE_MISSING_CERTIFICATE=24         # The certificate file cert.pem is missing
+export EXIT_CODE_INVALID_FRIENDLY_NAME=25       # The specified server friendly name is invalid
+export EXIT_CODE_NETWORK_NOT_ONLINE=27          # WAN device did not become online within expected time
+export EXIT_CODE_CANNOT_RUN_ALIAS_DISCOVERY=28  # The script was unable to run the alias discovery daemon
+export EXIT_CODE_CANNOT_CONFIGURE_EXAMNET=30    # The script was unable to configure the exam network
+
+export NETWORK_DEVICE_FILTER_RE="^docker|^br|^veth|^lo$"
+export DOCKER_BRIDGE_NETWORK_DNS_RESOLVER_IP="172.17.0.1"
+export FRIENDLY_NAME_SEARCH_DOMAIN="internal"
+export DISCOVERY_PORT=26464
+export BOUNCER_PORT=80
+
+export ALLOWED_DOCKER_IP_RANGES="10.0. 192.168. 172.17."
+export MIN_SERVER_NUMBER="1"
+export MAX_SERVER_NUMBER="24"
+export SUBNETS_PER_SERVER="10"
+
+export PATH_ETC=${PATH_ETC:-/etc}
+export PATH_ETC_HOSTS="${PATH_ETC}/hosts"
+export PATH_NETPLAN=${PATH_NETPLAN:-/etc/netplan}
+export PATH_NETPLAN_CONF="${PATH_NETPLAN}/50-cloud-init.yaml"
+export PATH_TEMPLATES=${PATH_TEMPLATES:-/etc/ytl-linux-digabi2-examnet/templates}
+export PATH_RESOLVED=${PATH_RESOLVED:-/etc/systemd/resolved.conf.d}
+export PATH_RESOLVED_CONF="$PATH_RESOLVED/ytl-linux.conf"
+export PATH_RESOLVED_CONF_TEMPLATE="$PATH_TEMPLATES/resolved.conf.template"
+export PATH_DNSMASQ=${PATH_DNSMASQ:-/etc/dnsmasq.d}
+export PATH_DNSMASQ_CONF="$PATH_DNSMASQ/ytl-linux.conf"
+export PATH_DNSMASQ_CONF_TEMPLATE="$PATH_TEMPLATES/dnsmasq.conf.template"
+export PATH_DNSMASQ_STATIC_DNS_CONF="$PATH_DNSMASQ/ytl-linux-static-dns-records.conf"
+export PATH_DNSMASQ_KTP_ALIASES_CONF="$PATH_DNSMASQ/ytl-linux-ktp-aliases.conf"
+export PATH_DOCKER=${PATH_DOCKER:-/etc/docker}
+export PATH_DOCKER_DAEMON_CONF="$PATH_DOCKER/daemon.json"
+export PATH_DOCKER_DAEMON_CONF_TEMPLATE="$PATH_TEMPLATES/docker-daemon.json.template"
+export PATH_NAKSU2_WORKDIR="${NAKSU2_WORKDIR:-/home/school/.local/share/digabi/naksu2}"
+export PATH_NAKSU2_CERTS_DIR="$PATH_NAKSU2_WORKDIR/certs"
+export PATH_NAKSU2_CERT="$PATH_NAKSU2_CERTS_DIR/cert.pem"
+export PATH_NAKSU2_FULLCHAIN_PEM="$PATH_NAKSU2_CERTS_DIR/fullchain.pem"
+export PATH_NAKSU2_KEY_PEM="$PATH_NAKSU2_CERTS_DIR/key.pem"
+export PATH_NAKSU2_DOMAIN="$PATH_NAKSU2_CERTS_DIR/domain.txt"
+export PATH_EXAMNET_CONFIG="${PATH_EXAMNET_CONFIG:-/etc/ytl-linux-digabi2-examnet/config}"
+export PATH_SERVER_FRIENDLY_NAME_CONF="$PATH_EXAMNET_CONFIG/server-friendly-name"
+export PATH_NET_DEVICE_LAN_CONF="$PATH_EXAMNET_CONFIG/net-device-lan"
+export PATH_NET_DEVICE_WAN_CONF="$PATH_EXAMNET_CONFIG/net-device-wan"
+export PATH_SERVER_OWN_IP="$PATH_EXAMNET_CONFIG/server-own-ip"
+export PATH_DISCOVERY_DB="$PATH_EXAMNET_CONFIG/discovery.db"
+export PATH_JUSTFILE="${PATH_JUSTFILE:-/usr/local/libexec/ytl-linux-digabi2-examnet/justfile}"
+export PATH_NCSI_HOSTNAMES="$PATH_EXAMNET_CONFIG/ncsi-hostnames"
+export BIN_DIGABI2_EXAMNET_BOUNCER=${BIN_DIGABI2_EXAMNET_BOUNCER:-/usr/local/libexec/ytl-linux-digabi2-examnet/bouncer}
+export BIN_DIGABI2_EXAMNET_DISCOVERY=${BIN_DIGABI2_EXAMNET_DISCOVERY:-/usr/local/libexec/ytl-linux-digabi2-examnet/discovery}
+
+args=()
+recipe="configure"
+
+for arg in "$@"; do
+  case "$arg" in
+    --daemon)
+      recipe="bouncer"
+      ;;
+    --restart-daemon)
+      recipe="restart-bouncer"
+      ;;
+    --discovery)
+      recipe="discovery"
+      ;;
+    --remove)
+      recipe="destroy"
+      ;;
+    --use-static-local-dns)
+      # Eat the flag, do not pass it to just
+      ;;
+    *)
+      args+=("$arg")
+      ;;
+  esac
+done
+
+just --justfile "$PATH_JUSTFILE" "$recipe" "${args[@]}"
