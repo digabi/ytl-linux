@@ -24,10 +24,7 @@ get-lan-ip-prefix wan-ip:
     echo "192.168.";
   fi
 
-get-available-ip-range-for-docker error-code +reserved-ips: \
-  (util::assert-envs-set error-code \
-    "ALLOWED_DOCKER_IP_RANGES"
-  )
+get-available-ip-range-for-docker error-code +reserved-ips:
   #!/usr/bin/env bash
   set -euo pipefail
 

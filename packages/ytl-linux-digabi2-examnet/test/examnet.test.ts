@@ -471,7 +471,18 @@ describe('examnet (just port)', () => {
       await assertFileExists(mockResolvedDir, 'ytl-linux.conf')
       await assertFileExists(mockDnsmasqDir, 'ytl-linux.conf')
       await assertFileExists(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf')
-      await assertFileExists(mockNaksu2CertsDir, 'domain.txt')
+      await assertFileExists(
+        mockDockerDir,
+        'daemon.json',
+        '{\n' +
+          '  "dns": ["10.0.0.1"],\n' +
+          '  "default-address-pools":\n' +
+          '  [\n' +
+          '    {"base": "10.0.0.0/16", "size":24}\n' +
+          '  ]\n' +
+          '}\n'
+      )
+      await assertFileExists(mockNaksu2CertsDir, 'domain.txt', 'ktp1.999.koe.abitti.net\n')
     })
     test('runs setup when correct parameters are given with friendly name', async () => {
       // use real sed to parse cert.pem
@@ -707,7 +718,17 @@ describe('examnet (just port)', () => {
     )
     await writeToTempDir(mockExamnetConfigDir, 'discovery.db', 'foo')
     await writeToTempDir(mockTemplatesDir, 'resolved.conf.template', 'foobar')
-    await writeToTempDir(mockTemplatesDir, 'docker-daemon.json.template', 'foobar')
+    await writeToTempDir(
+      mockTemplatesDir,
+      'docker-daemon.json.template',
+      '{\n' +
+        '  "dns": ["${DOCKER_NETWORK_DNS_RESOLVER_IP}"],\n' +
+        '  "default-address-pools":\n' +
+        '  [\n' +
+        '    {"base": "${DOCKER_NETWORK_POOL_BASE_IP}/16", "size":24}\n' +
+        '  ]\n' +
+        '}\n'
+    )
     await writeToTempDir(mockTemplatesDir, 'dnsmasq.conf.template', 'foobar')
     await writeToTempDir(mockNetplanConfDir, '50-cloud-init.yaml', 'baz')
     await writeToTempDir(mockEtcDir, 'hosts', '# test /etc/hosts file\n')

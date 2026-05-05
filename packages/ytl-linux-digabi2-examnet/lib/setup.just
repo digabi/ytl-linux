@@ -31,6 +31,7 @@ apply net-device-wan net-device-lan server-number server-name: \
     "MIN_SERVER_NUMBER"
     "MAX_SERVER_NUMBER"
     "SUBNETS_PER_SERVER"
+    "ALLOWED_DOCKER_IP_RANGES"
   ) \
   (assert-server-number-valid server-number) \
   (assert-device-exists net-device-wan) \
