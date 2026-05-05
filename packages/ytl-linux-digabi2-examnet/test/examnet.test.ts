@@ -233,10 +233,10 @@ describe('examnet (just port)', () => {
       await runExamnetReturnsExitCode(23, ['--remove'], ENV_TEST_MODE)
       await assertCalls([callSystemctl('disable', 'ytl-linux-digabi2-examnet', '--now')])
     })
-    test('returns error if waiting for network online fails', async () => {
+    test('runs destroy without error even if waiting for network online fails', async () => {
       await writeToTempDir(mockBinDir, 'nm-online', mockScriptReturningErrorCode)
       await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '10.0.10.1')
-      await runExamnetReturnsExitCode(27, ['--remove'], ENV_TEST_MODE)
+      await runExamnetWithArguments(['--remove'], ENV_TEST_MODE)
       await assertCalls([
         callSystemctl('disable', 'ytl-linux-digabi2-examnet', '--now'),
         callSystemctl('disable', 'dnsmasq', '--now'),
