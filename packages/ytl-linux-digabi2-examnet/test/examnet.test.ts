@@ -16,6 +16,8 @@ describe('examnet (just port)', () => {
   let mockDockerDir
   let mockDnsmasqDir
   let mockSysctlDir
+  let mockRsyslogDir
+  let mockLogrotateDir
   let mockNaksu2WorkDir
   let mockNaksu2CertsDir
   let mockNetplanConfDir
@@ -34,6 +36,8 @@ describe('examnet (just port)', () => {
       mockDockerDir,
       mockDnsmasqDir,
       mockSysctlDir,
+      mockRsyslogDir,
+      mockLogrotateDir,
       mockNaksu2WorkDir,
       mockNaksu2CertsDir,
       mockNetplanConfDir,
@@ -523,6 +527,10 @@ describe('examnet (just port)', () => {
         callIpset('flush', 'ytl_internet_allowlist'),
         callIpset('destroy', 'ytl_internet_allowlist'),
         callIpsetCreate('ytl_internet_allowlist'),
+
+        callSystemctl('restart', 'rsyslog'),
+        callSystemctl('restart', 'logrotate'),
+
         callIptablesCheckChain(
           'filter',
           'YTL_LAN_WAN_IPSET',
@@ -593,6 +601,8 @@ describe('examnet (just port)', () => {
         callIpset('flush', 'ytl_internet_allowlist'),
         callIpset('destroy', 'ytl_internet_allowlist'),
         callIpsetCreate('ytl_internet_allowlist'),
+        callSystemctl('restart', 'rsyslog'),
+        callSystemctl('restart', 'logrotate'),
         callIptablesCheckChain(
           'filter',
           'YTL_LAN_WAN_IPSET',
@@ -642,7 +652,25 @@ describe('examnet (just port)', () => {
       await assertFileExists(mockDnsmasqDir, 'ytl-linux.conf')
       await assertFileExists(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf')
       await assertFileExists(mockSysctlDir, '99-ytl-linux-digabi2-examnet.conf')
-      await assertFileExists(mockNaksu2CertsDir, 'domain.txt')
+      await assertFileExists(
+        mockRsyslogDir,
+        '30-ytl-linux-internet-forwarding.conf',
+        `:msg, contains, "YTL_ALLOW_NEW " ${mockNaksu2WorkDir}/logs/ytl-linux-internet-forwarding.log\n& stop\n`
+      )
+      await assertFileExists(
+        mockLogrotateDir,
+        'ytl-internet-forwarding',
+        `${mockNaksu2WorkDir}/logs/ytl-linux-internet-forwarding.log {\n` +
+          '    hourly\n' +
+          '    maxsize 10M\n' +
+          '    rotate 200\n' +
+          '    maxage 7\n' +
+          '    dateext\n' +
+          '    compress\n' +
+          '    missingok\n' +
+          '    notifempty\n' +
+          '}\n'
+      )
       await assertFileExists(
         mockDockerDir,
         'daemon.json',
@@ -718,6 +746,8 @@ describe('examnet (just port)', () => {
         callIpset('flush', 'ytl_internet_allowlist'),
         callIpset('destroy', 'ytl_internet_allowlist'),
         callIpsetCreate('ytl_internet_allowlist'),
+        callSystemctl('restart', 'rsyslog'),
+        callSystemctl('restart', 'logrotate'),
         callIptablesCheckChain(
           'filter',
           'YTL_LAN_WAN_IPSET',
@@ -768,8 +798,37 @@ describe('examnet (just port)', () => {
       await assertFileExists(mockDnsmasqDir, 'ytl-linux.conf')
       await assertFileExists(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf')
       await assertFileExists(mockSysctlDir, '99-ytl-linux-digabi2-examnet.conf')
-      await assertFileExists(mockNaksu2CertsDir, 'domain.txt')
-      // TODO tarkista daemon.json:in sisältö
+      await assertFileExists(
+        mockRsyslogDir,
+        '30-ytl-linux-internet-forwarding.conf',
+        `:msg, contains, "YTL_ALLOW_NEW " ${mockNaksu2WorkDir}/logs/ytl-linux-internet-forwarding.log\n& stop\n`
+      )
+      await assertFileExists(
+        mockLogrotateDir,
+        'ytl-internet-forwarding',
+        `${mockNaksu2WorkDir}/logs/ytl-linux-internet-forwarding.log {\n` +
+          '    hourly\n' +
+          '    maxsize 10M\n' +
+          '    rotate 200\n' +
+          '    maxage 7\n' +
+          '    dateext\n' +
+          '    compress\n' +
+          '    missingok\n' +
+          '    notifempty\n' +
+          '}\n'
+      )
+      await assertFileExists(
+        mockDockerDir,
+        'daemon.json',
+        '{\n' +
+          '  "dns": ["10.0.0.1"],\n' +
+          '  "default-address-pools":\n' +
+          '  [\n' +
+          '    {"base": "10.0.0.0/16", "size":24}\n' +
+          '  ]\n' +
+          '}\n'
+      )
+      await assertFileExists(mockNaksu2CertsDir, 'domain.txt', 'ktp1.999.koe.abitti.net\n')
     })
   })
 
@@ -790,6 +849,8 @@ describe('examnet (just port)', () => {
         PATH_DOCKER: mockDockerDir,
         PATH_DNSMASQ: mockDnsmasqDir,
         PATH_SYSCTL: mockSysctlDir,
+        PATH_RSYSLOG: mockRsyslogDir,
+        PATH_LOGROTATE: mockLogrotateDir,
         NAKSU2_WORKDIR: mockNaksu2WorkDir,
         PATH_NETPLAN: mockNetplanConfDir,
         PATH_ETC: mockEtcDir,
@@ -879,6 +940,8 @@ describe('examnet (just port)', () => {
     const mockDockerDir = await makeTempDir(root, 'mock-docker-dir')
     const mockDnsmasqDir = await makeTempDir(root, 'mock-dnsmasq-dir')
     const mockSysctlDir = await makeTempDir(root, 'mock-sysctl-dir')
+    const mockRsyslogDir = await makeTempDir(root, 'mock-rsyslog-dir')
+    const mockLogrotateDir = await makeTempDir(root, 'mock-logrotate-dir')
     const mockNaksu2WorkDir = await makeTempDir(root, 'naksu2-work-dir')
     const mockNaksu2CertsDir = await makeTempDir(mockNaksu2WorkDir, 'certs')
     const mockNetplanConfDir = await makeTempDir(root, 'mock-etc-netplan')
@@ -977,6 +1040,25 @@ describe('examnet (just port)', () => {
         '  ]\n' +
         '}\n'
     )
+    await writeToTempDir(
+      mockTemplatesDir,
+      'rsyslog-internet-forwarding.conf.template',
+      ':msg, contains, "YTL_ALLOW_NEW " $PATH_INTERNET_FORWARDING_LOGS\n& stop\n'
+    )
+    await writeToTempDir(
+      mockTemplatesDir,
+      'logrotate-internet-forwarding.template',
+      '$PATH_INTERNET_FORWARDING_LOGS {\n' +
+        '    hourly\n' +
+        '    maxsize 10M\n' +
+        '    rotate 200\n' +
+        '    maxage 7\n' +
+        '    dateext\n' +
+        '    compress\n' +
+        '    missingok\n' +
+        '    notifempty\n' +
+        '}\n'
+    )
     await writeToTempDir(mockTemplatesDir, 'dnsmasq.conf.template', 'foobar')
     await writeToTempDir(mockNetplanConfDir, '50-cloud-init.yaml', 'baz')
     await writeToTempDir(mockEtcDir, 'hosts', '# test /etc/hosts file\n')
@@ -998,6 +1080,8 @@ describe('examnet (just port)', () => {
       mockDockerDir,
       mockDnsmasqDir,
       mockSysctlDir,
+      mockRsyslogDir,
+      mockLogrotateDir,
       mockNaksu2WorkDir,
       mockNaksu2CertsDir,
       mockScriptWithNoOutput,

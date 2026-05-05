@@ -1,0 +1,2 @@
+:msg, contains, "YTL_ALLOW_NEW " $PATH_INTERNET_FORWARDING_LOGS
+& stop

@@ -82,11 +82,11 @@ apply net-device-wan net-device-lan server-number server-friendly-name: \
   just systemd restart NetworkManager
   just network wait-for-network-online
 
-  just fs write-file "$PATH_RESOLVED_CONF" "$(envsubst < $PATH_RESOLVED_CONF_TEMPLATE)"
+  just fs create-file-from-template "$PATH_RESOLVED_CONF" "$PATH_RESOLVED_CONF_TEMPLATE" $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
 
   export NET_DEVICE_LAN="{{net-device-lan}}"
   just fs empty-directory "$PATH_DNSMASQ"
-  just fs write-file "$PATH_DNSMASQ_CONF" "$(envsubst < $PATH_DNSMASQ_CONF_TEMPLATE)"
+  just fs create-file-from-template "$PATH_DNSMASQ_CONF" "$PATH_DNSMASQ_CONF_TEMPLATE" $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
 
   just static-dns-records configure {{server-number}} $SUBNETS_PER_SERVER
 
@@ -100,12 +100,7 @@ apply net-device-wan net-device-lan server-number server-friendly-name: \
   export DOCKER_NETWORK_DNS_RESOLVER_IP
   export DOCKER_NETWORK_POOL_BASE_IP
 
-  if ! DOCKER_DAEMON_CONF="$(envsubst < $PATH_DOCKER_DAEMON_CONF_TEMPLATE)"; then
-    just log error "Failed to substitute variables into Docker daemon configuration template"
-    exit $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
-  fi
-
-  just fs write-file "$PATH_DOCKER_DAEMON_CONF" "$DOCKER_DAEMON_CONF"
+  just fs create-file-from-template "$PATH_DOCKER_DAEMON_CONF" "$PATH_DOCKER_DAEMON_CONF_TEMPLATE" $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
   just systemd restart docker
 
   # Enable relevant systemd services

@@ -113,3 +113,16 @@ get-dir-owner path error-code:
   fi
 
   stat -c '%U:%G' "{{path}}"
+
+create-file-from-template destination-path template-path error-code:
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  just log debug "Creating file {{destination-path}} from template '{{template-path}}'"
+
+  if ! CONTENT="$(envsubst < "{{template-path}}")"; then
+    just log error "Failed to substitute variables into template file '{{template-path}}'"
+    exit {{error-code}}
+  fi
+
+  just fs write-file "{{destination-path}}" "$CONTENT"

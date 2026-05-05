@@ -9,6 +9,11 @@ enable net-device-wan net-device-lan error-code: \
     "INTERNET_ALLOWLIST_DOMAINS"
     "PATH_DNSMASQ_IPSET_ALLOWLIST_CONF"
     "PATH_DNSMASQ_SERVER_ALLOWLIST_CONF"
+    "PATH_RSYSLOG_INTERNET_FORWARDING_CONF"
+    "PATH_RSYSLOG_INTERNET_FORWARDING_CONF_TEMPLATE"
+    "PATH_LOGROTATE_INTERNET_FORWARDING_CONF"
+    "PATH_LOGROTATE_INTERNET_FORWARDING_CONF_TEMPLATE"
+    "PATH_INTERNET_FORWARDING_LOGS"
     "PATH_SYSCTL_EXAMNET_CONF"
     "INTERNET_ALLOWLIST_IPSET_NAME"
     "INTERNET_ALLOWLIST_FILTER_CHAIN"
@@ -48,6 +53,14 @@ enable net-device-wan net-device-lan error-code: \
     just log error "Failed to create ipset '$INTERNET_ALLOWLIST_IPSET_NAME'"
     exit {{error-code}}
   fi
+
+  # Add rsyslog config to log allowed packets to a separate file for easier analysis
+  just fs create-file-from-template "$PATH_RSYSLOG_INTERNET_FORWARDING_CONF" "$PATH_RSYSLOG_INTERNET_FORWARDING_CONF_TEMPLATE" {{error-code}}
+  just systemd restart rsyslog
+
+  # Add logrotate config to rotate the separate log file
+  just fs create-file-from-template "$PATH_LOGROTATE_INTERNET_FORWARDING_CONF" "$PATH_LOGROTATE_INTERNET_FORWARDING_CONF_TEMPLATE"  {{error-code}}
+    just systemd restart logrotate
 
   # Log new allowlisted flows
   just iptables add-rule filter $INTERNET_ALLOWLIST_FILTER_CHAIN {{error-code}} \
@@ -164,7 +177,7 @@ enable-kernel-ip-forwarding error-code:
 
   just log debug "Enabling kernel IP forwarding"
 
-  if ! echo net.ipv4.ip_forward=1 > "$PATH_SYSCTL_EXAMNET_CONF"; then
+  if ! just fs write-file "$PATH_SYSCTL_EXAMNET_CONF" "net.ipv4.ip_forward=1"; then
     just log error "Failed to write kernel IP forwarding setting to '$PATH_SYSCTL_EXAMNET_CONF'"
     exit {{error-code}}
   fi
