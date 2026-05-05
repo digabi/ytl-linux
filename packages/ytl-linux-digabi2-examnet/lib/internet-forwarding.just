@@ -19,9 +19,6 @@ enable net-device-wan net-device-lan error-code: \
     "INTERNET_ALLOWLIST_FILTER_CHAIN"
     "INTERNET_ALLOWLIST_IPSET_TIMEOUT_SECONDS"
   ) \
-  (util::assert-program-exists "iptables") \
-  (util::assert-program-exists "ipset") \
-  (util::assert-program-exists "sysctl") \
   (network::assert-device-exists net-device-wan) \
   (network::assert-device-exists net-device-lan)
   #!/usr/bin/env bash
@@ -108,10 +105,7 @@ disable error-code: \
     "PATH_SYSCTL_EXAMNET_CONF"
     "INTERNET_ALLOWLIST_IPSET_NAME"
     "INTERNET_ALLOWLIST_FILTER_CHAIN"
-  ) \
-  (util::assert-program-exists "iptables") \
-  (util::assert-program-exists "ipset") \
-  (util::assert-program-exists "sysctl")
+  )
   #!/usr/bin/env bash
   set -euo pipefail
 
@@ -160,8 +154,7 @@ flush-and-destroy-ipset ipset-name error-code:
   fi
 
 populate-ipset server-own-ip error-code: \
-  (util::assert-envs-set error-code "INTERNET_ALLOWLIST_DOMAINS") \
-  (util::assert-program-exists "dig")
+  (util::assert-envs-set error-code "INTERNET_ALLOWLIST_DOMAINS")
   #!/usr/bin/env bash
   set -euo pipefail
 
