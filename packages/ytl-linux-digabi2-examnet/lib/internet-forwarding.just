@@ -66,7 +66,7 @@ enable net-device-wan net-device-lan error-code: \
   just iptables add-rule filter $INTERNET_ALLOWLIST_FILTER_CHAIN {{error-code}} \
       --match conntrack --ctstate NEW \
       --match set --match-set "$INTERNET_ALLOWLIST_IPSET_NAME" dst \
-      --match limit --limit 10/second --limit-burst 30 \
+      --match limit --limit 30/second --limit-burst 100 \
       --jump LOG --log-prefix "YTL_ALLOW_NEW " --log-level 6
 
   # Allow only ipset allowlisted destinations

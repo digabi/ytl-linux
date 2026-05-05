@@ -534,7 +534,7 @@ describe('examnet (just port)', () => {
         callIptablesCheckChain(
           'filter',
           'YTL_LAN_WAN_IPSET',
-          '--match conntrack --ctstate NEW --match set --match-set ytl_internet_allowlist dst --match limit --limit 10/second --limit-burst 30 --jump LOG --log-prefix YTL_ALLOW_NEW --log-level 6'
+          '--match conntrack --ctstate NEW --match set --match-set ytl_internet_allowlist dst --match limit --limit 30/second --limit-burst 100 --jump LOG --log-prefix YTL_ALLOW_NEW --log-level 6'
         ),
         callIptablesCheckChain(
           'filter',
@@ -606,7 +606,7 @@ describe('examnet (just port)', () => {
         callIptablesCheckChain(
           'filter',
           'YTL_LAN_WAN_IPSET',
-          '--match conntrack --ctstate NEW --match set --match-set ytl_internet_allowlist dst --match limit --limit 10/second --limit-burst 30 --jump LOG --log-prefix YTL_ALLOW_NEW --log-level 6'
+          '--match conntrack --ctstate NEW --match set --match-set ytl_internet_allowlist dst --match limit --limit 30/second --limit-burst 100 --jump LOG --log-prefix YTL_ALLOW_NEW --log-level 6'
         ),
         callIptablesCheckChain(
           'filter',
@@ -751,7 +751,7 @@ describe('examnet (just port)', () => {
         callIptablesCheckChain(
           'filter',
           'YTL_LAN_WAN_IPSET',
-          '--match conntrack --ctstate NEW --match set --match-set ytl_internet_allowlist dst --match limit --limit 10/second --limit-burst 30 --jump LOG --log-prefix YTL_ALLOW_NEW --log-level 6'
+          '--match conntrack --ctstate NEW --match set --match-set ytl_internet_allowlist dst --match limit --limit 30/second --limit-burst 100 --jump LOG --log-prefix YTL_ALLOW_NEW --log-level 6'
         ),
         callIptablesCheckChain(
           'filter',
