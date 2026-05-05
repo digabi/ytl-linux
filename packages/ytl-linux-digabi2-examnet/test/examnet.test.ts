@@ -484,6 +484,26 @@ describe('examnet (just port)', () => {
       )
       await assertFileExists(mockNaksu2CertsDir, 'domain.txt', 'ktp1.999.koe.abitti.net\n')
     })
+    test('returns error if waiting for network online fails', async () => {
+      // use real sed to parse cert.pem
+      await unlink(join(mockBinDir, 'sed'))
+      await writeToTempDir(mockBinDir, 'nm-online', mockScriptReturningErrorCode)
+      await runExamnetReturnsExitCode(27, ['eth0', 'eth1', '1', 'perunakellari'], ENV_TEST_MODE)
+      await assertCalls([
+        callIpLinkShow('eth0'),
+        callIpLinkShow('eth1'),
+        callIpAddrShow('eth0'),
+        callIpAddrShow('eth1'),
+        callNmicliConnectionShow('yo-eth1'),
+        callNmicliConnectionDelete('yo-eth1'),
+        callNmicliConnectionAdd('yo-eth1', '192.168.10.1/16'),
+        callNmicliConnectionModify('yo-eth1'),
+        callNmicliConnectionUp('yo-eth1'),
+        callRm(`${mockNetplanConfDir}/50-cloud-init.yaml`),
+        callSystemctl('restart', 'NetworkManager'),
+        callNmonline()
+      ])
+    })
     test('runs setup when correct parameters are given with friendly name', async () => {
       // use real sed to parse cert.pem
       await unlink(join(mockBinDir, 'sed'))
