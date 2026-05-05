@@ -8,7 +8,7 @@ mod static-dns-records
 EXIT_CODE_CANNOT_CONFIGURE_EXAMNET := env('EXIT_CODE_CANNOT_CONFIGURE_EXAMNET')
 EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE := env('EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE')
 
-apply net-device-wan net-device-lan server-number server-name: \
+apply net-device-wan net-device-lan server-number server-friendly-name: \
   (util::assert-envs-set EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
     "EXIT_CODE_NO_IP_ON_NETWORK_DEVICE"
     "EXIT_CODE_NETWORK_NOT_ONLINE"
@@ -36,12 +36,12 @@ apply net-device-wan net-device-lan server-number server-name: \
   (assert-server-number-valid server-number) \
   (assert-device-exists net-device-wan) \
   (assert-device-exists net-device-lan) \
-  (assert-server-name-valid server-name) \
+  (assert-server-friendly-name-valid server-friendly-name) \
   (assert-devices-different net-device-wan net-device-lan)
   #!/usr/bin/env bash
   set -euo pipefail
 
-  just log info "Configuring examnet with WAN device '{{net-device-wan}}', LAN device '{{net-device-lan}}', server number {{server-number}} and server name '{{server-name}}'"
+  just log info "Configuring examnet with WAN device '{{net-device-wan}}', LAN device '{{net-device-lan}}', server number {{server-number}} and server friendly name '{{server-friendly-name}}'"
 
   IP_WAN=$(just network get-device-ipv4-address "{{net-device-wan}}" $EXIT_CODE_NO_IP_ON_NETWORK_DEVICE)
   just log debug "WAN device {{net-device-wan}} has IP address '$IP_WAN'"
@@ -117,7 +117,7 @@ apply net-device-wan net-device-lan server-number server-name: \
   just systemd restart ytl-linux-digabi2-examnet-discovery.timer
   just systemd restart ytl-linux-digabi2-examnet-discovery.service
 
-  just setup write-examnet-config "{{net-device-wan}}" "{{net-device-lan}}" "$SERVER_OWN_IP" "{{server-name}}"
+  just setup write-examnet-config "{{net-device-wan}}" "{{net-device-lan}}" "$SERVER_OWN_IP" "{{server-friendly-name}}"
 
   just log info "Examnet configuration applied successfully"
 
@@ -188,11 +188,11 @@ destroy: \
   just log info "All examnet settings have been removed"
 
 [private]
-write-examnet-config net-device-wan net-device-lan server-own-ip server-name:
+write-examnet-config net-device-wan net-device-lan server-own-ip server-friendly-name:
   just fs write-file "$PATH_NET_DEVICE_LAN_CONF" "{{net-device-lan}}"
   just fs write-file "$PATH_NET_DEVICE_WAN_CONF" "{{net-device-wan}}"
   just fs write-file "$PATH_SERVER_OWN_IP" "{{server-own-ip}}"
-  just fs write-file "$PATH_SERVER_FRIENDLY_NAME_CONF" "{{server-name}}"
+  just fs write-file "$PATH_SERVER_FRIENDLY_NAME_CONF" "{{server-friendly-name}}"
 
 [private]
 assert-device-exists device:
@@ -231,21 +231,13 @@ assert-server-number-valid server-number:
   fi
 
 [private]
-assert-server-name-valid server-name:
+assert-server-friendly-name-valid server-friendly-name:
   #!/usr/bin/env bash
   set -euo pipefail
 
-  just log debug "Checking that server name '{{server-name}}' only contains lowercase letters a-z and digits 0-9"
+  just log debug "Checking that server friendly name '{{server-friendly-name}}' only contains lowercase letters a-z and digits 0-9"
 
-  if [[ ! "{{server-name}}" =~ ^[a-z0-9]+$ ]]; then
-    just log error "Server name may only contain lowercase letters a-z and digits 0-9"
+  if [[ ! "{{server-friendly-name}}" =~ ^[a-z0-9]+$ ]]; then
+    just log error "Server friendly name may only contain lowercase letters a-z and digits 0-9"
     exit $EXIT_CODE_INVALID_FRIENDLY_NAME
   fi
-
-[private]
-get-server-friendly-name domain-file error-code:
-  #!/usr/bin/env bash
-  set -euo pipefail
-
-  DOMAIN_NAME=$(just fs read-file "{{domain-file}}" "canonical server hostname" {{error-code}})
-  echo $DOMAIN_NAME | cut -d '.' -f1

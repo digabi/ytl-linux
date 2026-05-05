@@ -23,17 +23,17 @@ mod util 'lib/util.just'
 default:
     @just --list --unsorted
 
-configure net-device-wan net-device-lan server-number server-name="": util::assert-user-is-root
+configure net-device-wan net-device-lan server-number server-friendly-name="": util::assert-user-is-root
     #!/usr/bin/env bash
     set -euo pipefail
 
-    if [[ -n "{{server-name}}" ]]; then
-      SERVER_NAME="{{server-name}}"
+    if [[ -n "{{server-friendly-name}}" ]]; then
+      SERVER_FRIENDLY_NAME="{{server-friendly-name}}"
     else
-      SERVER_NAME=$(just setup get-server-friendly-name "$PATH_NAKSU2_DOMAIN" $EXIT_CODE_INVALID_FRIENDLY_NAME)
+      SERVER_FRIENDLY_NAME="ktp{{server-number}}"
     fi
 
-    just setup apply {{net-device-wan}} {{net-device-lan}} {{server-number}} "$SERVER_NAME"
+    just setup apply {{net-device-wan}} {{net-device-lan}} {{server-number}} "$SERVER_FRIENDLY_NAME"
 
 destroy: util::assert-user-is-root
     just setup destroy
