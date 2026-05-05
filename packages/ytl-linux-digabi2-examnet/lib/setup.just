@@ -5,10 +5,6 @@ mod fs
 mod systemd
 mod static-dns-records
 
-MIN_SERVER_NUMBER := "1"
-MAX_SERVER_NUMBER := "24"
-SUBNETS_PER_SERVER := "10"
-
 EXIT_CODE_CANNOT_CONFIGURE_EXAMNET := env('EXIT_CODE_CANNOT_CONFIGURE_EXAMNET')
 EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE := env('EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE')
 
@@ -32,6 +28,9 @@ apply net-device-wan net-device-lan server-number server-name: \
     "PATH_DNSMASQ_CONF_TEMPLATE"
     "PATH_DOCKER_DAEMON_CONF"
     "PATH_DOCKER_DAEMON_CONF_TEMPLATE"
+    "MIN_SERVER_NUMBER"
+    "MAX_SERVER_NUMBER"
+    "SUBNETS_PER_SERVER"
   ) \
   (assert-server-number-valid server-number) \
   (assert-device-exists net-device-wan) \
@@ -59,12 +58,12 @@ apply net-device-wan net-device-lan server-number server-name: \
   export IP_WAN
   export IP_LAN_PREFIX
 
-  SERVER_HOST_NUMBER=$(({{server-number}} * {{SUBNETS_PER_SERVER}}))
+  SERVER_HOST_NUMBER=$(({{server-number}} * $SUBNETS_PER_SERVER))
   SERVER_OWN_IP="$IP_LAN_PREFIX$SERVER_HOST_NUMBER.1"
   export SERVER_OWN_IP
 
   DHCP_RANGE_START="$IP_LAN_PREFIX$SERVER_HOST_NUMBER.10"
-  DHCP_RANGE_END="$IP_LAN_PREFIX$((SERVER_HOST_NUMBER + {{SUBNETS_PER_SERVER}} - 1)).254"
+  DHCP_RANGE_END="$IP_LAN_PREFIX$((SERVER_HOST_NUMBER + $SUBNETS_PER_SERVER - 1)).254"
   export DHCP_RANGE_START
   export DHCP_RANGE_END
 
@@ -86,9 +85,9 @@ apply net-device-wan net-device-lan server-number server-name: \
   just fs empty-directory "$PATH_DNSMASQ"
   just fs write-file "$PATH_DNSMASQ_CONF" "$(envsubst < $PATH_DNSMASQ_CONF_TEMPLATE)"
 
-  just static-dns-records configure {{net-device-wan}} {{server-number}} {{SUBNETS_PER_SERVER}} $SERVER_OWN_IP $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
+  just static-dns-records configure {{net-device-wan}} {{server-number}} $SUBNETS_PER_SERVER $SERVER_OWN_IP $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
 
-  DOCKER_NETWORK_PREFIX=$(just network get-available-ip-range-for-docker "$SERVER_OWN_IP" "$IP_WAN")
+  DOCKER_NETWORK_PREFIX=$(just network get-available-ip-range-for-docker $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET "$SERVER_OWN_IP" "$IP_WAN")
   just log debug "Calculated Docker network prefix is '$DOCKER_NETWORK_PREFIX'"
   DOCKER_NETWORK_DNS_RESOLVER_IP="$DOCKER_NETWORK_PREFIX"0.1
   DOCKER_NETWORK_POOL_BASE_IP="$DOCKER_NETWORK_PREFIX"0.0
@@ -216,10 +215,10 @@ assert-server-number-valid server-number:
   #!/usr/bin/env bash
   set -euo pipefail
 
-  just log debug "Checking that server number '{{server-number}}' is a number between {{MIN_SERVER_NUMBER}} and {{MAX_SERVER_NUMBER}}"
+  just log debug "Checking that server number '{{server-number}}' is a number between $MIN_SERVER_NUMBER and $MAX_SERVER_NUMBER"
 
-  if [[ ! "{{server-number}}" =~ ^[0-9]+$ ]] || [[ "{{server-number}}" -lt {{MIN_SERVER_NUMBER}} ]] || [[ "{{server-number}}" -gt {{MAX_SERVER_NUMBER}} ]]; then
-    just log error "Server number must be a number between {{MIN_SERVER_NUMBER}} and {{MAX_SERVER_NUMBER}}"
+  if [[ ! "{{server-number}}" =~ ^[0-9]+$ ]] || [[ "{{server-number}}" -lt $MIN_SERVER_NUMBER ]] || [[ "{{server-number}}" -gt $MAX_SERVER_NUMBER ]]; then
+    just log error "Server number must be a number between $MIN_SERVER_NUMBER and $MAX_SERVER_NUMBER"
     exit $EXIT_CODE_INVALID_SERVER_NUMBER
   fi
 
