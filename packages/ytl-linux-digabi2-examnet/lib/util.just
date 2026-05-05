@@ -11,16 +11,6 @@ assert-user-is-root:
   fi
 
 [private]
-assert-program-exists program-name:
-  #!/usr/bin/env bash
-  set -euo pipefail
-
-  if ! command -v "{{program-name}}" &> /dev/null; then
-    just log error "ERROR: Required program '{{program-name}}' is not installed or not in PATH"
-    exit $EXIT_CODE_GENERIC_ERROR
-  fi
-
-[private]
 assert-envs-set error-code +var-names:
   #!/usr/bin/env bash
   set -euo pipefail

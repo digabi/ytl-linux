@@ -14,8 +14,7 @@ configure server-number subnets-per-server: \
     "PATH_NAKSU2_DOMAIN"
     "PATH_NAKSU2_WORKDIR"
     "PATH_DNSMASQ_STATIC_DNS_CONF"
-  ) \
-  (util::assert-program-exists "openssl")
+  )
   #!/usr/bin/env bash
   set -euo pipefail
 

@@ -2,7 +2,7 @@ mod util
 mod fs
 mod log
 
-get-device-ipv4-address device error-code-if-no-ip="": (util::assert-program-exists "ip")
+get-device-ipv4-address device error-code-if-no-ip="":
   #!/usr/bin/env bash
   set -euo pipefail
 
