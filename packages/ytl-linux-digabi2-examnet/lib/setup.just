@@ -85,7 +85,7 @@ apply net-device-wan net-device-lan server-number server-name: \
   just fs empty-directory "$PATH_DNSMASQ"
   just fs write-file "$PATH_DNSMASQ_CONF" "$(envsubst < $PATH_DNSMASQ_CONF_TEMPLATE)"
 
-  just static-dns-records configure {{net-device-wan}} {{server-number}} $SUBNETS_PER_SERVER $SERVER_OWN_IP $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
+  just static-dns-records configure {{server-number}} $SUBNETS_PER_SERVER
 
   DOCKER_NETWORK_PREFIX=$(just network get-available-ip-range-for-docker $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET "$SERVER_OWN_IP" "$IP_WAN")
   just log debug "Calculated Docker network prefix is '$DOCKER_NETWORK_PREFIX'"

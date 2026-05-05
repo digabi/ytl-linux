@@ -3,8 +3,10 @@ mod fs
 mod log
 mod util
 
-configure net-device-wan server-number SUBNETS_PER_SERVER server-own-ip error-code: \
-  (util::assert-envs-set error-code
+EXIT_CODE_CANNOT_CONFIGURE_EXAMNET:=env('EXIT_CODE_CANNOT_CONFIGURE_EXAMNET')
+
+configure server-number subnets-per-server: \
+  (util::assert-envs-set EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
     "EXIT_CODE_MISSING_CERTIFICATE"
     "EXIT_CODE_NO_SAN_FOR_SERVER_NUMBER"
     "PATH_NAKSU2_CERT"
@@ -51,7 +53,7 @@ configure net-device-wan server-number SUBNETS_PER_SERVER server-own-ip error-co
         THIS_SERVER_DOMAIN=$DOMAIN
     fi
 
-    IP="${IP_LAN_PREFIX}$((SERVER_NUMBER * {{SUBNETS_PER_SERVER}})).1"
+    IP="${IP_LAN_PREFIX}$((SERVER_NUMBER * {{subnets-per-server}})).1"
 
     just log debug "Adding DNS record for domain $DOMAIN with IP $IP"
     DNS_RECORDS+=("host-record=$DOMAIN,$IP")
@@ -70,17 +72,17 @@ configure net-device-wan server-number SUBNETS_PER_SERVER server-own-ip error-co
 
   just fs write-file "$PATH_DNSMASQ_STATIC_DNS_CONF" "$(IFS=$'\n'; echo "${DNS_RECORDS[*]}")"
 
-  just etc-hosts remove-school-domain-entries "$PATH_ETC_HOSTS" {{error-code}}
+  just etc-hosts remove-school-domain-entries "$PATH_ETC_HOSTS" $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
 
   just log debug "Adding school domain entries to /etc/hosts for server number {{server-number}}"
 
   SCHOOL_DOMAIN_ENTRIES=$(printf '%s\n' "${ETC_HOSTS[@]}")
-  just etc-hosts add-school-domain-entries "$PATH_ETC_HOSTS" "$SCHOOL_DOMAIN_ENTRIES" {{error-code}}
+  just etc-hosts add-school-domain-entries "$PATH_ETC_HOSTS" "$SCHOOL_DOMAIN_ENTRIES" $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
 
   just log debug "Got back from add-school-domain-entries"
 
   just log debug "Getting owner of Naksu2 workdir at $PATH_NAKSU2_WORKDIR to set correct ownership for created domain file at $PATH_NAKSU2_DOMAIN"
-  NAKSU2_WORKDIR_OWNER=$(just fs get-dir-owner "$PATH_NAKSU2_WORKDIR" {{error-code}})
+  NAKSU2_WORKDIR_OWNER=$(just fs get-dir-owner "$PATH_NAKSU2_WORKDIR" $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET)
 
   just log debug "Configuring domain for KTP"
   just log debug "This server's domain based on server number {{server-number}} is: $THIS_SERVER_DOMAIN"
