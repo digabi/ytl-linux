@@ -441,49 +441,6 @@ describe('examnet (just port)', () => {
         callOpenssl(mockNaksu2CertsDir)
       ])
     })
-    test('returns error if running ipset fails', async () => {
-      // use real sed to parse cert.pem
-      await unlink(join(mockBinDir, 'sed'))
-      await writeToTempDir(mockBinDir, 'ipset', mockScriptReturningErrorCode)
-      await runExamnetReturnsExitCode(30, ['eth0', 'eth1', '1'], ENV_TEST_MODE)
-      await assertCalls([
-        callIpLinkShow('eth0'),
-        callIpLinkShow('eth1'),
-        callIpAddrShow('eth0'),
-        callIpAddrShow('eth1'),
-        callNmicliConnectionShow('yo-eth1'),
-        callNmicliConnectionDelete('yo-eth1'),
-        callNmicliConnectionAdd('yo-eth1', '192.168.10.1/16'),
-        callNmicliConnectionModify('yo-eth1'),
-        callNmicliConnectionUp('yo-eth1'),
-        callRm(`${mockNetplanConfDir}/50-cloud-init.yaml`),
-        callSystemctl('restart', 'NetworkManager'),
-        callNmonline(),
-        callRmRecursive(`${mockDnsmasqDir}/*`),
-        callOpenssl(mockNaksu2CertsDir),
-        callSudoTeeWriteToFile(`${mockEtcDir}/hosts`),
-        callRm(`${mockEtcDir}/hosts.tmp`),
-        callSudoTeeAppendToFile(`${mockEtcDir}/hosts`),
-        callStat(mockNaksu2WorkDir),
-        callChown(join(mockNaksu2WorkDir, 'certs/domain.txt')),
-
-        callIpLinkShow('eth0'),
-        callIpLinkShow('eth1'),
-        callSysctl('1'),
-
-        callIptablesList('nat', 'POSTROUTING'),
-        callIptablesList('nat', 'POSTROUTING'),
-        callIptablesList('filter', 'FORWARD'),
-        callIptablesList('filter', 'FORWARD'),
-        callIptablesList('filter', 'YTL_LAN_WAN_IPSET'),
-
-        callIptablesFlushChain('filter', 'YTL_LAN_WAN_IPSET'),
-        callIptablesDeleteChain('filter', 'YTL_LAN_WAN_IPSET'),
-        callIptablesNewChain('filter', 'YTL_LAN_WAN_IPSET'),
-        callIpset('list', 'ytl_internet_allowlist'),
-        callIpsetCreate('ytl_internet_allowlist')
-      ])
-    })
     test('returns error if configuring docker fails', async () => {
       // use real sed to parse cert.pem
       await unlink(join(mockBinDir, 'sed'))
@@ -557,6 +514,49 @@ describe('examnet (just port)', () => {
           'POSTROUTING',
           '--out-interface eth0 --match comment --comment ytl_internet_allowlist --match set --match-set ytl_internet_allowlist dst --jump MASQUERADE'
         )
+      ])
+    })
+    test('returns error if running ipset fails', async () => {
+      // use real sed to parse cert.pem
+      await unlink(join(mockBinDir, 'sed'))
+      await writeToTempDir(mockBinDir, 'ipset', mockScriptReturningErrorCode)
+      await runExamnetReturnsExitCode(30, ['eth0', 'eth1', '1'], ENV_TEST_MODE)
+      await assertCalls([
+        callIpLinkShow('eth0'),
+        callIpLinkShow('eth1'),
+        callIpAddrShow('eth0'),
+        callIpAddrShow('eth1'),
+        callNmicliConnectionShow('yo-eth1'),
+        callNmicliConnectionDelete('yo-eth1'),
+        callNmicliConnectionAdd('yo-eth1', '192.168.10.1/16'),
+        callNmicliConnectionModify('yo-eth1'),
+        callNmicliConnectionUp('yo-eth1'),
+        callRm(`${mockNetplanConfDir}/50-cloud-init.yaml`),
+        callSystemctl('restart', 'NetworkManager'),
+        callNmonline(),
+        callRmRecursive(`${mockDnsmasqDir}/*`),
+        callOpenssl(mockNaksu2CertsDir),
+        callSudoTeeWriteToFile(`${mockEtcDir}/hosts`),
+        callRm(`${mockEtcDir}/hosts.tmp`),
+        callSudoTeeAppendToFile(`${mockEtcDir}/hosts`),
+        callStat(mockNaksu2WorkDir),
+        callChown(join(mockNaksu2WorkDir, 'certs/domain.txt')),
+
+        callIpLinkShow('eth0'),
+        callIpLinkShow('eth1'),
+        callSysctl('1'),
+
+        callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('filter', 'FORWARD'),
+        callIptablesList('filter', 'FORWARD'),
+        callIptablesList('filter', 'YTL_LAN_WAN_IPSET'),
+
+        callIptablesFlushChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIptablesDeleteChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIptablesNewChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIpset('list', 'ytl_internet_allowlist'),
+        callIpsetCreate('ytl_internet_allowlist')
       ])
     })
     test('runs setup when correct parameters are given', async () => {
@@ -1095,7 +1095,7 @@ describe('examnet (just port)', () => {
     // console.log(`expecting ${expectedCalls.length} calls to external programs`)
     const callsArray = callsLines
       .map(line => {
-        console.log(`parsing line ${line}`)
+        // console.log(`parsing line ${line}`)
         return line ? JSON.parse(line) : undefined
       })
       .filter(Boolean)
@@ -1293,8 +1293,4 @@ function callIptablesCheckChain(table: string, chain: string, rulespec: string) 
     cmd: 'iptables',
     argv: ['--wait', '--table', table, '--check', chain, ...rulespec.split(' ')]
   }
-}
-
-function callIptablesAppendRule(table: string, chain: string, jumpTarget: string) {
-  return { cmd: 'iptables', argv: ['--wait', '--table', table, '--append', chain, '--jump', jumpTarget] }
 }
