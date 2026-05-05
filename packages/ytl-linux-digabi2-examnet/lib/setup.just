@@ -176,7 +176,14 @@ destroy: \
   just systemd restart NetworkManager
   just systemd restart docker
 
+  # Using a shorter timeout for removing settings, since if the internal network device does not have DHCP (common in dedicated exam networks,
+  # since this server is acting as DHCP), the internal network connection will never activate. nm-online -s waits for connections to become
+  # active within the timeout, so if the internal network device does not have DHCP, this will never happen and we will always hit the timeout.
+  # As such, use a fairly short timeout to just give NetworkManager a little time to get the working connections up and going. Also ignoring
+  # errors because it will always fail in the aforementioned instance.
+  set +e
   just network wait-for-network-online 5
+  set -e
 
   just log info "All examnet settings have been removed"
 
