@@ -30,9 +30,10 @@ enable net-device-wan net-device-lan error-code: \
   just log info "Enabling internet forwarding for domains: $INTERNET_ALLOWLIST_DOMAINS"
 
   just internet-forwarding enable-kernel-ip-forwarding {{error-code}}
-  #TODO pilko tätä ja disablea vielä osasiin
-  # Allowlisted domains are forwarded to upstream resolvers
-  # All other domains are null-routed by address=/#/0.0.0.0 in the main configuration
+
+  # Setup dnsmasq
+  # - allowlisted domains are forwarded to upstream resolvers
+  # - other domains are null-routed by address=/#/0.0.0.0 in the main configuration
   for domain in $INTERNET_ALLOWLIST_DOMAINS; do
     echo "ipset=/$domain/$INTERNET_ALLOWLIST_IPSET_NAME"
   done > "$PATH_DNSMASQ_IPSET_ALLOWLIST_CONF"
@@ -46,9 +47,9 @@ enable net-device-wan net-device-lan error-code: \
   just internet-forwarding remove-iptables-rules-by-comment "$INTERNET_ALLOWLIST_IPSET_NAME" {{error-code}}
   just iptables recreate-chain filter $INTERNET_ALLOWLIST_FILTER_CHAIN {{error-code}}
 
-  # Ensure ipset exists
+  # Recreate ipset
   just internet-forwarding flush-and-destroy-ipset "$INTERNET_ALLOWLIST_IPSET_NAME" {{error-code}}
-  just log debug "Ensuring ipset '$INTERNET_ALLOWLIST_IPSET_NAME' exists"
+  just log debug "Creating ipset '$INTERNET_ALLOWLIST_IPSET_NAME'"
   if ! ipset create "$INTERNET_ALLOWLIST_IPSET_NAME" hash:ip timeout "$INTERNET_ALLOWLIST_IPSET_TIMEOUT_SECONDS" -exist; then
     just log error "Failed to create ipset '$INTERNET_ALLOWLIST_IPSET_NAME'"
     exit {{error-code}}
@@ -60,7 +61,7 @@ enable net-device-wan net-device-lan error-code: \
 
   # Add logrotate config to rotate the separate log file
   just fs create-file-from-template "$PATH_LOGROTATE_INTERNET_FORWARDING_CONF" "$PATH_LOGROTATE_INTERNET_FORWARDING_CONF_TEMPLATE"  {{error-code}}
-    just systemd restart logrotate
+  just systemd restart logrotate
 
   # Log new allowlisted flows
   just iptables add-rule filter $INTERNET_ALLOWLIST_FILTER_CHAIN {{error-code}} \
@@ -155,7 +156,7 @@ flush-and-destroy-ipset ipset-name error-code:
     fi
     just log debug "Destroyed ipset '{{ipset-name}}'"
   else
-    just log debug "ipset '{{ipset-name}}' does not exist"
+    just log debug "Skipping flushing and destroying ipset '{{ipset-name}}' which does not exist"
   fi
 
 populate-ipset server-own-ip error-code: \
@@ -164,12 +165,16 @@ populate-ipset server-own-ip error-code: \
   #!/usr/bin/env bash
   set -euo pipefail
 
+  just log debug "Populating ipset with IP addresses of allowlisted domains: $INTERNET_ALLOWLIST_DOMAINS"
+
   for domain in $INTERNET_ALLOWLIST_DOMAINS; do
     just log debug "Resolving allowlisted domain '$domain' to populate ipset with its IP addresses"
     if ! dig +time=1 +tries=1 @{{server-own-ip}} "$domain" A >/dev/null 2>&1; then
       just log warn "Failed to resolve allowlisted domain '$domain' using dig with server {{server-own-ip}}"
     fi
   done
+
+  just log debug "Done populating ipset with IP addresses of allowlisted domains"
 
 enable-kernel-ip-forwarding error-code:
   #!/usr/bin/env bash

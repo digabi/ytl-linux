@@ -2,7 +2,8 @@ remove-rule table chain error-code +rule-spec:
   #!/usr/bin/env bash
   set -euo pipefail
 
-  just log debug "Checking iptables rule for deletion from table {{table}}, chain {{chain}} with specification: {{rule-spec}}"
+  just log debug "Checking if there are iptables rules to delete from table {{table}}, chain {{chain}} with specification: {{rule-spec}}"
+
   while iptables --wait --table {{table}} --check {{chain}} {{rule-spec}} 2> /dev/null; do
     just log debug "Deleting iptables rule from table {{table}}, chain {{chain}} with specification: {{rule-spec}}"
     if ! iptables --wait --table {{table}} --delete {{chain}} {{rule-spec}}; then
@@ -10,6 +11,7 @@ remove-rule table chain error-code +rule-spec:
       exit {{error-code}}
     fi
   done
+
   just log debug "Done deleting iptables rules from table {{table}}, chain {{chain}} with specification: {{rule-spec}}"
 
 remove-rules-by-comment table chain comment error-code:
@@ -18,7 +20,7 @@ remove-rules-by-comment table chain comment error-code:
 
   just log debug "In order to remove rules by comment, making sure table {{table}}, chain {{chain}} exists"
   if ! iptables --wait --table {{table}} --list {{chain}} --line-numbers --numeric > /dev/null 2>&1; then
-    just log error "Failed to list iptables chain {{chain}} in table {{table}} while deleting rules with comment: {{comment}}"
+    just log error "Failed to list iptables chain {{chain}} in table {{table}} while attempting to delete rules with comment: {{comment}}"
     exit {{error-code}}
   fi
 
@@ -33,6 +35,7 @@ remove-rules-by-comment table chain comment error-code:
       exit {{error-code}}
     fi
   done
+
   just log debug "Done deleting iptables rules from table {{table}}, chain {{chain}} with comment: {{comment}}"
 
 add-rule table chain error-code +rule-spec:
@@ -40,19 +43,24 @@ add-rule table chain error-code +rule-spec:
     set -euo pipefail
 
     just log debug "Checking if we need to add iptables rule to table {{table}}, chain {{chain}} with specification: {{rule-spec}}"
+
     if ! iptables --wait --table {{table}} --check {{chain}} {{rule-spec}} 2> /dev/null; then
       just log debug "Need to add iptables rule to table {{table}}, chain {{chain}} with specification: {{rule-spec}}"
       if ! iptables --wait --table {{table}} --append {{chain}} {{rule-spec}}; then
         just log error "Failed to add iptables rule to table {{table}}, chain {{chain}} with specification: {{rule-spec}}"
         exit {{error-code}}
       fi
+    else
+      just log debug "Iptables rule already exists in table {{table}}, chain {{chain}} with specification: {{rule-spec}}, skipping addition"
     fi
+
     just log debug "Done adding iptables rule to table {{table}}, chain {{chain}} with specification: {{rule-spec}}"
 
 flush-and-delete-chain table chain error-code:
   #!/usr/bin/env bash
   set -euo pipefail
 
+  just log debug "Checking if iptables chain {{chain}} in table {{table}} exists before attempting to flush and delete it"
   if ! iptables --wait --table {{table}} --list {{chain}} --line-numbers --numeric > /dev/null 2>&1; then
     just log debug "Skipping flush and delete, as iptables chain {{chain}} in table {{table}} does not exist"
     exit 0
