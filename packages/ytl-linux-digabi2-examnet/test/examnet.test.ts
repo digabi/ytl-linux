@@ -838,7 +838,7 @@ describe('examnet (just port)', () => {
   })
 
   function runExamnetWithArguments(examnetArguments: string[], envOverrides: NodeJS.Dict<string> = {}) {
-    return execa('./ytl-linux-digabi2-examnet-just', examnetArguments.filter(Boolean), {
+    return execa('./ytl-linux-digabi2-examnet', examnetArguments.filter(Boolean), {
       env: {
         ...process.env,
         PATH: `${mockBinDir}:${process.env.PATH}`,
