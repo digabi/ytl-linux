@@ -57,7 +57,7 @@ configure-networkmanager connection-name interface-name ip-and-netmask:
   just log info "Configuring NetworkManager connection '{{connection-name}}' for interface '{{interface-name}}' with IP and netmask '{{ip-and-netmask}}'"
 
   just log debug "Checking if NetworkManager connection '{{connection-name}}' already exists"
-  if nmcli connection show "{{connection-name}}" > /dev/null; then
+  if nmcli connection show "{{connection-name}}" > /dev/null 2>&1; then
     just log debug "NetworkManager connection '{{connection-name}}' already exists, deleting it before creating a new one"
     if ! nmcli connection delete "{{connection-name}}"; then
       just log error "Failed to delete existing NetworkManager connection '{{connection-name}}'"
