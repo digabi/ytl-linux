@@ -649,7 +649,55 @@ describe('examnet (just port)', () => {
       await assertFileExists(mockExamnetConfigDir, 'server-own-ip')
       await assertFileExists(mockExamnetConfigDir, 'server-friendly-name', 'ktp1\n')
       await assertFileExists(mockResolvedDir, 'ytl-linux.conf')
-      await assertFileExists(mockDnsmasqDir, 'ytl-linux.conf')
+      await assertFileExists(
+        mockDnsmasqDir,
+        'ytl-linux.conf',
+        '# Enable full query logging to assist debugging\n' +
+          'log-queries=extra\n' +
+          '\n' +
+          '# Bind to LAN device and Docker bridge interfaces\n' +
+          'interface=eth1\n' +
+          'interface=docker0\n' +
+          'interface=ytl0\n' +
+          '\n' +
+          '# Set search domain to ktp to support server aliases\n' +
+          'domain=internal\n' +
+          '\n' +
+          '# Tell clients to use this server as DHCP and DNS, also configure its search domain\n' +
+          'dhcp-range=192.168.10.10,192.168.19.254,255.255.0.0,1h\n' +
+          'dhcp-option=6,192.168.10.1\n' +
+          'dhcp-option=option:domain-name,internal\n' +
+          '\n' +
+          '# Redirect requests for Windows Network Connection Status Indicator (NCSI) to our local NCSI spoofer (digabi2-examnet-bouncer)\n' +
+          'host-record=dns.msftncsi.com,www.msftncsi.com,www.msftconnecttest.com,ipv6.msftconnecttest.com,192.168.10.1\n' +
+          '# Avoid resolving NCSI IPv6 addresses from upstream DNS\n' +
+          'host-record=dns.msftncsi.com,www.msftncsi.com,www.msftconnecttest.com,ipv6.msftconnecttest.com,::\n' +
+          '\n' +
+          '# Use WAN device nameservers as upstream\n' +
+          'resolv-file=/etc/resolv.conf\n' +
+          '\n' +
+          '# Forward requests for koe.abitti.net to upstream\n' +
+          '# This is for compatibility with practice exams that use a generated domain name in public DNS, as opposed to\n' +
+          '# examination networks, where the host records are local and static. Public DNS returns a private IP, but we\n' +
+          '# need DNS to tell student computers where to go\n' +
+          'server=/koe.abitti.net/#\n' +
+          '\n' +
+          '# Forward requests to koe.ylioppilastutkinto.fi and oma.abitti.fi to upstream\n' +
+          '# This is to allow other KTPs that temporarily receive DHCP from this server to still resolve the correct address and be able to\n' +
+          '# contact it on its external network interface (that does not lead to this KTP). If we did not do this, the KTP would get\n' +
+          '# koe.ylioppilastutkinto.fi => 0.0.0.0 and be unable to make the request, even on the correct network interface.\n' +
+          '# Student machines will not be able to contact koe.ylioppilastutkinto.fi or oma.abitti.fi either way, since they will get blocked by iptables\n' +
+          'server=/koe.ylioppilastutkinto.fi/#\n' +
+          'server=/oma.abitti.fi/#\n' +
+          '\n' +
+          '\n' +
+          '\n' +
+          '# Null-route all other traffic\n' +
+          '# This prevents software on the student computer from getting confused by when DNS queries work, but the TCP\n' +
+          '# request stalls (since this is not a router) for however long the client timeout is set to; possibly Infinity\n' +
+          'address=/#/0.0.0.0\n' +
+          'address=/#/::\n'
+      )
       await assertFileExists(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf')
       await assertFileExists(mockSysctlDir, '99-ytl-linux-digabi2-examnet.conf')
       await assertFileExists(
@@ -795,7 +843,55 @@ describe('examnet (just port)', () => {
       await assertFileExists(mockExamnetConfigDir, 'server-own-ip')
       await assertFileExists(mockExamnetConfigDir, 'server-friendly-name', 'perunakellari\n')
       await assertFileExists(mockResolvedDir, 'ytl-linux.conf')
-      await assertFileExists(mockDnsmasqDir, 'ytl-linux.conf')
+      await assertFileExists(
+        mockDnsmasqDir,
+        'ytl-linux.conf',
+        '# Enable full query logging to assist debugging\n' +
+          'log-queries=extra\n' +
+          '\n' +
+          '# Bind to LAN device and Docker bridge interfaces\n' +
+          'interface=eth1\n' +
+          'interface=docker0\n' +
+          'interface=ytl0\n' +
+          '\n' +
+          '# Set search domain to ktp to support server aliases\n' +
+          'domain=internal\n' +
+          '\n' +
+          '# Tell clients to use this server as DHCP and DNS, also configure its search domain\n' +
+          'dhcp-range=192.168.10.10,192.168.19.254,255.255.0.0,1h\n' +
+          'dhcp-option=6,192.168.10.1\n' +
+          'dhcp-option=option:domain-name,internal\n' +
+          '\n' +
+          '# Redirect requests for Windows Network Connection Status Indicator (NCSI) to our local NCSI spoofer (digabi2-examnet-bouncer)\n' +
+          'host-record=dns.msftncsi.com,www.msftncsi.com,www.msftconnecttest.com,ipv6.msftconnecttest.com,192.168.10.1\n' +
+          '# Avoid resolving NCSI IPv6 addresses from upstream DNS\n' +
+          'host-record=dns.msftncsi.com,www.msftncsi.com,www.msftconnecttest.com,ipv6.msftconnecttest.com,::\n' +
+          '\n' +
+          '# Use WAN device nameservers as upstream\n' +
+          'resolv-file=/etc/resolv.conf\n' +
+          '\n' +
+          '# Forward requests for koe.abitti.net to upstream\n' +
+          '# This is for compatibility with practice exams that use a generated domain name in public DNS, as opposed to\n' +
+          '# examination networks, where the host records are local and static. Public DNS returns a private IP, but we\n' +
+          '# need DNS to tell student computers where to go\n' +
+          'server=/koe.abitti.net/#\n' +
+          '\n' +
+          '# Forward requests to koe.ylioppilastutkinto.fi and oma.abitti.fi to upstream\n' +
+          '# This is to allow other KTPs that temporarily receive DHCP from this server to still resolve the correct address and be able to\n' +
+          '# contact it on its external network interface (that does not lead to this KTP). If we did not do this, the KTP would get\n' +
+          '# koe.ylioppilastutkinto.fi => 0.0.0.0 and be unable to make the request, even on the correct network interface.\n' +
+          '# Student machines will not be able to contact koe.ylioppilastutkinto.fi or oma.abitti.fi either way, since they will get blocked by iptables\n' +
+          'server=/koe.ylioppilastutkinto.fi/#\n' +
+          'server=/oma.abitti.fi/#\n' +
+          '\n' +
+          '\n' +
+          '\n' +
+          '# Null-route all other traffic\n' +
+          '# This prevents software on the student computer from getting confused by when DNS queries work, but the TCP\n' +
+          '# request stalls (since this is not a router) for however long the client timeout is set to; possibly Infinity\n' +
+          'address=/#/0.0.0.0\n' +
+          'address=/#/::\n'
+      )
       await assertFileExists(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf')
       await assertFileExists(mockSysctlDir, '99-ytl-linux-digabi2-examnet.conf')
       await assertFileExists(
@@ -1059,7 +1155,55 @@ describe('examnet (just port)', () => {
         '    notifempty\n' +
         '}\n'
     )
-    await writeToTempDir(mockTemplatesDir, 'dnsmasq.conf.template', 'foobar')
+    await writeToTempDir(
+      mockTemplatesDir,
+      'dnsmasq.conf.template',
+      '# Enable full query logging to assist debugging\n' +
+        'log-queries=extra\n' +
+        '\n' +
+        '# Bind to LAN device and Docker bridge interfaces\n' +
+        'interface=${NET_DEVICE_LAN}\n' +
+        'interface=docker0\n' +
+        'interface=ytl0\n' +
+        '\n' +
+        '# Set search domain to ktp to support server aliases\n' +
+        'domain=${FRIENDLY_NAME_SEARCH_DOMAIN}\n' +
+        '\n' +
+        '# Tell clients to use this server as DHCP and DNS, also configure its search domain\n' +
+        'dhcp-range=${DHCP_RANGE_START},${DHCP_RANGE_END},255.255.0.0,1h\n' +
+        'dhcp-option=6,${SERVER_OWN_IP}\n' +
+        'dhcp-option=option:domain-name,${FRIENDLY_NAME_SEARCH_DOMAIN}\n' +
+        '\n' +
+        '# Redirect requests for Windows Network Connection Status Indicator (NCSI) to our local NCSI spoofer (digabi2-examnet-bouncer)\n' +
+        'host-record=${NCSI_HOSTNAMES_LIST},${SERVER_OWN_IP}\n' +
+        '# Avoid resolving NCSI IPv6 addresses from upstream DNS\n' +
+        'host-record=${NCSI_HOSTNAMES_LIST},::\n' +
+        '\n' +
+        '# Use WAN device nameservers as upstream\n' +
+        'resolv-file=/etc/resolv.conf\n' +
+        '\n' +
+        '# Forward requests for koe.abitti.net to upstream\n' +
+        '# This is for compatibility with practice exams that use a generated domain name in public DNS, as opposed to\n' +
+        '# examination networks, where the host records are local and static. Public DNS returns a private IP, but we\n' +
+        '# need DNS to tell student computers where to go\n' +
+        'server=/koe.abitti.net/#\n' +
+        '\n' +
+        '# Forward requests to koe.ylioppilastutkinto.fi and oma.abitti.fi to upstream\n' +
+        '# This is to allow other KTPs that temporarily receive DHCP from this server to still resolve the correct address and be able to\n' +
+        '# contact it on its external network interface (that does not lead to this KTP). If we did not do this, the KTP would get\n' +
+        '# koe.ylioppilastutkinto.fi => 0.0.0.0 and be unable to make the request, even on the correct network interface.\n' +
+        '# Student machines will not be able to contact koe.ylioppilastutkinto.fi or oma.abitti.fi either way, since they will get blocked by iptables\n' +
+        'server=/koe.ylioppilastutkinto.fi/#\n' +
+        'server=/oma.abitti.fi/#\n' +
+        '\n' +
+        '\n' +
+        '\n' +
+        '# Null-route all other traffic\n' +
+        '# This prevents software on the student computer from getting confused by when DNS queries work, but the TCP\n' +
+        '# request stalls (since this is not a router) for however long the client timeout is set to; possibly Infinity\n' +
+        'address=/#/0.0.0.0\n' +
+        'address=/#/::\n'
+    )
     await writeToTempDir(mockNetplanConfDir, '50-cloud-init.yaml', 'baz')
     await writeToTempDir(mockEtcDir, 'hosts', '# test /etc/hosts file\n')
 
