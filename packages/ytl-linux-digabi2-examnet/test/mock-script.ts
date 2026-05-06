@@ -15,7 +15,7 @@ async function main() {
   switch (cmd) {
     case 'ip':
       if (argvString === '-oneline -4 addr show scope global eth0') {
-        console.log('127.0.0.1')
+        console.log('10.0.10.1')
       } else {
         console.log('')
       }
@@ -28,7 +28,11 @@ async function main() {
       await new Promise(resolve => setTimeout(resolve, 120_000))
       break
     case 'systemctl':
-      console.log('enabled')
+      if (argvString.includes('is-enabled')) {
+        console.log('enabled')
+      } else {
+        console.log('')
+      }
       break
     case 'openssl':
       console.log(

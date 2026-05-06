@@ -1,12 +1,11 @@
 NAME := ytl-linux-digabi2-examnet
-VERSION := 0.3.1
+VERSION := 1.0.0
 
 DEPENDENCIES := \
 	--depends apt \
 	--depends dnsmasq \
 	--depends jq \
-	--depends network-manager \
-	--depends zenity
+	--depends network-manager
 DEB_ROOT := deb-root
 
 deb:
@@ -15,8 +14,13 @@ deb:
 
 	# Script files
 	mkdir -p $(DEB_ROOT)/usr/local/sbin/
-	cp ytl-linux-digabi2-examnet $(DEB_ROOT)/usr/local/sbin/
+	cp ytl-linux-digabi2-examnet-legacy $(DEB_ROOT)/usr/local/sbin/
 	cp ytl-linux-digabi2-docker-configure.sh $(DEB_ROOT)/usr/local/sbin/
+	cp ytl-linux-digabi2-examnet $(DEB_ROOT)/usr/local/sbin/
+	
+	mkdir -p $(DEB_ROOT)/usr/local/libexec/ytl-linux-digabi2-examnet/lib
+	cp justfile $(DEB_ROOT)/usr/local/libexec/ytl-linux-digabi2-examnet/justfile
+	cp lib/* $(DEB_ROOT)/usr/local/libexec/ytl-linux-digabi2-examnet/lib/
 
 	# Config templates
 	mkdir -p ${DEB_ROOT}/etc/ytl-linux-digabi2-examnet/templates/
