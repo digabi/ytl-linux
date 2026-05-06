@@ -83,6 +83,7 @@ apply net-device-wan net-device-lan server-number server-friendly-name: \
 
   just fs write-file "$PATH_RESOLVED_CONF" "$(envsubst < $PATH_RESOLVED_CONF_TEMPLATE)"
 
+  export NET_DEVICE_LAN="{{net-device-lan}}"
   just fs empty-directory "$PATH_DNSMASQ"
   just fs write-file "$PATH_DNSMASQ_CONF" "$(envsubst < $PATH_DNSMASQ_CONF_TEMPLATE)"
 

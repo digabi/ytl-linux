@@ -36,8 +36,6 @@ server=/koe.abitti.net/#
 server=/koe.ylioppilastutkinto.fi/#
 server=/oma.abitti.fi/#
 
-
-
 # Null-route all other traffic
 # This prevents software on the student computer from getting confused by when DNS queries work, but the TCP
 # request stalls (since this is not a router) for however long the client timeout is set to; possibly Infinity
