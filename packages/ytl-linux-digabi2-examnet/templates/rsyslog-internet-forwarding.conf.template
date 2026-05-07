@@ -1,2 +1,9 @@
-:msg, contains, "YTL_ALLOW_NEW-" $PATH_INTERNET_FORWARDING_LOGS
-& stop
+if ($msg contains "YTL_ALLOW_NEW-") then {
+    action(
+        type="omfile"
+        file="$PATH_INTERNET_FORWARDING_LOGS"
+        createDirs="off"
+        fileCreateMode="0644"
+    )
+    stop
+}

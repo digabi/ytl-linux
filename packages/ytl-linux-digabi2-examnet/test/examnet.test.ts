@@ -19,8 +19,10 @@ describe('examnet (just port)', () => {
   let mockRsyslogDir
   let mockLogrotateDir
   let mockNaksu2WorkDir
+  let mockLogsDir
   let mockNaksu2CertsDir
   let mockNetplanConfDir
+  let mockApparmorDir
   let mockScriptWithNoOutput
   let mockScriptReturningErrorCode
   let exitCodesTested = new Set<number>()
@@ -39,8 +41,10 @@ describe('examnet (just port)', () => {
       mockRsyslogDir,
       mockLogrotateDir,
       mockNaksu2WorkDir,
+      mockLogsDir,
       mockNaksu2CertsDir,
       mockNetplanConfDir,
+      mockApparmorDir,
       mockScriptWithNoOutput,
       mockScriptReturningErrorCode
     } = await initTempDir())
@@ -442,6 +446,7 @@ describe('examnet (just port)', () => {
       ])
     })
     test('returns error if configuring docker fails', async () => {
+      const callChmodResults = callChmodRecursive(mockLogsDir)
       // use real sed to parse cert.pem
       await unlink(join(mockBinDir, 'sed'))
       await unlink(join(mockTemplatesDir, 'docker-daemon.json.template'))
@@ -484,9 +489,13 @@ describe('examnet (just port)', () => {
         callIpset('flush', 'ytl_internet_allowlist'),
         callIpset('destroy', 'ytl_internet_allowlist'),
         callIpsetCreate('ytl_internet_allowlist'),
-
-        callSystemctl('restart', 'rsyslog'),
+        callStat(mockLogsDir, '%G'),
+        callUsermod('nobody'),
+        callChown(`${mockLogsDir}/ytl-linux-internet-forwarding.log`, 'syslog:nobody'),
+        ...callChmodResults,
         callSystemctl('restart', 'logrotate'),
+        callApparmorParser(`${mockApparmorDir}/usr.sbin.rsyslogd`),
+        callSystemctl('restart', 'rsyslog'),
 
         callIptablesCheckChain(
           'filter',
@@ -559,10 +568,31 @@ describe('examnet (just port)', () => {
         callIpsetCreate('ytl_internet_allowlist')
       ])
     })
+    test('returns error if waiting for network online fails', async () => {
+      // use real sed to parse cert.pem
+      await unlink(join(mockBinDir, 'sed'))
+      await writeToTempDir(mockBinDir, 'nm-online', mockScriptReturningErrorCode)
+      await runExamnetReturnsExitCode(27, ['eth0', 'eth1', '1', 'perunakellari'], ENV_TEST_MODE)
+      await assertCalls([
+        callIpLinkShow('eth0'),
+        callIpLinkShow('eth1'),
+        callIpAddrShow('eth0'),
+        callIpAddrShow('eth1'),
+        callNmicliConnectionShow('yo-eth1'),
+        callNmicliConnectionDelete('yo-eth1'),
+        callNmicliConnectionAdd('yo-eth1', '192.168.10.1/16'),
+        callNmicliConnectionModify('yo-eth1'),
+        callNmicliConnectionUp('yo-eth1'),
+        callRm(`${mockNetplanConfDir}/50-cloud-init.yaml`),
+        callSystemctl('restart', 'NetworkManager'),
+        callNmonline()
+      ])
+    })
     test('runs setup when correct parameters are given', async () => {
       // use real sed to parse cert.pem
       await unlink(join(mockBinDir, 'sed'))
       await runExamnet('eth0', 'eth1', '1')
+      const callChmodResults = callChmodRecursive(mockLogsDir)
       await assertCalls([
         callIpLinkShow('eth0'),
         callIpLinkShow('eth1'),
@@ -601,8 +631,13 @@ describe('examnet (just port)', () => {
         callIpset('flush', 'ytl_internet_allowlist'),
         callIpset('destroy', 'ytl_internet_allowlist'),
         callIpsetCreate('ytl_internet_allowlist'),
-        callSystemctl('restart', 'rsyslog'),
+        callStat(mockLogsDir, '%G'),
+        callUsermod('nobody'),
+        callChown(`${mockLogsDir}/ytl-linux-internet-forwarding.log`, 'syslog:nobody'),
+        ...callChmodResults,
         callSystemctl('restart', 'logrotate'),
+        callApparmorParser(`${mockApparmorDir}/usr.sbin.rsyslogd`),
+        callSystemctl('restart', 'rsyslog'),
         callIptablesCheckChain(
           'filter',
           'YTL_LAN_WAN_IPSET',
@@ -690,7 +725,15 @@ describe('examnet (just port)', () => {
           'server=/koe.ylioppilastutkinto.fi/#\n' +
           'server=/oma.abitti.fi/#\n' +
           '\n' +
+          '# Forward also requests to allowlisted domains to upstream\n' +
+          'server=/endpoint.security.microsoft.com/#\n' +
+          'server=/smartscreen-prod.microsoft.com/#\n' +
+          'server=/smartscreen.microsoft.com/#\n' +
           '\n' +
+          '# IP addresses of allowlisted domains are added to ipset that is used to allow forwarding traffic to those domains in iptables\n' +
+          'ipset=/endpoint.security.microsoft.com/ytl_internet_allowlist\n' +
+          'ipset=/smartscreen-prod.microsoft.com/ytl_internet_allowlist\n' +
+          'ipset=/smartscreen.microsoft.com/ytl_internet_allowlist\n' +
           '\n' +
           '# Null-route all other traffic\n' +
           '# This prevents software on the student computer from getting confused by when DNS queries work, but the TCP\n' +
@@ -740,27 +783,8 @@ describe('examnet (just port)', () => {
       )
       await assertFileExists(mockNaksu2CertsDir, 'domain.txt', 'ktp1.999.koe.abitti.net\n')
     })
-    test('returns error if waiting for network online fails', async () => {
-      // use real sed to parse cert.pem
-      await unlink(join(mockBinDir, 'sed'))
-      await writeToTempDir(mockBinDir, 'nm-online', mockScriptReturningErrorCode)
-      await runExamnetReturnsExitCode(27, ['eth0', 'eth1', '1', 'perunakellari'], ENV_TEST_MODE)
-      await assertCalls([
-        callIpLinkShow('eth0'),
-        callIpLinkShow('eth1'),
-        callIpAddrShow('eth0'),
-        callIpAddrShow('eth1'),
-        callNmicliConnectionShow('yo-eth1'),
-        callNmicliConnectionDelete('yo-eth1'),
-        callNmicliConnectionAdd('yo-eth1', '192.168.10.1/16'),
-        callNmicliConnectionModify('yo-eth1'),
-        callNmicliConnectionUp('yo-eth1'),
-        callRm(`${mockNetplanConfDir}/50-cloud-init.yaml`),
-        callSystemctl('restart', 'NetworkManager'),
-        callNmonline()
-      ])
-    })
     test('runs setup when correct parameters are given with friendly name', async () => {
+      const callChmodResults = callChmodRecursive(mockLogsDir)
       // use real sed to parse cert.pem
       await unlink(join(mockBinDir, 'sed'))
       await runExamnet('eth0', 'eth1', '1', 'perunakellari')
@@ -802,8 +826,13 @@ describe('examnet (just port)', () => {
         callIpset('flush', 'ytl_internet_allowlist'),
         callIpset('destroy', 'ytl_internet_allowlist'),
         callIpsetCreate('ytl_internet_allowlist'),
-        callSystemctl('restart', 'rsyslog'),
+        callStat(mockLogsDir, '%G'),
+        callUsermod('nobody'),
+        callChown(`${mockLogsDir}/ytl-linux-internet-forwarding.log`, 'syslog:nobody'),
+        ...callChmodResults,
         callSystemctl('restart', 'logrotate'),
+        callApparmorParser(`${mockApparmorDir}/usr.sbin.rsyslogd`),
+        callSystemctl('restart', 'rsyslog'),
         callIptablesCheckChain(
           'filter',
           'YTL_LAN_WAN_IPSET',
@@ -892,7 +921,15 @@ describe('examnet (just port)', () => {
           'server=/koe.ylioppilastutkinto.fi/#\n' +
           'server=/oma.abitti.fi/#\n' +
           '\n' +
+          '# Forward also requests to allowlisted domains to upstream\n' +
+          'server=/endpoint.security.microsoft.com/#\n' +
+          'server=/smartscreen-prod.microsoft.com/#\n' +
+          'server=/smartscreen.microsoft.com/#\n' +
           '\n' +
+          '# IP addresses of allowlisted domains are added to ipset that is used to allow forwarding traffic to those domains in iptables\n' +
+          'ipset=/endpoint.security.microsoft.com/ytl_internet_allowlist\n' +
+          'ipset=/smartscreen-prod.microsoft.com/ytl_internet_allowlist\n' +
+          'ipset=/smartscreen.microsoft.com/ytl_internet_allowlist\n' +
           '\n' +
           '# Null-route all other traffic\n' +
           '# This prevents software on the student computer from getting confused by when DNS queries work, but the TCP\n' +
@@ -965,6 +1002,7 @@ describe('examnet (just port)', () => {
         PATH_LOGROTATE: mockLogrotateDir,
         NAKSU2_WORKDIR: mockNaksu2WorkDir,
         PATH_NETPLAN: mockNetplanConfDir,
+        PATH_APPARMOR_DIR: mockApparmorDir,
         PATH_ETC: mockEtcDir,
         PATH_JUSTFILE: './justfile',
         BIN_DIGABI2_EXAMNET_BOUNCER: 'ytl-linux-digabi2-bouncer',
@@ -1055,8 +1093,12 @@ describe('examnet (just port)', () => {
     const mockRsyslogDir = await makeTempDir(root, 'mock-rsyslog-dir')
     const mockLogrotateDir = await makeTempDir(root, 'mock-logrotate-dir')
     const mockNaksu2WorkDir = await makeTempDir(root, 'naksu2-work-dir')
+    const mockLogsDir = await makeTempDir(mockNaksu2WorkDir, 'logs')
     const mockNaksu2CertsDir = await makeTempDir(mockNaksu2WorkDir, 'certs')
     const mockNetplanConfDir = await makeTempDir(root, 'mock-etc-netplan')
+    const mockApparmorDir = await makeTempDir(root, 'mock-etc-apparmor')
+    await makeTempDir(mockApparmorDir, 'local')
+
     await writeToTempDir(mockNaksu2CertsDir, 'domain.txt', 'ktp1.1000.koe.abitti.net')
     await writeToTempDir(
       mockNaksu2CertsDir,
@@ -1123,6 +1165,7 @@ describe('examnet (just port)', () => {
     await writeToTempDir(mockBinDir, 'ipset', mockScript)
     await writeToTempDir(mockBinDir, 'sysctl', mockScript)
     await writeToTempDir(mockBinDir, 'dig', mockScript)
+    await writeToTempDir(mockBinDir, 'apparmor_parser', mockScript)
     await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-bouncer', mockScript)
     await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-discovery', mockScript)
     await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-docker-configure.sh', mockScript)
@@ -1141,6 +1184,7 @@ describe('examnet (just port)', () => {
     )
     await writeToTempDir(mockExamnetConfigDir, 'discovery.db', 'foo')
     await writeToTempDir(mockTemplatesDir, 'resolved.conf.template', 'foobar')
+    await writeToTempDir(mockTemplatesDir, 'rsyslog-apparmor-local.template', '$PATH_INTERNET_FORWARDING_LOGS rw,\n')
     await writeToTempDir(
       mockTemplatesDir,
       'docker-daemon.json.template',
@@ -1220,7 +1264,11 @@ describe('examnet (just port)', () => {
         'server=/koe.ylioppilastutkinto.fi/#\n' +
         'server=/oma.abitti.fi/#\n' +
         '\n' +
+        '# Forward also requests to allowlisted domains to upstream\n' +
+        '${ALLOWLISTED_SERVER_CONFIGURATION}\n' +
         '\n' +
+        '# IP addresses of allowlisted domains are added to ipset that is used to allow forwarding traffic to those domains in iptables\n' +
+        '${ALLOWLISTED_IPSET_CONFIGURATION}\n' +
         '\n' +
         '# Null-route all other traffic\n' +
         '# This prevents software on the student computer from getting confused by when DNS queries work, but the TCP\n' +
@@ -1243,6 +1291,7 @@ describe('examnet (just port)', () => {
       mockEtcDir,
       mockExamnetConfigDir,
       mockNetplanConfDir,
+      mockApparmorDir,
       mockTemplatesDir,
       mockResolvedDir,
       mockDockerDir,
@@ -1251,6 +1300,7 @@ describe('examnet (just port)', () => {
       mockRsyslogDir,
       mockLogrotateDir,
       mockNaksu2WorkDir,
+      mockLogsDir,
       mockNaksu2CertsDir,
       mockScriptWithNoOutput,
       mockScriptReturningErrorCode
@@ -1263,7 +1313,7 @@ describe('examnet (just port)', () => {
     // console.log(`expecting ${expectedCalls.length} calls to external programs`)
     const callsArray = callsLines
       .map(line => {
-        // console.log(`parsing line ${line}`)
+        console.log(`parsing line ${line}`)
         return line ? JSON.parse(line) : undefined
       })
       .filter(Boolean)
@@ -1315,14 +1365,27 @@ async function killSubprocess(subprocess: any) {
   }
 }
 
-function callStat(mockNaksu2WorkDir) {
-  return { cmd: 'stat', argv: ['-c', '%U:%G', mockNaksu2WorkDir] }
+function callStat(mockNaksu2WorkDir: string, format: string = '%U:%G') {
+  return { cmd: 'stat', argv: ['-c', format, mockNaksu2WorkDir] }
 }
 
-function callChown(file) {
-  return { cmd: 'chown', argv: ['nobody:nobody', file] }
+function callUsermod(group: string) {
+  return { cmd: 'sudo', argv: ['usermod', '--append', '--groups', group, 'syslog'] }
 }
 
+function callChown(file: string, owner: string = 'nobody:nobody') {
+  return { cmd: 'chown', argv: [owner, file] }
+}
+
+function callChmodRecursive(dir: string) {
+  let result = []
+  const dirParts = dir.split('/')
+  for (let i = 2; i <= dirParts.length; i++) {
+    const subdir = dirParts.slice(0, i).join('/')
+    result.push({ cmd: 'sudo', argv: ['chmod', 'g+wX', subdir] })
+  }
+  return result
+}
 function callBouncer(mockNaksu2CertsDir: string) {
   return {
     cmd: 'ytl-linux-digabi2-bouncer',
@@ -1350,6 +1413,10 @@ function callIpAddrShow(networkDevice: string) {
 
 function callSystemctl(cmd: string, service: string, flags?: string) {
   return { cmd: 'systemctl', argv: [cmd, flags, service].filter(Boolean) }
+}
+
+function callApparmorParser(profile: string) {
+  return { cmd: 'apparmor_parser', argv: ['-r', profile] }
 }
 
 function callNmicliConnectionShow(connectionName: string) {

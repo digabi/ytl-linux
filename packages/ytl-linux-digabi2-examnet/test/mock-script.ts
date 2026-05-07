@@ -21,7 +21,11 @@ async function main() {
       }
       break
     case 'stat':
-      console.log('nobody:nobody')
+      if (argvString.includes(`%U:%G`)) {
+        console.log('nobody:nobody')
+      } else {
+        console.log('nobody')
+      }
       break
     case 'ytl-linux-digabi2-bouncer':
       // simulate a daemon that stays running by waiting for two minutes
@@ -44,9 +48,8 @@ async function main() {
       console.log('')
       break
     case 'sysctl':
-      console.log('')
-      break
     case 'ipset':
+    case 'apparmor_parser':
       console.log('')
       break
   }

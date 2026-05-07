@@ -9,8 +9,12 @@ enable net-device-wan net-device-lan error-code: \
     "INTERNET_ALLOWLIST_DOMAINS"
     "PATH_RSYSLOG_INTERNET_FORWARDING_CONF"
     "PATH_RSYSLOG_INTERNET_FORWARDING_CONF_TEMPLATE"
+    "PATH_RSYSLOG_APPARMOR_LOCAL"
+    "PATH_RSYSLOG_APPARMOR_LOCAL_TEMPLATE"
+    "PATH_RSYSLOG_APPARMOR_PROFILE"
     "PATH_LOGROTATE_INTERNET_FORWARDING_CONF"
     "PATH_LOGROTATE_INTERNET_FORWARDING_CONF_TEMPLATE"
+    "PATH_NAKSU2_LOGS_DIR"
     "PATH_INTERNET_FORWARDING_LOGS"
     "PATH_SYSCTL_EXAMNET_CONF"
     "INTERNET_ALLOWLIST_IPSET_NAME"
@@ -38,13 +42,7 @@ enable net-device-wan net-device-lan error-code: \
     exit {{error-code}}
   fi
 
-  # Add rsyslog config to log allowed packets to a separate file for easier analysis
-  just fs create-file-from-template "$PATH_RSYSLOG_INTERNET_FORWARDING_CONF" "$PATH_RSYSLOG_INTERNET_FORWARDING_CONF_TEMPLATE" {{error-code}}
-  just systemd restart rsyslog
-
-  # Add logrotate config to rotate the separate log file
-  just fs create-file-from-template "$PATH_LOGROTATE_INTERNET_FORWARDING_CONF" "$PATH_LOGROTATE_INTERNET_FORWARDING_CONF_TEMPLATE"  {{error-code}}
-  just systemd restart logrotate
+  just internet-forwarding configure-logging {{error-code}}
 
   # Log new allowlisted flows
   just iptables add-rule filter $INTERNET_ALLOWLIST_FILTER_CHAIN {{error-code}} \
@@ -104,6 +102,51 @@ disable error-code: \
   just internet-forwarding disable-kernel-ip-forwarding {{error-code}}
 
   just log info "Done disabling internet forwarding"
+
+configure-logging error-code:
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  just log debug "Configuring logging for internet forwarding"
+
+  # Allow syslog to write to log directory by adding syslog to group owning the log directory
+  NAKSU2_LOGS_DIR_GROUP="$(just fs get-dir-group "$PATH_NAKSU2_LOGS_DIR" {{error-code}})"
+  sudo usermod --append --groups "$NAKSU2_LOGS_DIR_GROUP" syslog
+
+  # Create log file with right permissions
+  NAKSU2_LOGS_DIR_OWNER="syslog:$NAKSU2_LOGS_DIR_GROUP"
+  just log debug "Creating empty log file '$PATH_INTERNET_FORWARDING_LOGS' with owner '$NAKSU2_LOGS_DIR_OWNER'"
+  just fs write-file "$PATH_INTERNET_FORWARDING_LOGS" "" "$NAKSU2_LOGS_DIR_OWNER"
+
+  # Add write permissions for rsyslog to log dir and its parent directories
+  LOGS_DIR_PARENTS=$(echo $PATH_NAKSU2_LOGS_DIR | tr '/' '\n')
+  path=""
+  for dir in $LOGS_DIR_PARENTS; do
+    path="$path/$dir"
+    just log debug "Adding write permissions for rsyslog to '$path'"
+    sudo chmod g+wX "$path"
+  done
+
+  # Add rsyslog config to log allowed packets to a separate file for easier analysis
+  export msg='$msg'
+  just fs create-file-from-template "$PATH_RSYSLOG_INTERNET_FORWARDING_CONF" "$PATH_RSYSLOG_INTERNET_FORWARDING_CONF_TEMPLATE" {{error-code}}
+
+  # Add logrotate config to rotate the separate log file
+  just fs create-file-from-template "$PATH_LOGROTATE_INTERNET_FORWARDING_CONF" "$PATH_LOGROTATE_INTERNET_FORWARDING_CONF_TEMPLATE"  {{error-code}}
+  just systemd restart logrotate
+
+  # Add apparmor config to allow rsyslog to write to the log file
+  just fs create-file-from-template "$PATH_RSYSLOG_APPARMOR_LOCAL" "$PATH_RSYSLOG_APPARMOR_LOCAL_TEMPLATE" {{error-code}}
+
+  # Reload apparmor to apply the new apparmor config
+  if ! apparmor_parser -r "$PATH_RSYSLOG_APPARMOR_PROFILE"; then
+    just log error "Failed to reload apparmor profile '$PATH_RSYSLOG_APPARMOR_PROFILE'"
+    exit {{error-code}}
+  fi
+
+  # Restart rsyslog to apply the new rsyslog config
+  just systemd restart rsyslog
+
 
 remove-iptables-rules-by-comment comment error-code:
   #!/usr/bin/env bash
@@ -167,7 +210,7 @@ disable-kernel-ip-forwarding error-code:
 
   just log debug "Successfully disabled kernel IP forwarding"
 
-get-allowlisted-server-configuration allowlisted-domains:
+get-allowlisted-server-configuration +allowlisted-domains:
   #!/usr/bin/env bash
   set -euo pipefail
 
@@ -176,7 +219,7 @@ get-allowlisted-server-configuration allowlisted-domains:
     echo "server=/$domain/#"
   done
 
-get-allowlisted-ipset-configuration internet-allowlist-ipset-name allowlisted-domains:
+get-allowlisted-ipset-configuration internet-allowlist-ipset-name +allowlisted-domains:
   #!/usr/bin/env bash
   set -euo pipefail
 

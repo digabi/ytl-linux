@@ -7,4 +7,9 @@ $PATH_INTERNET_FORWARDING_LOGS {
     compress
     missingok
     notifempty
+    create 0664 syslog school
+    sharedscripts
+    postrotate
+        /usr/bin/systemctl kill -s HUP rsyslog.service >/dev/null 2>&1 || true
+    endscript
 }

@@ -108,11 +108,23 @@ get-dir-owner path error-code:
   set -euo pipefail
 
   if [[ ! -d "{{path}}" ]]; then
-    just log error "Directory '{{path}}' does not exist"
+    just log error "Directory '{{path}}' does not exist while trying to get owner"
     exit {{error-code}}
   fi
 
   stat -c '%U:%G' "{{path}}"
+
+[private]
+get-dir-group path error-code:
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  if [[ ! -d "{{path}}" ]]; then
+    just log error "Directory '{{path}}' does not exist while trying to get group"
+    exit {{error-code}}
+  fi
+
+  stat -c '%G' "{{path}}"
 
 create-file-from-template destination-path template-path error-code:
   #!/usr/bin/env bash
