@@ -2,6 +2,7 @@ mod log
 mod util
 mod network
 mod fs
+mod internet-forwarding
 mod systemd
 mod static-dns-records
 
@@ -34,8 +35,8 @@ apply net-device-wan net-device-lan server-number server-friendly-name: \
     "ALLOWED_DOCKER_IP_RANGES"
   ) \
   (assert-server-number-valid server-number) \
-  (assert-device-exists net-device-wan) \
-  (assert-device-exists net-device-lan) \
+  (network::assert-device-exists net-device-wan) \
+  (network::assert-device-exists net-device-lan) \
   (assert-server-friendly-name-valid server-friendly-name) \
   (assert-devices-different net-device-wan net-device-lan)
   #!/usr/bin/env bash
@@ -81,13 +82,17 @@ apply net-device-wan net-device-lan server-number server-friendly-name: \
   just systemd restart NetworkManager
   just network wait-for-network-online
 
-  just fs write-file "$PATH_RESOLVED_CONF" "$(envsubst < $PATH_RESOLVED_CONF_TEMPLATE)"
+  just fs create-file-from-template "$PATH_RESOLVED_CONF" "$PATH_RESOLVED_CONF_TEMPLATE" $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
 
   export NET_DEVICE_LAN="{{net-device-lan}}"
+  export ALLOWLISTED_SERVER_CONFIGURATION="$(just internet-forwarding get-allowlisted-server-configuration $INTERNET_ALLOWLIST_DOMAINS)"
+  export ALLOWLISTED_IPSET_CONFIGURATION="$(just internet-forwarding get-allowlisted-ipset-configuration $INTERNET_ALLOWLIST_IPSET_NAME $INTERNET_ALLOWLIST_DOMAINS)"
   just fs empty-directory "$PATH_DNSMASQ"
-  just fs write-file "$PATH_DNSMASQ_CONF" "$(envsubst < $PATH_DNSMASQ_CONF_TEMPLATE)"
+  just fs create-file-from-template "$PATH_DNSMASQ_CONF" "$PATH_DNSMASQ_CONF_TEMPLATE" $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
 
   just static-dns-records configure {{server-number}} $SUBNETS_PER_SERVER
+
+  just internet-forwarding enable {{net-device-wan}} {{net-device-lan}} $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
 
   DOCKER_NETWORK_PREFIX=$(just network get-available-ip-range-for-docker $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET "$SERVER_OWN_IP" "$IP_WAN")
   just log debug "Calculated Docker network prefix is '$DOCKER_NETWORK_PREFIX'"
@@ -97,12 +102,7 @@ apply net-device-wan net-device-lan server-number server-friendly-name: \
   export DOCKER_NETWORK_DNS_RESOLVER_IP
   export DOCKER_NETWORK_POOL_BASE_IP
 
-  if ! DOCKER_DAEMON_CONF="$(envsubst < $PATH_DOCKER_DAEMON_CONF_TEMPLATE)"; then
-    just log error "Failed to substitute variables into Docker daemon configuration template"
-    exit $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
-  fi
-
-  just fs write-file "$PATH_DOCKER_DAEMON_CONF" "$DOCKER_DAEMON_CONF"
+  just fs create-file-from-template "$PATH_DOCKER_DAEMON_CONF" "$PATH_DOCKER_DAEMON_CONF_TEMPLATE" $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
   just systemd restart docker
 
   # Enable relevant systemd services
@@ -120,6 +120,8 @@ apply net-device-wan net-device-lan server-number server-friendly-name: \
 
   just setup write-examnet-config "{{net-device-wan}}" "{{net-device-lan}}" "$SERVER_OWN_IP" "{{server-friendly-name}}"
 
+  just internet-forwarding populate-ipset $SERVER_OWN_IP $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
+
   just log info "Examnet configuration applied successfully"
 
 
@@ -128,6 +130,7 @@ destroy: \
     "EXIT_CODE_CANNOT_REMOVE_CONNECTION"
     "EXIT_CODE_NETWORK_NOT_ONLINE"
     "EXIT_CODE_CANNOT_REMOVE_FILES"
+    "EXIT_CODE_CANNOT_CONFIGURE_EXAMNET"
     "PATH_RESOLVED_CONF"
     "PATH_DOCKER_DAEMON_CONF"
     "PATH_NET_DEVICE_WAN_CONF"
@@ -162,6 +165,8 @@ destroy: \
 
   just etc-hosts remove-school-domain-entries "$PATH_ETC_HOSTS" $EXIT_CODE_CANNOT_REMOVE_FILES
 
+  just internet-forwarding disable $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
+
   just log debug "Getting list of network connections"
   CONNECTIONS=$(just network get-connections $EXIT_CODE_CANNOT_REMOVE_CONNECTION)
 
@@ -194,18 +199,6 @@ write-examnet-config net-device-wan net-device-lan server-own-ip server-friendly
   just fs write-file "$PATH_NET_DEVICE_WAN_CONF" "{{net-device-wan}}"
   just fs write-file "$PATH_SERVER_OWN_IP" "{{server-own-ip}}"
   just fs write-file "$PATH_SERVER_FRIENDLY_NAME_CONF" "{{server-friendly-name}}"
-
-[private]
-assert-device-exists device:
-  #!/usr/bin/env bash
-  set -euo pipefail
-
-  just log debug "Checking if network device {{device}} exists"
-
-  if ! ip link show "{{device}}" > /dev/null; then
-    just log error "Network device {{device}} does not exist"
-    exit $EXIT_CODE_NO_SUCH_NETWORK_DEVICE
-  fi
 
 [private]
 assert-devices-different wan-network-device lan-network-device:

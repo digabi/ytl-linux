@@ -1,0 +1,15 @@
+$PATH_INTERNET_FORWARDING_LOGS {
+    hourly
+    maxsize 10M
+    rotate 200
+    maxage 7
+    dateext
+    compress
+    missingok
+    notifempty
+    create 0664 syslog school
+    sharedscripts
+    postrotate
+        /usr/bin/systemctl kill -s HUP rsyslog.service >/dev/null 2>&1 || true
+    endscript
+}

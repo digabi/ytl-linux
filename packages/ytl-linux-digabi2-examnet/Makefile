@@ -4,6 +4,9 @@ VERSION := 1.0.1
 DEPENDENCIES := \
 	--depends apt \
 	--depends dnsmasq \
+	--depends dnsutils \
+	--depends ipset \
+	--depends iptables \
 	--depends jq \
 	--depends network-manager
 DEB_ROOT := deb-root
