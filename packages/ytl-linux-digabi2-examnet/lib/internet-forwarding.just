@@ -7,8 +7,6 @@ mod util
 enable net-device-wan net-device-lan error-code: \
   (util::assert-envs-set error-code
     "INTERNET_ALLOWLIST_DOMAINS"
-    "PATH_DNSMASQ_IPSET_ALLOWLIST_CONF"
-    "PATH_DNSMASQ_SERVER_ALLOWLIST_CONF"
     "PATH_RSYSLOG_INTERNET_FORWARDING_CONF"
     "PATH_RSYSLOG_INTERNET_FORWARDING_CONF_TEMPLATE"
     "PATH_LOGROTATE_INTERNET_FORWARDING_CONF"
@@ -27,18 +25,6 @@ enable net-device-wan net-device-lan error-code: \
   just log info "Enabling internet forwarding for domains: $INTERNET_ALLOWLIST_DOMAINS"
 
   just internet-forwarding enable-kernel-ip-forwarding {{error-code}}
-
-  # Setup dnsmasq
-  # - allowlisted domains are forwarded to upstream resolvers
-  # - other domains are null-routed by address=/#/0.0.0.0 in the main configuration
-  for domain in $INTERNET_ALLOWLIST_DOMAINS; do
-    echo "ipset=/$domain/$INTERNET_ALLOWLIST_IPSET_NAME"
-  done > "$PATH_DNSMASQ_IPSET_ALLOWLIST_CONF"
-
-  # Forward only allowlisted domains to upstream DNS (as defined by resolv-file=/etc/resolv.conf)
-  for domain in $INTERNET_ALLOWLIST_DOMAINS; do
-    echo "server=/$domain/#"
-  done > "$PATH_DNSMASQ_SERVER_ALLOWLIST_CONF"
 
   # Remove possible existing iptables rules and recreate allowlist filter chain to ensure idempotency
   just internet-forwarding remove-iptables-rules-by-comment "$INTERNET_ALLOWLIST_IPSET_NAME" {{error-code}}
@@ -100,8 +86,6 @@ enable net-device-wan net-device-lan error-code: \
 
 disable error-code: \
   (util::assert-envs-set error-code
-    "PATH_DNSMASQ_IPSET_ALLOWLIST_CONF"
-    "PATH_DNSMASQ_SERVER_ALLOWLIST_CONF"
     "PATH_SYSCTL_EXAMNET_CONF"
     "INTERNET_ALLOWLIST_IPSET_NAME"
     "INTERNET_ALLOWLIST_FILTER_CHAIN"
@@ -116,9 +100,6 @@ disable error-code: \
   just iptables flush-and-delete-chain filter "$INTERNET_ALLOWLIST_FILTER_CHAIN" {{error-code}}
 
   just internet-forwarding flush-and-destroy-ipset "$INTERNET_ALLOWLIST_IPSET_NAME" {{error-code}}
-
-  just fs remove-file "$PATH_DNSMASQ_IPSET_ALLOWLIST_CONF"
-  just fs remove-file "$PATH_DNSMASQ_SERVER_ALLOWLIST_CONF"
 
   just internet-forwarding disable-kernel-ip-forwarding {{error-code}}
 
@@ -153,22 +134,6 @@ flush-and-destroy-ipset ipset-name error-code:
     just log debug "Skipping flushing and destroying ipset '{{ipset-name}}' which does not exist"
   fi
 
-populate-ipset server-own-ip error-code: \
-  (util::assert-envs-set error-code "INTERNET_ALLOWLIST_DOMAINS")
-  #!/usr/bin/env bash
-  set -euo pipefail
-
-  just log debug "Populating ipset with IP addresses of allowlisted domains: $INTERNET_ALLOWLIST_DOMAINS"
-
-  for domain in $INTERNET_ALLOWLIST_DOMAINS; do
-    just log debug "Resolving allowlisted domain '$domain' to populate ipset with its IP addresses"
-    if ! dig +time=1 +tries=1 @{{server-own-ip}} "$domain" A >/dev/null 2>&1; then
-      just log warn "Failed to resolve allowlisted domain '$domain' using dig with server {{server-own-ip}}"
-    fi
-  done
-
-  just log debug "Done populating ipset with IP addresses of allowlisted domains"
-
 enable-kernel-ip-forwarding error-code:
   #!/usr/bin/env bash
   set -euo pipefail
@@ -201,3 +166,39 @@ disable-kernel-ip-forwarding error-code:
   fi
 
   just log debug "Successfully disabled kernel IP forwarding"
+
+get-allowlisted-server-configuration allowlisted-domains:
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  # Forward allowlisted domains to upstream DNS (as defined by resolv-file=/etc/resolv.conf)
+  for domain in {{allowlisted-domains}}; do
+    echo "server=/$domain/#"
+  done
+
+get-allowlisted-ipset-configuration internet-allowlist-ipset-name allowlisted-domains:
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  # IP addresses of allowlisted domains are added to ipset that is used to allow forwarding traffic to those domains in iptables
+  # Other domains are null-routed by address=/#/0.0.0.0 in the main configuration.
+  for domain in {{allowlisted-domains}}; do
+    echo "ipset=/$domain/{{internet-allowlist-ipset-name}}"
+  done
+
+populate-ipset server-own-ip error-code: \
+  (util::assert-envs-set error-code "INTERNET_ALLOWLIST_DOMAINS")
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  just log debug "Populating ipset with IP addresses of allowlisted domains: $INTERNET_ALLOWLIST_DOMAINS"
+
+  for domain in $INTERNET_ALLOWLIST_DOMAINS; do
+    just log debug "Resolving allowlisted domain '$domain' to populate ipset with its IP addresses"
+    if ! dig +time=1 +tries=1 @{{server-own-ip}} "$domain" A >/dev/null 2>&1; then
+      just log warn "Failed to resolve allowlisted domain '$domain' using dig with server {{server-own-ip}}"
+    fi
+  done
+
+  just log debug "Done populating ipset with IP addresses of allowlisted domains"
+

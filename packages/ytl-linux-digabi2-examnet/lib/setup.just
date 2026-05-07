@@ -85,6 +85,8 @@ apply net-device-wan net-device-lan server-number server-friendly-name: \
   just fs create-file-from-template "$PATH_RESOLVED_CONF" "$PATH_RESOLVED_CONF_TEMPLATE" $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
 
   export NET_DEVICE_LAN="{{net-device-lan}}"
+  export ALLOWLISTED_SERVER_CONFIGURATION="$(just internet-forwarding get-allowlisted-server-configuration $INTERNET_ALLOWLISTED_DOMAINS)"
+  export ALLOWLISTED_IPSET_CONFIGURATION="$(just internet-forwarding get-allowlisted-ipset-configuration $INTERNET_ALLOWLIST_IPSET_NAME $INTERNET_ALLOWLISTED_DOMAINS)"
   just fs empty-directory "$PATH_DNSMASQ"
   just fs create-file-from-template "$PATH_DNSMASQ_CONF" "$PATH_DNSMASQ_CONF_TEMPLATE" $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
 

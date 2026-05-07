@@ -491,7 +491,7 @@ describe('examnet (just port)', () => {
         callIptablesCheckChain(
           'filter',
           'YTL_LAN_WAN_IPSET',
-          '--match conntrack --ctstate NEW --match set --match-set ytl_internet_allowlist dst --match limit --limit 30/second --limit-burst 100 --jump LOG --log-prefix YTL_ALLOW_NEW --log-level 6'
+          '--match conntrack --ctstate NEW --match set --match-set ytl_internet_allowlist dst --match limit --limit 30/second --limit-burst 100 --jump LOG --log-prefix YTL_ALLOW_NEW- --log-level 6'
         ),
         callIptablesCheckChain(
           'filter',
@@ -606,7 +606,7 @@ describe('examnet (just port)', () => {
         callIptablesCheckChain(
           'filter',
           'YTL_LAN_WAN_IPSET',
-          '--match conntrack --ctstate NEW --match set --match-set ytl_internet_allowlist dst --match limit --limit 30/second --limit-burst 100 --jump LOG --log-prefix YTL_ALLOW_NEW --log-level 6'
+          '--match conntrack --ctstate NEW --match set --match-set ytl_internet_allowlist dst --match limit --limit 30/second --limit-burst 100 --jump LOG --log-prefix YTL_ALLOW_NEW- --log-level 6'
         ),
         callIptablesCheckChain(
           'filter',
@@ -703,7 +703,15 @@ describe('examnet (just port)', () => {
       await assertFileExists(
         mockRsyslogDir,
         '30-ytl-linux-internet-forwarding.conf',
-        `:msg, contains, "YTL_ALLOW_NEW " ${mockNaksu2WorkDir}/logs/ytl-linux-internet-forwarding.log\n& stop\n`
+        'if ($msg contains "YTL_ALLOW_NEW-") then {\n' +
+          '    action(\n' +
+          '        type="omfile"\n' +
+          `        file="${mockNaksu2WorkDir}/logs/ytl-linux-internet-forwarding.log"\n` +
+          '        createDirs="off"\n' +
+          '        fileCreateMode="0640"\n' +
+          '    )\n' +
+          '    stop\n' +
+          '}\n'
       )
       await assertFileExists(
         mockLogrotateDir,
@@ -799,7 +807,7 @@ describe('examnet (just port)', () => {
         callIptablesCheckChain(
           'filter',
           'YTL_LAN_WAN_IPSET',
-          '--match conntrack --ctstate NEW --match set --match-set ytl_internet_allowlist dst --match limit --limit 30/second --limit-burst 100 --jump LOG --log-prefix YTL_ALLOW_NEW --log-level 6'
+          '--match conntrack --ctstate NEW --match set --match-set ytl_internet_allowlist dst --match limit --limit 30/second --limit-burst 100 --jump LOG --log-prefix YTL_ALLOW_NEW- --log-level 6'
         ),
         callIptablesCheckChain(
           'filter',
@@ -897,7 +905,15 @@ describe('examnet (just port)', () => {
       await assertFileExists(
         mockRsyslogDir,
         '30-ytl-linux-internet-forwarding.conf',
-        `:msg, contains, "YTL_ALLOW_NEW " ${mockNaksu2WorkDir}/logs/ytl-linux-internet-forwarding.log\n& stop\n`
+        'if ($msg contains "YTL_ALLOW_NEW-") then {\n' +
+          '    action(\n' +
+          '        type="omfile"\n' +
+          `        file="${mockNaksu2WorkDir}/logs/ytl-linux-internet-forwarding.log"\n` +
+          '        createDirs="off"\n' +
+          '        fileCreateMode="0640"\n' +
+          '    )\n' +
+          '    stop\n' +
+          '}\n'
       )
       await assertFileExists(
         mockLogrotateDir,
@@ -1139,7 +1155,15 @@ describe('examnet (just port)', () => {
     await writeToTempDir(
       mockTemplatesDir,
       'rsyslog-internet-forwarding.conf.template',
-      ':msg, contains, "YTL_ALLOW_NEW " $PATH_INTERNET_FORWARDING_LOGS\n& stop\n'
+      'if ($msg contains "YTL_ALLOW_NEW-") then {\n' +
+        '    action(\n' +
+        '        type="omfile"\n' +
+        '        file="$PATH_INTERNET_FORWARDING_LOGS"\n' +
+        '        createDirs="off"\n' +
+        '        fileCreateMode="0640"\n' +
+        '    )\n' +
+        '    stop\n' +
+        '}\n'
     )
     await writeToTempDir(
       mockTemplatesDir,
