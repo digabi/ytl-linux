@@ -69,7 +69,8 @@ Install and set up [git-lfs](https://git-lfs.com).
 1. Run `scripts/update-naksu2.sh` to download the latest version of the Naksu 2 deb from GitHub Releases.
 2. `git add .` and `git commit -m "Update Naksu 2 to x.x.x"`
 3. `git push`
-4. That's it. Naksu will read the latest version from [https://linux.abitti.fi/meta/naksu2-latest-version.json](https://linux.abitti.fi/meta/naksu2-latest-version.json)
+4. When the build action is finished, Naksu 2 has been published.
+5. Check it yourself: Naksu will read the latest version from [https://linux.abitti.fi/meta/naksu2-latest-version.json](https://linux.abitti.fi/meta/naksu2-latest-version.json)
 
 ## AnyDesk
 
