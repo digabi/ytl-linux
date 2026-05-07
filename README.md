@@ -69,7 +69,7 @@ Install and set up [git-lfs](https://git-lfs.com).
 1. Run `scripts/update-naksu2.sh` to download the latest version of the Naksu 2 deb from GitHub Releases.
 2. `git add .` and `git commit -m "Update Naksu 2 to x.x.x"`
 3. `git push`
-4. Go to (Actions)[https://github.com/digabi/ytl-linux/actions].
+4. Go to [Actions](https://github.com/digabi/ytl-linux/actions).
 5. When the build action is finished, click on "Update Debian Repository" in the left sidebar.
 6. Click on "Run Workflow" dropdown -> check "Publish built images" -> Run workflow.
 7. When the "Update Debian Repository" job is finished, Naksu 2 has been published.
