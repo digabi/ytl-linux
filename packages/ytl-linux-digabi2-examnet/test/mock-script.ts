@@ -21,7 +21,11 @@ async function main() {
       }
       break
     case 'stat':
-      console.log('nobody:nobody')
+      if (argvString.includes(`%U:%G`)) {
+        console.log('nobody:nobody')
+      } else {
+        console.log('nobody')
+      }
       break
     case 'ytl-linux-digabi2-bouncer':
       // simulate a daemon that stays running by waiting for two minutes
@@ -38,6 +42,15 @@ async function main() {
       console.log(
         '                DNS:999.koe.abitti.net, DNS:ktp1.999.koe.abitti.net, DNS:ktp10.999.koe.abitti.net, DNS:ktp11.999.koe.abitti.net, DNS:ktp12.999.koe.abitti.net, DNS:ktp13.999.koe.abitti.net, DNS:ktp14.999.koe.abitti.net, DNS:ktp15.999.koe.abitti.net, DNS:ktp16.999.koe.abitti.net, DNS:ktp17.999.koe.abitti.net, DNS:ktp18.999.koe.abitti.net, DNS:ktp19.999.koe.abitti.net, DNS:ktp2.999.koe.abitti.net, DNS:ktp20.999.koe.abitti.net, DNS:ktp21.999.koe.abitti.net, DNS:ktp22.999.koe.abitti.net, DNS:ktp23.999.koe.abitti.net, DNS:ktp24.999.koe.abitti.net, DNS:ktp3.999.koe.abitti.net, DNS:ktp4.999.koe.abitti.net, DNS:ktp5.999.koe.abitti.net, DNS:ktp6.999.koe.abitti.net, DNS:ktp7.999.koe.abitti.net, DNS:ktp8.999.koe.abitti.net, DNS:ktp9.999.koe.abitti.net'
       )
+      break
+    case 'iptables':
+      // TODO mock script would need to be stateful to support testing of adding and deleting rules
+      console.log('')
+      break
+    case 'sysctl':
+    case 'ipset':
+    case 'apparmor_parser':
+      console.log('')
       break
   }
 }

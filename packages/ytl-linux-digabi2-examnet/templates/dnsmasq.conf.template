@@ -36,6 +36,12 @@ server=/koe.abitti.net/#
 server=/koe.ylioppilastutkinto.fi/#
 server=/oma.abitti.fi/#
 
+# Forward also requests to allowlisted domains to upstream
+${ALLOWLISTED_SERVER_CONFIGURATION}
+
+# IP addresses of allowlisted domains are added to ipset that is used to allow forwarding traffic to those domains in iptables
+${ALLOWLISTED_IPSET_CONFIGURATION}
+
 # Null-route all other traffic
 # This prevents software on the student computer from getting confused by when DNS queries work, but the TCP
 # request stalls (since this is not a router) for however long the client timeout is set to; possibly Infinity

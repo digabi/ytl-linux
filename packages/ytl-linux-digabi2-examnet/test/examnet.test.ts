@@ -15,9 +15,14 @@ describe('examnet (just port)', () => {
   let mockResolvedDir
   let mockDockerDir
   let mockDnsmasqDir
+  let mockSysctlDir
+  let mockRsyslogDir
+  let mockLogrotateDir
   let mockNaksu2WorkDir
+  let mockLogsDir
   let mockNaksu2CertsDir
   let mockNetplanConfDir
+  let mockApparmorDir
   let mockScriptWithNoOutput
   let mockScriptReturningErrorCode
   let exitCodesTested = new Set<number>()
@@ -32,9 +37,14 @@ describe('examnet (just port)', () => {
       mockResolvedDir,
       mockDockerDir,
       mockDnsmasqDir,
+      mockSysctlDir,
+      mockRsyslogDir,
+      mockLogrotateDir,
       mockNaksu2WorkDir,
+      mockLogsDir,
       mockNaksu2CertsDir,
       mockNetplanConfDir,
+      mockApparmorDir,
       mockScriptWithNoOutput,
       mockScriptReturningErrorCode
     } = await initTempDir())
@@ -225,6 +235,17 @@ describe('examnet (just port)', () => {
         callSed(`${mockEtcDir}/hosts`),
         callSudoTeeWriteToFile(`${mockEtcDir}/hosts`),
         callRm(`${mockEtcDir}/hosts.tmp`),
+        callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('filter', 'FORWARD'),
+        callIptablesList('filter', 'FORWARD'),
+        callIptablesList('filter', 'YTL_LAN_WAN_IPSET'),
+        callIptablesFlushChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIptablesDeleteChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIpset('list', 'ytl_internet_allowlist'),
+        callIpset('flush', 'ytl_internet_allowlist'),
+        callIpset('destroy', 'ytl_internet_allowlist'),
+        callSysctl('0'),
         callNmcli()
       ])
     })
@@ -248,6 +269,17 @@ describe('examnet (just port)', () => {
         callSed(`${mockEtcDir}/hosts`),
         callSudoTeeWriteToFile(`${mockEtcDir}/hosts`),
         callRm(`${mockEtcDir}/hosts.tmp`),
+        callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('filter', 'FORWARD'),
+        callIptablesList('filter', 'FORWARD'),
+        callIptablesList('filter', 'YTL_LAN_WAN_IPSET'),
+        callIptablesFlushChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIptablesDeleteChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIpset('list', 'ytl_internet_allowlist'),
+        callIpset('flush', 'ytl_internet_allowlist'),
+        callIpset('destroy', 'ytl_internet_allowlist'),
+        callSysctl('0'),
         callNmcli(),
         callSystemctl('restart', 'systemd-resolved'),
         callSystemctl('restart', 'NetworkManager'),
@@ -269,6 +301,17 @@ describe('examnet (just port)', () => {
         callSed(`${mockEtcDir}/hosts`),
         callSudoTeeWriteToFile(`${mockEtcDir}/hosts`),
         callRm(`${mockEtcDir}/hosts.tmp`),
+        callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('filter', 'FORWARD'),
+        callIptablesList('filter', 'FORWARD'),
+        callIptablesList('filter', 'YTL_LAN_WAN_IPSET'),
+        callIptablesFlushChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIptablesDeleteChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIpset('list', 'ytl_internet_allowlist'),
+        callIpset('flush', 'ytl_internet_allowlist'),
+        callIpset('destroy', 'ytl_internet_allowlist'),
+        callSysctl('0'),
         callNmcli(),
         callSystemctl('restart', 'systemd-resolved'),
         callSystemctl('restart', 'NetworkManager'),
@@ -403,6 +446,7 @@ describe('examnet (just port)', () => {
       ])
     })
     test('returns error if configuring docker fails', async () => {
+      const callChmodResults = callChmodRecursive(mockLogsDir)
       // use real sed to parse cert.pem
       await unlink(join(mockBinDir, 'sed'))
       await unlink(join(mockTemplatesDir, 'docker-daemon.json.template'))
@@ -426,13 +470,66 @@ describe('examnet (just port)', () => {
         callRm(`${mockEtcDir}/hosts.tmp`),
         callSudoTeeAppendToFile(`${mockEtcDir}/hosts`),
         callStat(mockNaksu2WorkDir),
-        callChown(join(mockNaksu2WorkDir, 'certs/domain.txt'))
+        callChown(join(mockNaksu2WorkDir, 'certs/domain.txt')),
+
+        callIpLinkShow('eth0'),
+        callIpLinkShow('eth1'),
+        callSysctl('1'),
+
+        callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('filter', 'FORWARD'),
+        callIptablesList('filter', 'FORWARD'),
+        callIptablesList('filter', 'YTL_LAN_WAN_IPSET'),
+
+        callIptablesFlushChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIptablesDeleteChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIptablesNewChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIpset('list', 'ytl_internet_allowlist'),
+        callIpset('flush', 'ytl_internet_allowlist'),
+        callIpset('destroy', 'ytl_internet_allowlist'),
+        callIpsetCreate('ytl_internet_allowlist'),
+        callStat(mockLogsDir, '%G'),
+        callUsermod('nobody'),
+        callChown(`${mockLogsDir}/ytl-linux-internet-forwarding.log`, 'syslog:nobody'),
+        ...callChmodResults,
+        callSystemctl('restart', 'logrotate'),
+        callApparmorParser(`${mockApparmorDir}/usr.sbin.rsyslogd`),
+        callSystemctl('restart', 'rsyslog'),
+
+        callIptablesCheckChain(
+          'filter',
+          'YTL_LAN_WAN_IPSET',
+          '--match conntrack --ctstate NEW --match set --match-set ytl_internet_allowlist dst --match limit --limit 30/second --limit-burst 100 --jump LOG --log-prefix YTL_ALLOW_NEW- --log-level 6'
+        ),
+        callIptablesCheckChain(
+          'filter',
+          'YTL_LAN_WAN_IPSET',
+          '--match set --match-set ytl_internet_allowlist dst --jump ACCEPT'
+        ),
+        callIptablesCheckChain('filter', 'YTL_LAN_WAN_IPSET', '--jump DROP'),
+        callIptablesCheckChain(
+          'filter',
+          'FORWARD',
+          '--in-interface eth0 --out-interface eth1 --match comment --comment ytl_internet_allowlist --match conntrack --ctstate RELATED,ESTABLISHED --jump ACCEPT'
+        ),
+        callIptablesCheckChain(
+          'filter',
+          'FORWARD',
+          '--in-interface eth1 --out-interface eth0 --match comment --comment ytl_internet_allowlist --jump YTL_LAN_WAN_IPSET'
+        ),
+        callIptablesCheckChain(
+          'nat',
+          'POSTROUTING',
+          '--out-interface eth0 --match comment --comment ytl_internet_allowlist --match set --match-set ytl_internet_allowlist dst --jump MASQUERADE'
+        )
       ])
     })
-    test('runs setup when correct parameters are given', async () => {
+    test('returns error if running ipset fails', async () => {
       // use real sed to parse cert.pem
       await unlink(join(mockBinDir, 'sed'))
-      await runExamnet('eth0', 'eth1', '1')
+      await writeToTempDir(mockBinDir, 'ipset', mockScriptReturningErrorCode)
+      await runExamnetReturnsExitCode(30, ['eth0', 'eth1', '1'], ENV_TEST_MODE)
       await assertCalls([
         callIpLinkShow('eth0'),
         callIpLinkShow('eth1'),
@@ -453,36 +550,23 @@ describe('examnet (just port)', () => {
         callSudoTeeAppendToFile(`${mockEtcDir}/hosts`),
         callStat(mockNaksu2WorkDir),
         callChown(join(mockNaksu2WorkDir, 'certs/domain.txt')),
-        callSystemctl('restart', 'docker'),
-        callSystemctl('enable', 'ytl-linux-digabi2-examnet'),
-        callSystemctl('enable', 'dnsmasq'),
-        callSystemctl('enable', 'ytl-linux-digabi2-examnet-discovery.service'),
-        callSystemctl('enable', 'ytl-linux-digabi2-examnet-discovery.timer'),
-        callSystemctl('restart', 'systemd-resolved'),
-        callSystemctl('restart', 'dnsmasq'),
-        callSystemctl('restart', 'ytl-linux-digabi2-examnet'),
-        callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.timer'),
-        callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.service')
+
+        callIpLinkShow('eth0'),
+        callIpLinkShow('eth1'),
+        callSysctl('1'),
+
+        callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('filter', 'FORWARD'),
+        callIptablesList('filter', 'FORWARD'),
+        callIptablesList('filter', 'YTL_LAN_WAN_IPSET'),
+
+        callIptablesFlushChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIptablesDeleteChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIptablesNewChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIpset('list', 'ytl_internet_allowlist'),
+        callIpsetCreate('ytl_internet_allowlist')
       ])
-      await assertFileExists(mockExamnetConfigDir, 'net-device-lan')
-      await assertFileExists(mockExamnetConfigDir, 'net-device-wan')
-      await assertFileExists(mockExamnetConfigDir, 'server-own-ip')
-      await assertFileExists(mockExamnetConfigDir, 'server-friendly-name', 'ktp1\n')
-      await assertFileExists(mockResolvedDir, 'ytl-linux.conf')
-      await assertFileExists(mockDnsmasqDir, 'ytl-linux.conf')
-      await assertFileExists(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf')
-      await assertFileExists(
-        mockDockerDir,
-        'daemon.json',
-        '{\n' +
-          '  "dns": ["10.0.0.1"],\n' +
-          '  "default-address-pools":\n' +
-          '  [\n' +
-          '    {"base": "10.0.0.0/16", "size":24}\n' +
-          '  ]\n' +
-          '}\n'
-      )
-      await assertFileExists(mockNaksu2CertsDir, 'domain.txt', 'ktp1.999.koe.abitti.net\n')
     })
     test('returns error if waiting for network online fails', async () => {
       // use real sed to parse cert.pem
@@ -504,7 +588,203 @@ describe('examnet (just port)', () => {
         callNmonline()
       ])
     })
+    test('runs setup when correct parameters are given', async () => {
+      // use real sed to parse cert.pem
+      await unlink(join(mockBinDir, 'sed'))
+      await runExamnet('eth0', 'eth1', '1')
+      const callChmodResults = callChmodRecursive(mockLogsDir)
+      await assertCalls([
+        callIpLinkShow('eth0'),
+        callIpLinkShow('eth1'),
+        callIpAddrShow('eth0'),
+        callIpAddrShow('eth1'),
+        callNmicliConnectionShow('yo-eth1'),
+        callNmicliConnectionDelete('yo-eth1'),
+        callNmicliConnectionAdd('yo-eth1', '192.168.10.1/16'),
+        callNmicliConnectionModify('yo-eth1'),
+        callNmicliConnectionUp('yo-eth1'),
+        callRm(`${mockNetplanConfDir}/50-cloud-init.yaml`),
+        callSystemctl('restart', 'NetworkManager'),
+        callNmonline(),
+        callRmRecursive(`${mockDnsmasqDir}/*`),
+        callOpenssl(mockNaksu2CertsDir),
+        callSudoTeeWriteToFile(`${mockEtcDir}/hosts`),
+        callRm(`${mockEtcDir}/hosts.tmp`),
+        callSudoTeeAppendToFile(`${mockEtcDir}/hosts`),
+        callStat(mockNaksu2WorkDir),
+        callChown(join(mockNaksu2WorkDir, 'certs/domain.txt')),
+
+        callIpLinkShow('eth0'),
+        callIpLinkShow('eth1'),
+        callSysctl('1'),
+
+        callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('filter', 'FORWARD'),
+        callIptablesList('filter', 'FORWARD'),
+        callIptablesList('filter', 'YTL_LAN_WAN_IPSET'),
+
+        callIptablesFlushChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIptablesDeleteChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIptablesNewChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIpset('list', 'ytl_internet_allowlist'),
+        callIpset('flush', 'ytl_internet_allowlist'),
+        callIpset('destroy', 'ytl_internet_allowlist'),
+        callIpsetCreate('ytl_internet_allowlist'),
+        callStat(mockLogsDir, '%G'),
+        callUsermod('nobody'),
+        callChown(`${mockLogsDir}/ytl-linux-internet-forwarding.log`, 'syslog:nobody'),
+        ...callChmodResults,
+        callSystemctl('restart', 'logrotate'),
+        callApparmorParser(`${mockApparmorDir}/usr.sbin.rsyslogd`),
+        callSystemctl('restart', 'rsyslog'),
+        callIptablesCheckChain(
+          'filter',
+          'YTL_LAN_WAN_IPSET',
+          '--match conntrack --ctstate NEW --match set --match-set ytl_internet_allowlist dst --match limit --limit 30/second --limit-burst 100 --jump LOG --log-prefix YTL_ALLOW_NEW- --log-level 6'
+        ),
+        callIptablesCheckChain(
+          'filter',
+          'YTL_LAN_WAN_IPSET',
+          '--match set --match-set ytl_internet_allowlist dst --jump ACCEPT'
+        ),
+        callIptablesCheckChain('filter', 'YTL_LAN_WAN_IPSET', '--jump DROP'),
+        callIptablesCheckChain(
+          'filter',
+          'FORWARD',
+          '--in-interface eth0 --out-interface eth1 --match comment --comment ytl_internet_allowlist --match conntrack --ctstate RELATED,ESTABLISHED --jump ACCEPT'
+        ),
+        callIptablesCheckChain(
+          'filter',
+          'FORWARD',
+          '--in-interface eth1 --out-interface eth0 --match comment --comment ytl_internet_allowlist --jump YTL_LAN_WAN_IPSET'
+        ),
+        callIptablesCheckChain(
+          'nat',
+          'POSTROUTING',
+          '--out-interface eth0 --match comment --comment ytl_internet_allowlist --match set --match-set ytl_internet_allowlist dst --jump MASQUERADE'
+        ),
+
+        callSystemctl('restart', 'docker'),
+        callSystemctl('enable', 'ytl-linux-digabi2-examnet'),
+        callSystemctl('enable', 'dnsmasq'),
+        callSystemctl('enable', 'ytl-linux-digabi2-examnet-discovery.service'),
+        callSystemctl('enable', 'ytl-linux-digabi2-examnet-discovery.timer'),
+        callSystemctl('restart', 'systemd-resolved'),
+        callSystemctl('restart', 'dnsmasq'),
+        callSystemctl('restart', 'ytl-linux-digabi2-examnet'),
+        callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.timer'),
+        callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.service'),
+        callDig('endpoint.security.microsoft.com'),
+        callDig('smartscreen-prod.microsoft.com'),
+        callDig('smartscreen.microsoft.com')
+      ])
+      await assertFileExists(mockExamnetConfigDir, 'net-device-lan')
+      await assertFileExists(mockExamnetConfigDir, 'net-device-wan')
+      await assertFileExists(mockExamnetConfigDir, 'server-own-ip')
+      await assertFileExists(mockExamnetConfigDir, 'server-friendly-name', 'ktp1\n')
+      await assertFileExists(mockResolvedDir, 'ytl-linux.conf')
+      await assertFileExists(
+        mockDnsmasqDir,
+        'ytl-linux.conf',
+        '# Enable full query logging to assist debugging\n' +
+          'log-queries=extra\n' +
+          '\n' +
+          '# Bind to LAN device and Docker bridge interfaces\n' +
+          'interface=eth1\n' +
+          'interface=docker0\n' +
+          'interface=ytl0\n' +
+          '\n' +
+          '# Set search domain to ktp to support server aliases\n' +
+          'domain=internal\n' +
+          '\n' +
+          '# Tell clients to use this server as DHCP and DNS, also configure its search domain\n' +
+          'dhcp-range=192.168.10.10,192.168.19.254,255.255.0.0,1h\n' +
+          'dhcp-option=6,192.168.10.1\n' +
+          'dhcp-option=option:domain-name,internal\n' +
+          '\n' +
+          '# Redirect requests for Windows Network Connection Status Indicator (NCSI) to our local NCSI spoofer (digabi2-examnet-bouncer)\n' +
+          'host-record=dns.msftncsi.com,www.msftncsi.com,www.msftconnecttest.com,ipv6.msftconnecttest.com,192.168.10.1\n' +
+          '# Avoid resolving NCSI IPv6 addresses from upstream DNS\n' +
+          'host-record=dns.msftncsi.com,www.msftncsi.com,www.msftconnecttest.com,ipv6.msftconnecttest.com,::\n' +
+          '\n' +
+          '# Use WAN device nameservers as upstream\n' +
+          'resolv-file=/etc/resolv.conf\n' +
+          '\n' +
+          '# Forward requests for koe.abitti.net to upstream\n' +
+          '# This is for compatibility with practice exams that use a generated domain name in public DNS, as opposed to\n' +
+          '# examination networks, where the host records are local and static. Public DNS returns a private IP, but we\n' +
+          '# need DNS to tell student computers where to go\n' +
+          'server=/koe.abitti.net/#\n' +
+          '\n' +
+          '# Forward requests to koe.ylioppilastutkinto.fi and oma.abitti.fi to upstream\n' +
+          '# This is to allow other KTPs that temporarily receive DHCP from this server to still resolve the correct address and be able to\n' +
+          '# contact it on its external network interface (that does not lead to this KTP). If we did not do this, the KTP would get\n' +
+          '# koe.ylioppilastutkinto.fi => 0.0.0.0 and be unable to make the request, even on the correct network interface.\n' +
+          '# Student machines will not be able to contact koe.ylioppilastutkinto.fi or oma.abitti.fi either way, since they will get blocked by iptables\n' +
+          'server=/koe.ylioppilastutkinto.fi/#\n' +
+          'server=/oma.abitti.fi/#\n' +
+          '\n' +
+          '# Forward also requests to allowlisted domains to upstream\n' +
+          'server=/endpoint.security.microsoft.com/#\n' +
+          'server=/smartscreen-prod.microsoft.com/#\n' +
+          'server=/smartscreen.microsoft.com/#\n' +
+          '\n' +
+          '# IP addresses of allowlisted domains are added to ipset that is used to allow forwarding traffic to those domains in iptables\n' +
+          'ipset=/endpoint.security.microsoft.com/ytl_internet_allowlist\n' +
+          'ipset=/smartscreen-prod.microsoft.com/ytl_internet_allowlist\n' +
+          'ipset=/smartscreen.microsoft.com/ytl_internet_allowlist\n' +
+          '\n' +
+          '# Null-route all other traffic\n' +
+          '# This prevents software on the student computer from getting confused by when DNS queries work, but the TCP\n' +
+          '# request stalls (since this is not a router) for however long the client timeout is set to; possibly Infinity\n' +
+          'address=/#/0.0.0.0\n' +
+          'address=/#/::\n'
+      )
+      await assertFileExists(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf')
+      await assertFileExists(mockSysctlDir, '99-ytl-linux-digabi2-examnet.conf')
+      await assertFileExists(
+        mockRsyslogDir,
+        '30-ytl-linux-internet-forwarding.conf',
+        'if ($msg contains "YTL_ALLOW_NEW-") then {\n' +
+          '    action(\n' +
+          '        type="omfile"\n' +
+          `        file="${mockNaksu2WorkDir}/logs/ytl-linux-internet-forwarding.log"\n` +
+          '        createDirs="off"\n' +
+          '        fileCreateMode="0640"\n' +
+          '    )\n' +
+          '    stop\n' +
+          '}\n'
+      )
+      await assertFileExists(
+        mockLogrotateDir,
+        'ytl-internet-forwarding',
+        `${mockNaksu2WorkDir}/logs/ytl-linux-internet-forwarding.log {\n` +
+          '    hourly\n' +
+          '    maxsize 10M\n' +
+          '    rotate 200\n' +
+          '    maxage 7\n' +
+          '    dateext\n' +
+          '    compress\n' +
+          '    missingok\n' +
+          '    notifempty\n' +
+          '}\n'
+      )
+      await assertFileExists(
+        mockDockerDir,
+        'daemon.json',
+        '{\n' +
+          '  "dns": ["10.0.0.1"],\n' +
+          '  "default-address-pools":\n' +
+          '  [\n' +
+          '    {"base": "10.0.0.0/16", "size":24}\n' +
+          '  ]\n' +
+          '}\n'
+      )
+      await assertFileExists(mockNaksu2CertsDir, 'domain.txt', 'ktp1.999.koe.abitti.net\n')
+    })
     test('runs setup when correct parameters are given with friendly name', async () => {
+      const callChmodResults = callChmodRecursive(mockLogsDir)
       // use real sed to parse cert.pem
       await unlink(join(mockBinDir, 'sed'))
       await runExamnet('eth0', 'eth1', '1', 'perunakellari')
@@ -528,6 +808,58 @@ describe('examnet (just port)', () => {
         callSudoTeeAppendToFile(`${mockEtcDir}/hosts`),
         callStat(mockNaksu2WorkDir),
         callChown(join(mockNaksu2WorkDir, 'certs/domain.txt')),
+
+        callIpLinkShow('eth0'),
+        callIpLinkShow('eth1'),
+        callSysctl('1'),
+
+        callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('filter', 'FORWARD'),
+        callIptablesList('filter', 'FORWARD'),
+        callIptablesList('filter', 'YTL_LAN_WAN_IPSET'),
+
+        callIptablesFlushChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIptablesDeleteChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIptablesNewChain('filter', 'YTL_LAN_WAN_IPSET'),
+        callIpset('list', 'ytl_internet_allowlist'),
+        callIpset('flush', 'ytl_internet_allowlist'),
+        callIpset('destroy', 'ytl_internet_allowlist'),
+        callIpsetCreate('ytl_internet_allowlist'),
+        callStat(mockLogsDir, '%G'),
+        callUsermod('nobody'),
+        callChown(`${mockLogsDir}/ytl-linux-internet-forwarding.log`, 'syslog:nobody'),
+        ...callChmodResults,
+        callSystemctl('restart', 'logrotate'),
+        callApparmorParser(`${mockApparmorDir}/usr.sbin.rsyslogd`),
+        callSystemctl('restart', 'rsyslog'),
+        callIptablesCheckChain(
+          'filter',
+          'YTL_LAN_WAN_IPSET',
+          '--match conntrack --ctstate NEW --match set --match-set ytl_internet_allowlist dst --match limit --limit 30/second --limit-burst 100 --jump LOG --log-prefix YTL_ALLOW_NEW- --log-level 6'
+        ),
+        callIptablesCheckChain(
+          'filter',
+          'YTL_LAN_WAN_IPSET',
+          '--match set --match-set ytl_internet_allowlist dst --jump ACCEPT'
+        ),
+        callIptablesCheckChain('filter', 'YTL_LAN_WAN_IPSET', '--jump DROP'),
+        callIptablesCheckChain(
+          'filter',
+          'FORWARD',
+          '--in-interface eth0 --out-interface eth1 --match comment --comment ytl_internet_allowlist --match conntrack --ctstate RELATED,ESTABLISHED --jump ACCEPT'
+        ),
+        callIptablesCheckChain(
+          'filter',
+          'FORWARD',
+          '--in-interface eth1 --out-interface eth0 --match comment --comment ytl_internet_allowlist --jump YTL_LAN_WAN_IPSET'
+        ),
+        callIptablesCheckChain(
+          'nat',
+          'POSTROUTING',
+          '--out-interface eth0 --match comment --comment ytl_internet_allowlist --match set --match-set ytl_internet_allowlist dst --jump MASQUERADE'
+        ),
+
         callSystemctl('restart', 'docker'),
         callSystemctl('enable', 'ytl-linux-digabi2-examnet'),
         callSystemctl('enable', 'dnsmasq'),
@@ -537,7 +869,10 @@ describe('examnet (just port)', () => {
         callSystemctl('restart', 'dnsmasq'),
         callSystemctl('restart', 'ytl-linux-digabi2-examnet'),
         callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.timer'),
-        callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.service')
+        callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.service'),
+        callDig('endpoint.security.microsoft.com'),
+        callDig('smartscreen-prod.microsoft.com'),
+        callDig('smartscreen.microsoft.com')
       ])
 
       await assertFileExists(mockExamnetConfigDir, 'net-device-lan')
@@ -545,9 +880,104 @@ describe('examnet (just port)', () => {
       await assertFileExists(mockExamnetConfigDir, 'server-own-ip')
       await assertFileExists(mockExamnetConfigDir, 'server-friendly-name', 'perunakellari\n')
       await assertFileExists(mockResolvedDir, 'ytl-linux.conf')
-      await assertFileExists(mockDnsmasqDir, 'ytl-linux.conf')
+      await assertFileExists(
+        mockDnsmasqDir,
+        'ytl-linux.conf',
+        '# Enable full query logging to assist debugging\n' +
+          'log-queries=extra\n' +
+          '\n' +
+          '# Bind to LAN device and Docker bridge interfaces\n' +
+          'interface=eth1\n' +
+          'interface=docker0\n' +
+          'interface=ytl0\n' +
+          '\n' +
+          '# Set search domain to ktp to support server aliases\n' +
+          'domain=internal\n' +
+          '\n' +
+          '# Tell clients to use this server as DHCP and DNS, also configure its search domain\n' +
+          'dhcp-range=192.168.10.10,192.168.19.254,255.255.0.0,1h\n' +
+          'dhcp-option=6,192.168.10.1\n' +
+          'dhcp-option=option:domain-name,internal\n' +
+          '\n' +
+          '# Redirect requests for Windows Network Connection Status Indicator (NCSI) to our local NCSI spoofer (digabi2-examnet-bouncer)\n' +
+          'host-record=dns.msftncsi.com,www.msftncsi.com,www.msftconnecttest.com,ipv6.msftconnecttest.com,192.168.10.1\n' +
+          '# Avoid resolving NCSI IPv6 addresses from upstream DNS\n' +
+          'host-record=dns.msftncsi.com,www.msftncsi.com,www.msftconnecttest.com,ipv6.msftconnecttest.com,::\n' +
+          '\n' +
+          '# Use WAN device nameservers as upstream\n' +
+          'resolv-file=/etc/resolv.conf\n' +
+          '\n' +
+          '# Forward requests for koe.abitti.net to upstream\n' +
+          '# This is for compatibility with practice exams that use a generated domain name in public DNS, as opposed to\n' +
+          '# examination networks, where the host records are local and static. Public DNS returns a private IP, but we\n' +
+          '# need DNS to tell student computers where to go\n' +
+          'server=/koe.abitti.net/#\n' +
+          '\n' +
+          '# Forward requests to koe.ylioppilastutkinto.fi and oma.abitti.fi to upstream\n' +
+          '# This is to allow other KTPs that temporarily receive DHCP from this server to still resolve the correct address and be able to\n' +
+          '# contact it on its external network interface (that does not lead to this KTP). If we did not do this, the KTP would get\n' +
+          '# koe.ylioppilastutkinto.fi => 0.0.0.0 and be unable to make the request, even on the correct network interface.\n' +
+          '# Student machines will not be able to contact koe.ylioppilastutkinto.fi or oma.abitti.fi either way, since they will get blocked by iptables\n' +
+          'server=/koe.ylioppilastutkinto.fi/#\n' +
+          'server=/oma.abitti.fi/#\n' +
+          '\n' +
+          '# Forward also requests to allowlisted domains to upstream\n' +
+          'server=/endpoint.security.microsoft.com/#\n' +
+          'server=/smartscreen-prod.microsoft.com/#\n' +
+          'server=/smartscreen.microsoft.com/#\n' +
+          '\n' +
+          '# IP addresses of allowlisted domains are added to ipset that is used to allow forwarding traffic to those domains in iptables\n' +
+          'ipset=/endpoint.security.microsoft.com/ytl_internet_allowlist\n' +
+          'ipset=/smartscreen-prod.microsoft.com/ytl_internet_allowlist\n' +
+          'ipset=/smartscreen.microsoft.com/ytl_internet_allowlist\n' +
+          '\n' +
+          '# Null-route all other traffic\n' +
+          '# This prevents software on the student computer from getting confused by when DNS queries work, but the TCP\n' +
+          '# request stalls (since this is not a router) for however long the client timeout is set to; possibly Infinity\n' +
+          'address=/#/0.0.0.0\n' +
+          'address=/#/::\n'
+      )
       await assertFileExists(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf')
-      await assertFileExists(mockNaksu2CertsDir, 'domain.txt')
+      await assertFileExists(mockSysctlDir, '99-ytl-linux-digabi2-examnet.conf')
+      await assertFileExists(
+        mockRsyslogDir,
+        '30-ytl-linux-internet-forwarding.conf',
+        'if ($msg contains "YTL_ALLOW_NEW-") then {\n' +
+          '    action(\n' +
+          '        type="omfile"\n' +
+          `        file="${mockNaksu2WorkDir}/logs/ytl-linux-internet-forwarding.log"\n` +
+          '        createDirs="off"\n' +
+          '        fileCreateMode="0640"\n' +
+          '    )\n' +
+          '    stop\n' +
+          '}\n'
+      )
+      await assertFileExists(
+        mockLogrotateDir,
+        'ytl-internet-forwarding',
+        `${mockNaksu2WorkDir}/logs/ytl-linux-internet-forwarding.log {\n` +
+          '    hourly\n' +
+          '    maxsize 10M\n' +
+          '    rotate 200\n' +
+          '    maxage 7\n' +
+          '    dateext\n' +
+          '    compress\n' +
+          '    missingok\n' +
+          '    notifempty\n' +
+          '}\n'
+      )
+      await assertFileExists(
+        mockDockerDir,
+        'daemon.json',
+        '{\n' +
+          '  "dns": ["10.0.0.1"],\n' +
+          '  "default-address-pools":\n' +
+          '  [\n' +
+          '    {"base": "10.0.0.0/16", "size":24}\n' +
+          '  ]\n' +
+          '}\n'
+      )
+      await assertFileExists(mockNaksu2CertsDir, 'domain.txt', 'ktp1.999.koe.abitti.net\n')
     })
   })
 
@@ -567,8 +997,12 @@ describe('examnet (just port)', () => {
         PATH_RESOLVED: mockResolvedDir,
         PATH_DOCKER: mockDockerDir,
         PATH_DNSMASQ: mockDnsmasqDir,
+        PATH_SYSCTL: mockSysctlDir,
+        PATH_RSYSLOG: mockRsyslogDir,
+        PATH_LOGROTATE: mockLogrotateDir,
         NAKSU2_WORKDIR: mockNaksu2WorkDir,
         PATH_NETPLAN: mockNetplanConfDir,
+        PATH_APPARMOR_DIR: mockApparmorDir,
         PATH_ETC: mockEtcDir,
         PATH_JUSTFILE: './justfile',
         BIN_DIGABI2_EXAMNET_BOUNCER: 'ytl-linux-digabi2-bouncer',
@@ -655,9 +1089,16 @@ describe('examnet (just port)', () => {
     const mockResolvedDir = await makeTempDir(root, 'mock-resolved-dir')
     const mockDockerDir = await makeTempDir(root, 'mock-docker-dir')
     const mockDnsmasqDir = await makeTempDir(root, 'mock-dnsmasq-dir')
+    const mockSysctlDir = await makeTempDir(root, 'mock-sysctl-dir')
+    const mockRsyslogDir = await makeTempDir(root, 'mock-rsyslog-dir')
+    const mockLogrotateDir = await makeTempDir(root, 'mock-logrotate-dir')
     const mockNaksu2WorkDir = await makeTempDir(root, 'naksu2-work-dir')
+    const mockLogsDir = await makeTempDir(mockNaksu2WorkDir, 'logs')
     const mockNaksu2CertsDir = await makeTempDir(mockNaksu2WorkDir, 'certs')
     const mockNetplanConfDir = await makeTempDir(root, 'mock-etc-netplan')
+    const mockApparmorDir = await makeTempDir(root, 'mock-etc-apparmor')
+    await makeTempDir(mockApparmorDir, 'local')
+
     await writeToTempDir(mockNaksu2CertsDir, 'domain.txt', 'ktp1.1000.koe.abitti.net')
     await writeToTempDir(
       mockNaksu2CertsDir,
@@ -720,6 +1161,11 @@ describe('examnet (just port)', () => {
     await writeToTempDir(mockBinDir, 'rm', mockScript)
     await writeToTempDir(mockBinDir, 'sudo', mockScript)
     await writeToTempDir(mockBinDir, 'chown', mockScript)
+    await writeToTempDir(mockBinDir, 'iptables', mockScript)
+    await writeToTempDir(mockBinDir, 'ipset', mockScript)
+    await writeToTempDir(mockBinDir, 'sysctl', mockScript)
+    await writeToTempDir(mockBinDir, 'dig', mockScript)
+    await writeToTempDir(mockBinDir, 'apparmor_parser', mockScript)
     await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-bouncer', mockScript)
     await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-discovery', mockScript)
     await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-docker-configure.sh', mockScript)
@@ -738,6 +1184,7 @@ describe('examnet (just port)', () => {
     )
     await writeToTempDir(mockExamnetConfigDir, 'discovery.db', 'foo')
     await writeToTempDir(mockTemplatesDir, 'resolved.conf.template', 'foobar')
+    await writeToTempDir(mockTemplatesDir, 'rsyslog-apparmor-local.template', '$PATH_INTERNET_FORWARDING_LOGS rw,\n')
     await writeToTempDir(
       mockTemplatesDir,
       'docker-daemon.json.template',
@@ -749,7 +1196,86 @@ describe('examnet (just port)', () => {
         '  ]\n' +
         '}\n'
     )
-    await writeToTempDir(mockTemplatesDir, 'dnsmasq.conf.template', 'foobar')
+    await writeToTempDir(
+      mockTemplatesDir,
+      'rsyslog-internet-forwarding.conf.template',
+      'if ($msg contains "YTL_ALLOW_NEW-") then {\n' +
+        '    action(\n' +
+        '        type="omfile"\n' +
+        '        file="$PATH_INTERNET_FORWARDING_LOGS"\n' +
+        '        createDirs="off"\n' +
+        '        fileCreateMode="0640"\n' +
+        '    )\n' +
+        '    stop\n' +
+        '}\n'
+    )
+    await writeToTempDir(
+      mockTemplatesDir,
+      'logrotate-internet-forwarding.template',
+      '$PATH_INTERNET_FORWARDING_LOGS {\n' +
+        '    hourly\n' +
+        '    maxsize 10M\n' +
+        '    rotate 200\n' +
+        '    maxage 7\n' +
+        '    dateext\n' +
+        '    compress\n' +
+        '    missingok\n' +
+        '    notifempty\n' +
+        '}\n'
+    )
+    await writeToTempDir(
+      mockTemplatesDir,
+      'dnsmasq.conf.template',
+      '# Enable full query logging to assist debugging\n' +
+        'log-queries=extra\n' +
+        '\n' +
+        '# Bind to LAN device and Docker bridge interfaces\n' +
+        'interface=${NET_DEVICE_LAN}\n' +
+        'interface=docker0\n' +
+        'interface=ytl0\n' +
+        '\n' +
+        '# Set search domain to ktp to support server aliases\n' +
+        'domain=${FRIENDLY_NAME_SEARCH_DOMAIN}\n' +
+        '\n' +
+        '# Tell clients to use this server as DHCP and DNS, also configure its search domain\n' +
+        'dhcp-range=${DHCP_RANGE_START},${DHCP_RANGE_END},255.255.0.0,1h\n' +
+        'dhcp-option=6,${SERVER_OWN_IP}\n' +
+        'dhcp-option=option:domain-name,${FRIENDLY_NAME_SEARCH_DOMAIN}\n' +
+        '\n' +
+        '# Redirect requests for Windows Network Connection Status Indicator (NCSI) to our local NCSI spoofer (digabi2-examnet-bouncer)\n' +
+        'host-record=${NCSI_HOSTNAMES_LIST},${SERVER_OWN_IP}\n' +
+        '# Avoid resolving NCSI IPv6 addresses from upstream DNS\n' +
+        'host-record=${NCSI_HOSTNAMES_LIST},::\n' +
+        '\n' +
+        '# Use WAN device nameservers as upstream\n' +
+        'resolv-file=/etc/resolv.conf\n' +
+        '\n' +
+        '# Forward requests for koe.abitti.net to upstream\n' +
+        '# This is for compatibility with practice exams that use a generated domain name in public DNS, as opposed to\n' +
+        '# examination networks, where the host records are local and static. Public DNS returns a private IP, but we\n' +
+        '# need DNS to tell student computers where to go\n' +
+        'server=/koe.abitti.net/#\n' +
+        '\n' +
+        '# Forward requests to koe.ylioppilastutkinto.fi and oma.abitti.fi to upstream\n' +
+        '# This is to allow other KTPs that temporarily receive DHCP from this server to still resolve the correct address and be able to\n' +
+        '# contact it on its external network interface (that does not lead to this KTP). If we did not do this, the KTP would get\n' +
+        '# koe.ylioppilastutkinto.fi => 0.0.0.0 and be unable to make the request, even on the correct network interface.\n' +
+        '# Student machines will not be able to contact koe.ylioppilastutkinto.fi or oma.abitti.fi either way, since they will get blocked by iptables\n' +
+        'server=/koe.ylioppilastutkinto.fi/#\n' +
+        'server=/oma.abitti.fi/#\n' +
+        '\n' +
+        '# Forward also requests to allowlisted domains to upstream\n' +
+        '${ALLOWLISTED_SERVER_CONFIGURATION}\n' +
+        '\n' +
+        '# IP addresses of allowlisted domains are added to ipset that is used to allow forwarding traffic to those domains in iptables\n' +
+        '${ALLOWLISTED_IPSET_CONFIGURATION}\n' +
+        '\n' +
+        '# Null-route all other traffic\n' +
+        '# This prevents software on the student computer from getting confused by when DNS queries work, but the TCP\n' +
+        '# request stalls (since this is not a router) for however long the client timeout is set to; possibly Infinity\n' +
+        'address=/#/0.0.0.0\n' +
+        'address=/#/::\n'
+    )
     await writeToTempDir(mockNetplanConfDir, '50-cloud-init.yaml', 'baz')
     await writeToTempDir(mockEtcDir, 'hosts', '# test /etc/hosts file\n')
 
@@ -765,11 +1291,16 @@ describe('examnet (just port)', () => {
       mockEtcDir,
       mockExamnetConfigDir,
       mockNetplanConfDir,
+      mockApparmorDir,
       mockTemplatesDir,
       mockResolvedDir,
       mockDockerDir,
       mockDnsmasqDir,
+      mockSysctlDir,
+      mockRsyslogDir,
+      mockLogrotateDir,
       mockNaksu2WorkDir,
+      mockLogsDir,
       mockNaksu2CertsDir,
       mockScriptWithNoOutput,
       mockScriptReturningErrorCode
@@ -782,7 +1313,7 @@ describe('examnet (just port)', () => {
     // console.log(`expecting ${expectedCalls.length} calls to external programs`)
     const callsArray = callsLines
       .map(line => {
-        // console.log(`parsing line ${line}`)
+        console.log(`parsing line ${line}`)
         return line ? JSON.parse(line) : undefined
       })
       .filter(Boolean)
@@ -834,14 +1365,27 @@ async function killSubprocess(subprocess: any) {
   }
 }
 
-function callStat(mockNaksu2WorkDir) {
-  return { cmd: 'stat', argv: ['-c', '%U:%G', mockNaksu2WorkDir] }
+function callStat(mockNaksu2WorkDir: string, format: string = '%U:%G') {
+  return { cmd: 'stat', argv: ['-c', format, mockNaksu2WorkDir] }
 }
 
-function callChown(file) {
-  return { cmd: 'chown', argv: ['nobody:nobody', file] }
+function callUsermod(group: string) {
+  return { cmd: 'sudo', argv: ['usermod', '--append', '--groups', group, 'syslog'] }
 }
 
+function callChown(file: string, owner: string = 'nobody:nobody') {
+  return { cmd: 'chown', argv: [owner, file] }
+}
+
+function callChmodRecursive(dir: string) {
+  let result = []
+  const dirParts = dir.split('/')
+  for (let i = 2; i <= dirParts.length; i++) {
+    const subdir = dirParts.slice(0, i).join('/')
+    result.push({ cmd: 'sudo', argv: ['chmod', 'g+wX', subdir] })
+  }
+  return result
+}
 function callBouncer(mockNaksu2CertsDir: string) {
   return {
     cmd: 'ytl-linux-digabi2-bouncer',
@@ -869,6 +1413,10 @@ function callIpAddrShow(networkDevice: string) {
 
 function callSystemctl(cmd: string, service: string, flags?: string) {
   return { cmd: 'systemctl', argv: [cmd, flags, service].filter(Boolean) }
+}
+
+function callApparmorParser(profile: string) {
+  return { cmd: 'apparmor_parser', argv: ['-r', profile] }
 }
 
 function callNmicliConnectionShow(connectionName: string) {
@@ -944,31 +1492,40 @@ function callSudoTeeWriteToFile(file: string) {
   return { cmd: 'sudo', argv: ['tee', file] }
 }
 
-// These are not yet in use:
-//
-// function callDig(host: string) {
-//   return { cmd: 'dig', argv: ['+time=1', '+tries=1', '@10.0.10.1', host, 'A'] }
-// }
-//
-// function callIpsetCreate(listName: string) {
-//   return { cmd: 'ipset', argv: ['create', listName, 'hash:ip', 'timeout', '3600', '-exist'] }
-// }
-//
-// function callIptablesNewChain(chainName: string) {
-//   return { cmd: 'iptables', argv: ['-t', 'filter', '-N', chainName] }
-// }
-//
-// function callIptablesFlushChain(chainName: string) {
-//   return { cmd: 'iptables', argv: ['-t', 'filter', '-F', chainName] }
-// }
-//
-// function callIptablesCheckChain(chainName: string, networkDevice: string, jumpTarget: string) {
-//   return {
-//     cmd: 'iptables',
-//     argv: ['-t', 'filter', '-C', chainName, '-i', networkDevice, '-o', 'eth0', '-j', jumpTarget]
-//   }
-// }
-//
-// function callIptablesAppendRule(chainName: string, jumpTarget: string) {
-//   return { cmd: 'iptables', argv: ['-t', 'filter', '-A', chainName, '-j', jumpTarget] }
-// }
+function callDig(host: string) {
+  return { cmd: 'dig', argv: ['+time=1', '+tries=1', '@192.168.10.1', host, 'A'] }
+}
+
+function callIpsetCreate(list: string) {
+  return { cmd: 'ipset', argv: ['create', list, 'hash:ip', 'timeout', '3600', '-exist'] }
+}
+
+function callSysctl(value: string) {
+  return { cmd: 'sysctl', argv: ['-w', `net.ipv4.ip_forward=${value}`] }
+}
+
+function callIpset(command: string, list: string) {
+  return { cmd: 'ipset', argv: [command, list] }
+}
+
+function callIptablesList(table: string, chain: string) {
+  return { cmd: 'iptables', argv: ['--wait', '--table', table, '--list', chain, '--line-numbers', '--numeric'] }
+}
+function callIptablesNewChain(table: string, chain: string) {
+  return { cmd: 'iptables', argv: ['--wait', '--table', table, '--new-chain', chain] }
+}
+
+function callIptablesFlushChain(table: string, chain: string) {
+  return { cmd: 'iptables', argv: ['--wait', '--table', table, '--flush', chain] }
+}
+
+function callIptablesDeleteChain(table: string, chain: string) {
+  return { cmd: 'iptables', argv: ['--wait', '--table', table, '--delete-chain', chain] }
+}
+
+function callIptablesCheckChain(table: string, chain: string, rulespec: string) {
+  return {
+    cmd: 'iptables',
+    argv: ['--wait', '--table', table, '--check', chain, ...rulespec.split(' ')]
+  }
+}
