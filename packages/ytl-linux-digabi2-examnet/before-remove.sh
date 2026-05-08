@@ -18,4 +18,7 @@ systemctl disable ytl-linux-digabi2-examnet-discovery.timer
 systemctl stop ytl-linux-digabi2-examnet-discovery.service
 systemctl disable ytl-linux-digabi2-examnet-discovery.service
 
+systemctl stop ytl-linux-digabi2-wait-for-listen-ip.service
+systemctl disable ytl-linux-digabi2-wait-for-listen-ip.service
+
 systemctl daemon-reload

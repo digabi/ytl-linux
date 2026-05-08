@@ -14,3 +14,4 @@ fi
 systemctl enable ytl-linux-digabi2-examnet
 systemctl enable ytl-linux-digabi2-examnet-discovery.timer
 systemctl enable ytl-linux-digabi2-examnet-discovery.service
+systemctl enable ytl-linux-digabi2-wait-for-listen-ip.service
