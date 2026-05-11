@@ -18,6 +18,8 @@ mod systemd 'lib/systemd.just'
 mod static-dns-records 'lib/static-dns-records.just'
 [private]
 mod util 'lib/util.just'
+[private]
+mod mod-wait-for-listen-ip 'lib/wait-for-listen-ip.just'
 
 [private]
 default:
@@ -46,3 +48,6 @@ restart-bouncer: util::assert-user-is-root
 
 discovery: util::assert-user-is-root
     just mod-discovery start
+
+wait-for-listen-ip:
+    just mod-wait-for-listen-ip start
