@@ -1,0 +1,16 @@
+[Unit]
+Description=Wait for digabi2 examnet LAN IP before starting docker
+After=NetworkManager.service
+Wants=NetworkManager.service
+Before=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/ytl-linux-digabi2-examnet --wait-for-listen-ip
+TimeoutStartSec=45s
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

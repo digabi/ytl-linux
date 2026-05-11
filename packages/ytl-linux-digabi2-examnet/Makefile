@@ -20,7 +20,7 @@ deb:
 	cp ytl-linux-digabi2-examnet-legacy $(DEB_ROOT)/usr/local/sbin/
 	cp ytl-linux-digabi2-docker-configure.sh $(DEB_ROOT)/usr/local/sbin/
 	cp ytl-linux-digabi2-examnet $(DEB_ROOT)/usr/local/sbin/
-	
+
 	mkdir -p $(DEB_ROOT)/usr/local/libexec/ytl-linux-digabi2-examnet/lib
 	cp justfile $(DEB_ROOT)/usr/local/libexec/ytl-linux-digabi2-examnet/justfile
 	cp lib/* $(DEB_ROOT)/usr/local/libexec/ytl-linux-digabi2-examnet/lib/
@@ -52,8 +52,14 @@ deb:
 	cp ytl-linux-digabi2-examnet.service $(DEB_ROOT)/etc/systemd/system/
 	cp ytl-linux-digabi2-examnet-discovery.service $(DEB_ROOT)/etc/systemd/system/
 	cp ytl-linux-digabi2-examnet-discovery.timer $(DEB_ROOT)/etc/systemd/system/
+	cp ytl-linux-digabi2-wait-for-listen-ip.service $(DEB_ROOT)/etc/systemd/system/
 
 	chmod 644 $(DEB_ROOT)/etc/systemd/system/*
+
+	# docker.service drop-in to order docker after the listen-ip wait
+	mkdir -p $(DEB_ROOT)/etc/systemd/system/docker.service.d/
+	cp docker.service.d/wait-for-listen-ip.conf $(DEB_ROOT)/etc/systemd/system/docker.service.d/
+	chmod 644 $(DEB_ROOT)/etc/systemd/system/docker.service.d/*.conf
 
 	# Polkit policy
 	mkdir -p $(DEB_ROOT)/usr/share/polkit-1/actions/

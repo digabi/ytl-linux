@@ -97,6 +97,9 @@ for arg in "$@"; do
     --remove)
       recipe="destroy"
       ;;
+    --wait-for-listen-ip)
+      recipe="wait-for-listen-ip"
+      ;;
     --use-static-local-dns)
       # Eat the flag, do not pass it to just
       ;;
