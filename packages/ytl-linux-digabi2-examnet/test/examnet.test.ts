@@ -1438,21 +1438,23 @@ function callApparmorParser(profile: string) {
 }
 
 function callNmicliConnectionShow(connectionName: string) {
-  return { cmd: 'nmcli', argv: ['connection', 'show', connectionName] }
+  return { cmd: 'nmcli', argv: ['--wait', '30', 'connection', 'show', connectionName] }
 }
 
 function callNmicliConnectionDelete(connectionName: string) {
-  return { cmd: 'nmcli', argv: ['connection', 'delete', connectionName] }
+  return { cmd: 'nmcli', argv: ['--wait', '30', 'connection', 'delete', connectionName] }
 }
 
 function callNmicliConnectionModify(connectionName: string) {
-  return { cmd: 'nmcli', argv: ['connection', 'modify', connectionName, 'ipv6.method', 'disabled'] }
+  return { cmd: 'nmcli', argv: ['--wait', '30', 'connection', 'modify', connectionName, 'ipv6.method', 'disabled'] }
 }
 
 function callNmicliConnectionAdd(connectionName: string, ipRange: string) {
   return {
     cmd: 'nmcli',
     argv: [
+      '--wait',
+      '30',
       'connection',
       'add',
       'type',
@@ -1472,7 +1474,7 @@ function callNmicliConnectionAdd(connectionName: string, ipRange: string) {
 }
 
 function callNmicliConnectionUp(deviceName: string) {
-  return { cmd: 'nmcli', argv: ['connection', 'up', deviceName] }
+  return { cmd: 'nmcli', argv: ['--wait', '60', 'connection', 'up', deviceName] }
 }
 
 function callNmonline(timeout: number = 30) {
@@ -1495,7 +1497,7 @@ function callSed(path: string) {
 }
 
 function callNmcli() {
-  return { cmd: 'nmcli', argv: ['-f', 'UUID,NAME', 'connection', 'show'] }
+  return { cmd: 'nmcli', argv: ['--wait', '30', '--fields', 'UUID,NAME', 'connection', 'show'] }
 }
 
 function callOpenssl(path: string) {
