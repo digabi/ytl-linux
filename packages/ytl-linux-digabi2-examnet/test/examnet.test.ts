@@ -237,6 +237,8 @@ describe('examnet (just port)', () => {
         callRm(`${mockEtcDir}/hosts.tmp`),
         callIptablesList('nat', 'POSTROUTING'),
         callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('filter', 'DOCKER-USER'),
+        callIptablesList('filter', 'DOCKER-USER'),
         callIptablesList('filter', 'FORWARD'),
         callIptablesList('filter', 'FORWARD'),
         callIptablesList('filter', 'YTL_LAN_WAN_IPSET'),
@@ -271,6 +273,8 @@ describe('examnet (just port)', () => {
         callRm(`${mockEtcDir}/hosts.tmp`),
         callIptablesList('nat', 'POSTROUTING'),
         callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('filter', 'DOCKER-USER'),
+        callIptablesList('filter', 'DOCKER-USER'),
         callIptablesList('filter', 'FORWARD'),
         callIptablesList('filter', 'FORWARD'),
         callIptablesList('filter', 'YTL_LAN_WAN_IPSET'),
@@ -303,6 +307,8 @@ describe('examnet (just port)', () => {
         callRm(`${mockEtcDir}/hosts.tmp`),
         callIptablesList('nat', 'POSTROUTING'),
         callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('filter', 'DOCKER-USER'),
+        callIptablesList('filter', 'DOCKER-USER'),
         callIptablesList('filter', 'FORWARD'),
         callIptablesList('filter', 'FORWARD'),
         callIptablesList('filter', 'YTL_LAN_WAN_IPSET'),
@@ -476,8 +482,11 @@ describe('examnet (just port)', () => {
         callIpLinkShow('eth1'),
         callSysctl('1'),
 
+        callIptablesList('filter', 'DOCKER-USER'),
         callIptablesList('nat', 'POSTROUTING'),
         callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('filter', 'DOCKER-USER'),
+        callIptablesList('filter', 'DOCKER-USER'),
         callIptablesList('filter', 'FORWARD'),
         callIptablesList('filter', 'FORWARD'),
         callIptablesList('filter', 'YTL_LAN_WAN_IPSET'),
@@ -510,12 +519,12 @@ describe('examnet (just port)', () => {
         callIptablesCheckChain('filter', 'YTL_LAN_WAN_IPSET', '--jump DROP'),
         callIptablesCheckChain(
           'filter',
-          'FORWARD',
+          'DOCKER-USER',
           '--in-interface eth0 --out-interface eth1 --match comment --comment ytl_internet_allowlist --match conntrack --ctstate RELATED,ESTABLISHED --jump ACCEPT'
         ),
         callIptablesCheckChain(
           'filter',
-          'FORWARD',
+          'DOCKER-USER',
           '--in-interface eth1 --out-interface eth0 --match comment --comment ytl_internet_allowlist --jump YTL_LAN_WAN_IPSET'
         ),
         callIptablesCheckChain(
@@ -555,8 +564,11 @@ describe('examnet (just port)', () => {
         callIpLinkShow('eth1'),
         callSysctl('1'),
 
+        callIptablesList('filter', 'DOCKER-USER'),
         callIptablesList('nat', 'POSTROUTING'),
         callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('filter', 'DOCKER-USER'),
+        callIptablesList('filter', 'DOCKER-USER'),
         callIptablesList('filter', 'FORWARD'),
         callIptablesList('filter', 'FORWARD'),
         callIptablesList('filter', 'YTL_LAN_WAN_IPSET'),
@@ -618,8 +630,11 @@ describe('examnet (just port)', () => {
         callIpLinkShow('eth1'),
         callSysctl('1'),
 
+        callIptablesList('filter', 'DOCKER-USER'),
         callIptablesList('nat', 'POSTROUTING'),
         callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('filter', 'DOCKER-USER'),
+        callIptablesList('filter', 'DOCKER-USER'),
         callIptablesList('filter', 'FORWARD'),
         callIptablesList('filter', 'FORWARD'),
         callIptablesList('filter', 'YTL_LAN_WAN_IPSET'),
@@ -651,12 +666,12 @@ describe('examnet (just port)', () => {
         callIptablesCheckChain('filter', 'YTL_LAN_WAN_IPSET', '--jump DROP'),
         callIptablesCheckChain(
           'filter',
-          'FORWARD',
+          'DOCKER-USER',
           '--in-interface eth0 --out-interface eth1 --match comment --comment ytl_internet_allowlist --match conntrack --ctstate RELATED,ESTABLISHED --jump ACCEPT'
         ),
         callIptablesCheckChain(
           'filter',
-          'FORWARD',
+          'DOCKER-USER',
           '--in-interface eth1 --out-interface eth0 --match comment --comment ytl_internet_allowlist --jump YTL_LAN_WAN_IPSET'
         ),
         callIptablesCheckChain(
@@ -813,8 +828,11 @@ describe('examnet (just port)', () => {
         callIpLinkShow('eth1'),
         callSysctl('1'),
 
+        callIptablesList('filter', 'DOCKER-USER'),
         callIptablesList('nat', 'POSTROUTING'),
         callIptablesList('nat', 'POSTROUTING'),
+        callIptablesList('filter', 'DOCKER-USER'),
+        callIptablesList('filter', 'DOCKER-USER'),
         callIptablesList('filter', 'FORWARD'),
         callIptablesList('filter', 'FORWARD'),
         callIptablesList('filter', 'YTL_LAN_WAN_IPSET'),
@@ -846,12 +864,12 @@ describe('examnet (just port)', () => {
         callIptablesCheckChain('filter', 'YTL_LAN_WAN_IPSET', '--jump DROP'),
         callIptablesCheckChain(
           'filter',
-          'FORWARD',
+          'DOCKER-USER',
           '--in-interface eth0 --out-interface eth1 --match comment --comment ytl_internet_allowlist --match conntrack --ctstate RELATED,ESTABLISHED --jump ACCEPT'
         ),
         callIptablesCheckChain(
           'filter',
-          'FORWARD',
+          'DOCKER-USER',
           '--in-interface eth1 --out-interface eth0 --match comment --comment ytl_internet_allowlist --jump YTL_LAN_WAN_IPSET'
         ),
         callIptablesCheckChain(

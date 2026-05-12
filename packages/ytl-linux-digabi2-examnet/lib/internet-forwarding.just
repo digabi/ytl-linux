@@ -30,6 +30,8 @@ enable net-device-wan net-device-lan error-code: \
 
   just internet-forwarding enable-kernel-ip-forwarding {{error-code}}
 
+  just internet-forwarding assert-chain-exists filter DOCKER-USER {{error-code}}
+
   # Remove possible existing iptables rules and recreate allowlist filter chain to ensure idempotency
   just internet-forwarding remove-iptables-rules-by-comment "$INTERNET_ALLOWLIST_IPSET_NAME" {{error-code}}
   just iptables recreate-chain filter $INTERNET_ALLOWLIST_FILTER_CHAIN {{error-code}}
@@ -61,14 +63,14 @@ enable net-device-wan net-device-lan error-code: \
       --jump DROP
 
   # Allow return traffic
-  just iptables add-rule filter FORWARD {{error-code}} \
+  just iptables add-rule filter DOCKER-USER {{error-code}} \
       --in-interface "{{net-device-wan}}" --out-interface "{{net-device-lan}}" \
       --match comment --comment "$INTERNET_ALLOWLIST_IPSET_NAME" \
       --match conntrack --ctstate RELATED,ESTABLISHED \
       --jump ACCEPT
 
   # Enforce allowlist for LAN->WAN traffic
-  just iptables add-rule filter FORWARD {{error-code}} \
+  just iptables add-rule filter DOCKER-USER {{error-code}} \
       --in-interface "{{net-device-lan}}" --out-interface "{{net-device-wan}}" \
       --match comment --comment "$INTERNET_ALLOWLIST_IPSET_NAME" \
       --jump "$INTERNET_ALLOWLIST_FILTER_CHAIN"
@@ -102,6 +104,19 @@ disable error-code: \
   just internet-forwarding disable-kernel-ip-forwarding {{error-code}}
 
   just log info "Done disabling internet forwarding"
+
+assert-chain-exists table chain error-code:
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  just log debug "Checking that iptables chain {{chain}} exists in table {{table}}"
+
+  if ! iptables --wait --table {{table}} --list {{chain}} --line-numbers --numeric > /dev/null 2>&1; then
+    just log error "Required iptables chain {{chain}} does not exist in table {{table}}"
+    exit {{error-code}}
+  fi
+
+  just log debug "Iptables chain {{chain}} exists in table {{table}}"
 
 configure-logging error-code:
   #!/usr/bin/env bash
@@ -153,6 +168,7 @@ remove-iptables-rules-by-comment comment error-code:
   set -euo pipefail
 
   just iptables remove-rules-by-comment nat POSTROUTING {{comment}} {{error-code}}
+  just iptables remove-rules-by-comment filter DOCKER-USER {{comment}} {{error-code}}
   just iptables remove-rules-by-comment filter FORWARD {{comment}} {{error-code}}
 
 flush-and-destroy-ipset ipset-name error-code:
