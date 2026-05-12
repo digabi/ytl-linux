@@ -1,5 +1,5 @@
 NAME := ytl-linux-tasks
-VERSION := 0.3.2
+VERSION := 0.4.0
 
 deb:
 	if [ -d deb-root ]; then rm -fR deb-root/; fi
