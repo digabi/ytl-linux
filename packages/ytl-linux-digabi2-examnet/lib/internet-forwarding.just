@@ -144,6 +144,7 @@ configure-logging error-code:
 
   # Add rsyslog config to log allowed packets to a separate file for easier analysis
   export msg='$msg'
+  export programname='$programname'
   just fs create-file-from-template "$PATH_RSYSLOG_INTERNET_FORWARDING_CONF" "$PATH_RSYSLOG_INTERNET_FORWARDING_CONF_TEMPLATE" {{error-code}}
 
   # Add logrotate config to rotate the separate log file
