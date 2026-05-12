@@ -6,7 +6,7 @@ import { mkdtemp, writeFile, chmod, readFile, mkdir, unlink, truncate, access } 
 import { tmpdir } from 'node:os'
 
 const ENV_TEST_MODE = { TEST_MODE: 'test' }
-describe('examnet', async () => {
+describe('examnet (legacy)', async () => {
   let callsLog
   let mockBinDir
   let mockEtcDir
