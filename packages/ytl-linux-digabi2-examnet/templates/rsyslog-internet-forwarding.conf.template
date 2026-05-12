@@ -5,5 +5,17 @@ if ($msg contains "YTL_ALLOW_NEW-") then {
         createDirs="off"
         fileCreateMode="0644"
     )
-    stop
+}
+
+if ($programname == "dnsmasq" and (
+    $msg contains " forwarded " or
+    $msg contains " reply " or
+    $msg contains " ipset add "
+)) then {
+    action(
+        type="omfile"
+        file="$PATH_INTERNET_FORWARDING_LOGS"
+        createDirs="off"
+        fileCreateMode="0644"
+    )
 }
