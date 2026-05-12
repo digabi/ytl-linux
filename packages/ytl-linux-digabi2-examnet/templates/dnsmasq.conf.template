@@ -47,3 +47,7 @@ ${ALLOWLISTED_IPSET_CONFIGURATION}
 # request stalls (since this is not a router) for however long the client timeout is set to; possibly Infinity
 address=/#/0.0.0.0
 address=/#/::
+
+# Reduce DNS cache TTLs as Microsoft has very short TTL for the A records of the allowlisted servers
+max-cache-ttl=5
+max-ttl=5
