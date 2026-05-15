@@ -8,7 +8,6 @@ if ($msg contains "YTL_ALLOW_NEW-") then {
 }
 
 if ($programname == "dnsmasq" and (
-    $msg contains " forwarded " or
     $msg contains " reply " or
     $msg contains " ipset add "
 )) then {
