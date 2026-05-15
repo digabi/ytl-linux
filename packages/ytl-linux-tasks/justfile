@@ -13,3 +13,14 @@ migrate-package-keys:
 # Remove VirtualBox 7.1 and its requirements (autopurge)
 remove-virtualbox:
     './scripts/2026-04-16_remove-virtualbox.sh'
+
+archive-digabi2-database:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    timestamp=$(date '+%Y-%m-%d-%H%M%S')
+    archive_path="{{ invocation_directory() }}/digabi2-dbdata-${timestamp}.tar.gz"
+    mountpoint=$(docker inspect digabi2_dbdata | jq -r '.[0].Mountpoint')
+    sudo tar cvzf "${archive_path}" "${mountpoint%/*}"
+    echo "Digabi2 database archive created: ${archive_path}"
+    open "{{ invocation_directory() }}"
