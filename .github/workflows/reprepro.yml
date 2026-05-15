@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       publish:
-        description: Publish built images
+        description: Publish built .deb packages
         type: boolean
         required: true
         default: false
