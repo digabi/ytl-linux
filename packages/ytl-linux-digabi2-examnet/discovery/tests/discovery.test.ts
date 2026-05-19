@@ -54,4 +54,23 @@ describe('KTP discovery', () => {
 
     await assertSnapshot(ctx, discovered)
   })
+
+  it('waits for slow KTPs to respond', async ctx => {
+    const discovered = await discoverFriendlyNamesInNetwork(config, async ktpDomain => {
+      // intent: ktp1 and ktp10-ktp19 are absent from the result
+      const fuzz = Math.random() * 999
+      const delayTime = (ktpDomain.startsWith('ktp1') ? 1000 : 0) + fuzz
+      const resolvableTimeout = Promise.withResolvers<void>()
+      const timeout = setTimeout(() => resolvableTimeout.reject('simulated timeout'), 1000)
+      const delay = setTimeout(() => resolvableTimeout.resolve(), delayTime)
+      try {
+        await resolvableTimeout.promise
+        return fakeDiscoveryResponse(200, FAKE_KTPS[ktpDomain])
+      } finally {
+        clearTimeout(timeout)
+        clearTimeout(delay)
+      }
+    })
+    await assertSnapshot(ctx, discovered)
+  })
 })

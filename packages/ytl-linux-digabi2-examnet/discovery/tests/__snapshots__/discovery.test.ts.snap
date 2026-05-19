@@ -349,3 +349,73 @@ snapshot[`KTP discovery > ignores KTPs that respond with invalidly shaped JSON 1
   },
 ]
 `;
+
+snapshot[`KTP discovery > waits for slow KTPs to respond 1`] = `
+[
+  {
+    address: "ktp2.1000.koe.abitti.net",
+    alias: "nauris.internal",
+    target: "192.168.20.1",
+  },
+  {
+    address: "ktp3.1000.koe.abitti.net",
+    alias: "turnipsi.internal",
+    target: "192.168.30.1",
+  },
+  {
+    address: "ktp4.1000.koe.abitti.net",
+    alias: "porkkana.internal",
+    target: "192.168.40.1",
+  },
+  {
+    address: "ktp5.1000.koe.abitti.net",
+    alias: "lanttu.internal",
+    target: "192.168.50.1",
+  },
+  {
+    address: "ktp6.1000.koe.abitti.net",
+    alias: "retiisi.internal",
+    target: "192.168.60.1",
+  },
+  {
+    address: "ktp7.1000.koe.abitti.net",
+    alias: "purjo.internal",
+    target: "192.168.70.1",
+  },
+  {
+    address: "ktp8.1000.koe.abitti.net",
+    alias: "sipuli.internal",
+    target: "192.168.80.1",
+  },
+  {
+    address: "ktp9.1000.koe.abitti.net",
+    alias: "kukkakaali.internal",
+    target: "192.168.90.1",
+  },
+  {
+    address: "ktp20.1000.koe.abitti.net",
+    alias: "artisokka.internal",
+    target: "192.168.200.1",
+  },
+  {
+    address: "ktp21.1000.koe.abitti.net",
+    alias: "endiivi.internal",
+    target: "192.168.210.1",
+  },
+  {
+    address: "ktp22.1000.koe.abitti.net",
+    alias: "avokado.internal",
+    target: "192.168.220.1",
+  },
+  {
+    address: "ktp23.1000.koe.abitti.net",
+    alias: "munakoiso.internal",
+    target: "192.168.230.1",
+  },
+  {
+    address: "ktp24.1000.koe.abitti.net",
+    alias: "sokerijuurikas.internal",
+    target: "192.168.240.1",
+  },
+]
+`;
