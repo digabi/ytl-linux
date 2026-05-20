@@ -25,7 +25,7 @@ export async function fetchFromDiscoveryEndpoint(ktpDomain: string, config: Conf
   logger.debug(`Asking ${ktpDomain} for alias using URL ${discoveryUrl}`)
 
   return await fetch(discoveryUrl, {
-    signal: AbortSignal.timeout(1000)
+    signal: AbortSignal.timeout(5000)
   })
 }
 
@@ -33,45 +33,46 @@ export async function discoverFriendlyNamesInNetwork(
   config: Config,
   fetchFn = fetchFromDiscoveryEndpoint
 ): Promise<DiscoveredKTP[]> {
-  const discovered: DiscoveredKTP[] = []
-
   // Sort the domains so that the logs make a bit more sense, since the certificate SANs are sorted by "natural order" (i.e. 1, 10, 11, ... 2, 20, 21, ...) and not KTP number order
   const ktpDomains = config.ktpDomains.toSorted(sortByKTPNumber)
 
-  for (const ktpDomain of ktpDomains) {
-    try {
-      const response = await fetchFn(ktpDomain, config)
+  const results = await Promise.allSettled(
+    ktpDomains.map(async ktpDomain => {
+      try {
+        const response = await fetchFn(ktpDomain, config)
 
-      if (!response.ok) {
-        logger.warn(`${ktpDomain} responded with ${response.status} ${response.statusText}, skipping it`)
-        logger.warn(`Response body: ${await response.text()}`)
-        continue
+        if (!response.ok) {
+          logger.warn(`${ktpDomain} responded with ${response.status} ${response.statusText}, skipping it`)
+          logger.warn(`Response body: ${await response.text()}`)
+          return
+        }
+
+        const responseJson = await response.json()
+        const discoveryResponse = DiscoveryResponseSchema.safeParse(responseJson)
+
+        if (!discoveryResponse.success) {
+          logger.warn(`${ktpDomain} responded with invalid JSON shape, skipping it`)
+          logger.warn(`Response body: ${JSON.stringify(responseJson)}`)
+          return
+        }
+
+        const { target, alias } = discoveryResponse.data
+
+        logger.debug(`${ktpDomain} declares alias ${alias} => ${target}`)
+
+        return {
+          address: ktpDomain,
+          target,
+          alias
+        }
+      } catch (err) {
+        logger.debug(`${ktpDomain} did not respond validly, assuming it's down or otherwise unreachable`)
+        logger.debug(`Error message: ${err instanceof Error ? err.message : err}`)
+        logger.trace(err, `Exact error:`)
+        return
       }
+    })
+  )
 
-      const responseJson = await response.json()
-      const discoveryResponse = DiscoveryResponseSchema.safeParse(responseJson)
-
-      if (!discoveryResponse.success) {
-        logger.warn(`${ktpDomain} responded with invalid JSON shape, skipping it`)
-        logger.warn(`Response body: ${JSON.stringify(responseJson)}`)
-        continue
-      }
-
-      const { target, alias } = discoveryResponse.data
-
-      logger.debug(`${ktpDomain} declares alias ${alias} => ${target}`)
-
-      discovered.push({
-        address: ktpDomain,
-        target,
-        alias
-      })
-    } catch (err) {
-      logger.debug(`${ktpDomain} did not respond validly, assuming it's down or otherwise unreachable`)
-      logger.debug(`Error message: ${err instanceof Error ? err.message : err}`)
-      logger.trace(err, `Exact error:`)
-    }
-  }
-
-  return Object.values(discovered)
+  return results.flatMap(x => (x.status === 'fulfilled' ? (x.value ? [x.value] : []) : []))
 }
