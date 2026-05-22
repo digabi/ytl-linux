@@ -33,6 +33,8 @@ export MIN_SERVER_NUMBER="1"
 export MAX_SERVER_NUMBER="24"
 export SUBNETS_PER_SERVER="10"
 
+export EXTENDED_LOGGING=${EXTENDED_LOGGING:-false}
+
 export PATH_ETC=${PATH_ETC:-/etc}
 export PATH_ETC_HOSTS="${PATH_ETC}/hosts"
 export PATH_NETPLAN=${PATH_NETPLAN:-/etc/netplan}

@@ -7,6 +7,7 @@ mod util
 enable net-device-wan net-device-lan error-code: \
   (util::assert-envs-set error-code
     "INTERNET_ALLOWLIST_DOMAINS"
+    "EXTENDED_LOGGING"
     "PATH_RSYSLOG_INTERNET_FORWARDING_CONF"
     "PATH_RSYSLOG_INTERNET_FORWARDING_CONF_TEMPLATE"
     "PATH_RSYSLOG_APPARMOR_LOCAL"
@@ -53,14 +54,36 @@ enable net-device-wan net-device-lan error-code: \
       --match limit --limit 30/second --limit-burst 100 \
       --jump LOG --log-prefix "YTL_ALLOW_NEW-" --log-level 6
 
+  if [[ "$EXTENDED_LOGGING" == "true" ]]; then
+    just log debug "Extended logging: Log traffic we ACCEPT in filter chain $INTERNET_ALLOWLIST_FILTER_CHAIN ACCEPT with prefix YTL_ALLOWLIST_ACCEPT-"
+    just iptables add-rule filter $INTERNET_ALLOWLIST_FILTER_CHAIN {{error-code}} \
+        --match set --match-set "$INTERNET_ALLOWLIST_IPSET_NAME" dst \
+        --jump LOG --log-prefix "YTL_ALLOWLIST_ACCEPT-" --log-level 6
+  fi
+
   # Allow only ipset allowlisted destinations
   just iptables add-rule filter $INTERNET_ALLOWLIST_FILTER_CHAIN {{error-code}} \
       --match set --match-set "$INTERNET_ALLOWLIST_IPSET_NAME" dst \
       --jump ACCEPT
 
+  if [[ "$EXTENDED_LOGGING" == "true" ]]; then
+    just log debug "Extended logging: Log traffic we DROP in filter chain $INTERNET_ALLOWLIST_FILTER_CHAIN ACCEPT with prefix YTL_ALLOWLIST_ACCEPT-"
+    just iptables add-rule filter $INTERNET_ALLOWLIST_FILTER_CHAIN {{error-code}} \
+        --jump LOG --log-prefix "YTL_ALLOWLIST_DROP-" --log-level 6
+  fi
+
   # Drop all other LAN->WAN traffic
   just iptables add-rule filter $INTERNET_ALLOWLIST_FILTER_CHAIN {{error-code}} \
       --jump DROP
+
+  if [[ "$EXTENDED_LOGGING" == "true" ]]; then
+    just log debug "Extended logging: Log return traffic we ACCEPT with prefix YTL_RETURN_ACCEPT-"
+    just iptables add-rule filter DOCKER-USER {{error-code}} \
+        --in-interface "{{net-device-wan}}" --out-interface "{{net-device-lan}}" \
+        --match comment --comment "$INTERNET_ALLOWLIST_IPSET_NAME" \
+        --match conntrack --ctstate RELATED,ESTABLISHED \
+        --jump LOG --log-prefix "YTL_RETURN_ACCEPT-" --log-level 6
+  fi
 
   # Allow return traffic
   just iptables add-rule filter DOCKER-USER {{error-code}} \
