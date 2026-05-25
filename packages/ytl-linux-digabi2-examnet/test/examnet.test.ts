@@ -813,10 +813,10 @@ describe('examnet (just port)', () => {
         mockDockerDir,
         'daemon.json',
         '{\n' +
-          '  "dns": ["10.0.0.1"],\n' +
+          '  "dns": ["172.17.0.1"],\n' +
           '  "default-address-pools":\n' +
           '  [\n' +
-          '    {"base": "10.0.0.0/16", "size":24}\n' +
+          '    {"base": "172.17.0.0/16", "size":24}\n' +
           '  ]\n' +
           '}\n'
       )
@@ -1036,10 +1036,10 @@ describe('examnet (just port)', () => {
         mockDockerDir,
         'daemon.json',
         '{\n' +
-          '  "dns": ["10.0.0.1"],\n' +
+          '  "dns": ["172.17.0.1"],\n' +
           '  "default-address-pools":\n' +
           '  [\n' +
-          '    {"base": "10.0.0.0/16", "size":24}\n' +
+          '    {"base": "172.17.0.0/16", "size":24}\n' +
           '  ]\n' +
           '}\n'
       )

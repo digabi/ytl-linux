@@ -33,7 +33,7 @@ get-available-ip-range-for-docker error-code +reserved-ips:
   for range in "${RANGES[@]}"; do
     _USED=false
 
-    for reserved in "{{reserved-ips}}"; do
+    for reserved in {{reserved-ips}}; do
       if [[ $reserved == $range* ]]; then
         _USED=true
         break
