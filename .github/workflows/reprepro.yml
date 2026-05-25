@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       publish:
-        description: Publish built .deb packages
+        description: Publish built .deb packages (Did you remember to update version number in Makefile?)
         type: boolean
         required: true
         default: false
