@@ -500,7 +500,7 @@ describe('examnet (just port)', () => {
         callIpsetCreate('ytl_internet_allowlist'),
         callStat(mockLogsDir, '%G'),
         callUsermod('nobody'),
-        callChown(`${mockLogsDir}/ytl-linux-internet-forwarding.log`, 'syslog:nobody'),
+        callChown(`${mockLogsDir}/ktp1.999.koe.abitti.net-ytl-linux-internet-forwarding.log`, 'syslog:nobody'),
         ...callChmodResults,
         callSystemctl('restart', 'logrotate'),
         callApparmorParser(`${mockApparmorDir}/usr.sbin.rsyslogd`),
@@ -648,7 +648,7 @@ describe('examnet (just port)', () => {
         callIpsetCreate('ytl_internet_allowlist'),
         callStat(mockLogsDir, '%G'),
         callUsermod('nobody'),
-        callChown(`${mockLogsDir}/ytl-linux-internet-forwarding.log`, 'syslog:nobody'),
+        callChown(`${mockLogsDir}/ktp1.999.koe.abitti.net-ytl-linux-internet-forwarding.log`, 'syslog:nobody'),
         ...callChmodResults,
         callSystemctl('restart', 'logrotate'),
         callApparmorParser(`${mockApparmorDir}/usr.sbin.rsyslogd`),
@@ -788,7 +788,7 @@ describe('examnet (just port)', () => {
         'if ($msg contains "YTL_ALLOW_NEW-") then {\n' +
           '    action(\n' +
           '        type="omfile"\n' +
-          `        file="${mockNaksu2WorkDir}/logs/ytl-linux-internet-forwarding.log"\n` +
+          `        file="${mockNaksu2WorkDir}/logs/ktp1.999.koe.abitti.net-ytl-linux-internet-forwarding.log"\n` +
           '        createDirs="off"\n' +
           '        fileCreateMode="0640"\n' +
           '    )\n' +
@@ -798,7 +798,7 @@ describe('examnet (just port)', () => {
       await assertFileExists(
         mockLogrotateDir,
         'ytl-internet-forwarding',
-        `${mockNaksu2WorkDir}/logs/ytl-linux-internet-forwarding.log {\n` +
+        `${mockNaksu2WorkDir}/logs/ktp1.999.koe.abitti.net-ytl-linux-internet-forwarding.log {\n` +
           '    hourly\n' +
           '    maxsize 10M\n' +
           '    rotate 200\n' +
@@ -870,7 +870,7 @@ describe('examnet (just port)', () => {
         callIpsetCreate('ytl_internet_allowlist'),
         callStat(mockLogsDir, '%G'),
         callUsermod('nobody'),
-        callChown(`${mockLogsDir}/ytl-linux-internet-forwarding.log`, 'syslog:nobody'),
+        callChown(`${mockLogsDir}/ktp1.999.koe.abitti.net-ytl-linux-internet-forwarding.log`, 'syslog:nobody'),
         ...callChmodResults,
         callSystemctl('restart', 'logrotate'),
         callApparmorParser(`${mockApparmorDir}/usr.sbin.rsyslogd`),
@@ -1011,7 +1011,7 @@ describe('examnet (just port)', () => {
         'if ($msg contains "YTL_ALLOW_NEW-") then {\n' +
           '    action(\n' +
           '        type="omfile"\n' +
-          `        file="${mockNaksu2WorkDir}/logs/ytl-linux-internet-forwarding.log"\n` +
+          `        file="${mockNaksu2WorkDir}/logs/ktp1.999.koe.abitti.net-ytl-linux-internet-forwarding.log"\n` +
           '        createDirs="off"\n' +
           '        fileCreateMode="0640"\n' +
           '    )\n' +
@@ -1021,7 +1021,7 @@ describe('examnet (just port)', () => {
       await assertFileExists(
         mockLogrotateDir,
         'ytl-internet-forwarding',
-        `${mockNaksu2WorkDir}/logs/ytl-linux-internet-forwarding.log {\n` +
+        `${mockNaksu2WorkDir}/logs/ktp1.999.koe.abitti.net-ytl-linux-internet-forwarding.log {\n` +
           '    hourly\n' +
           '    maxsize 10M\n' +
           '    rotate 200\n' +

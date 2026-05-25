@@ -4,7 +4,7 @@ mod log
 mod network
 mod util
 
-enable net-device-wan net-device-lan error-code: \
+enable net-device-wan net-device-lan this-server-domain error-code: \
   (util::assert-envs-set error-code
     "INTERNET_ALLOWLIST_DOMAINS"
     "PATH_RSYSLOG_INTERNET_FORWARDING_CONF"
@@ -15,7 +15,7 @@ enable net-device-wan net-device-lan error-code: \
     "PATH_LOGROTATE_INTERNET_FORWARDING_CONF"
     "PATH_LOGROTATE_INTERNET_FORWARDING_CONF_TEMPLATE"
     "PATH_NAKSU2_LOGS_DIR"
-    "PATH_INTERNET_FORWARDING_LOGS"
+    "INTERNET_FORWARDING_LOGS_FILE"
     "PATH_SYSCTL_EXAMNET_CONF"
     "INTERNET_ALLOWLIST_IPSET_NAME"
     "INTERNET_ALLOWLIST_FILTER_CHAIN"
@@ -44,7 +44,7 @@ enable net-device-wan net-device-lan error-code: \
     exit {{error-code}}
   fi
 
-  just internet-forwarding configure-logging {{error-code}}
+  just internet-forwarding configure-logging {{this-server-domain}} {{error-code}}
 
   # Log new allowlisted flows
   just iptables add-rule filter $INTERNET_ALLOWLIST_FILTER_CHAIN {{error-code}} \
@@ -118,11 +118,15 @@ assert-chain-exists table chain error-code:
 
   just log debug "Iptables chain {{chain}} exists in table {{table}}"
 
-configure-logging error-code:
+configure-logging this-server-domain error-code:
   #!/usr/bin/env bash
   set -euo pipefail
 
   just log debug "Configuring logging for internet forwarding"
+
+  PATH_INTERNET_FORWARDING_LOGS="$PATH_NAKSU2_LOGS_DIR/{{this-server-domain}}-$INTERNET_FORWARDING_LOGS_FILE"
+  export PATH_INTERNET_FORWARDING_LOGS
+  just log debug "Internet forwarding logs will be written to '$PATH_INTERNET_FORWARDING_LOGS'"
 
   # Allow syslog to write to log directory by adding syslog to group owning the log directory
   NAKSU2_LOGS_DIR_GROUP="$(just fs get-dir-group "$PATH_NAKSU2_LOGS_DIR" {{error-code}})"
