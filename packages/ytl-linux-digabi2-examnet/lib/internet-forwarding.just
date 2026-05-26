@@ -15,7 +15,7 @@ enable net-device-wan net-device-lan this-server-domain error-code: \
     "PATH_LOGROTATE_INTERNET_FORWARDING_CONF"
     "PATH_LOGROTATE_INTERNET_FORWARDING_CONF_TEMPLATE"
     "PATH_NAKSU2_LOGS_DIR"
-    "INTERNET_FORWARDING_LOGS_FILE"
+    "FILENAME_INTERNET_FORWARDING_LOGS"
     "PATH_SYSCTL_EXAMNET_CONF"
     "INTERNET_ALLOWLIST_IPSET_NAME"
     "INTERNET_ALLOWLIST_FILTER_CHAIN"
@@ -124,7 +124,7 @@ configure-logging this-server-domain error-code:
 
   just log debug "Configuring logging for internet forwarding"
 
-  PATH_INTERNET_FORWARDING_LOGS="$PATH_NAKSU2_LOGS_DIR/{{this-server-domain}}-$INTERNET_FORWARDING_LOGS_FILE"
+  PATH_INTERNET_FORWARDING_LOGS="$PATH_NAKSU2_LOGS_DIR/{{this-server-domain}}-$FILENAME_INTERNET_FORWARDING_LOGS"
   export PATH_INTERNET_FORWARDING_LOGS
   just log debug "Internet forwarding logs will be written to '$PATH_INTERNET_FORWARDING_LOGS'"
 
