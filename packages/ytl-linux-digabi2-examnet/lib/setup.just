@@ -92,7 +92,9 @@ apply net-device-wan net-device-lan server-number server-friendly-name: \
 
   just static-dns-records configure {{server-number}} $SUBNETS_PER_SERVER
 
-  just internet-forwarding enable {{net-device-wan}} {{net-device-lan}} $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
+  THIS_SERVER_DOMAIN=$(just fs read-file "$PATH_NAKSU2_DOMAIN" "canonical server hostname" $EXIT_CODE_CANNOT_START_BOUNCER)
+  just log debug "Read canonical server hostname '$THIS_SERVER_DOMAIN' from file '$PATH_NAKSU2_DOMAIN'"
+  just internet-forwarding enable {{net-device-wan}} {{net-device-lan}} $THIS_SERVER_DOMAIN $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
 
   DOCKER_NETWORK_PREFIX=$(just network get-available-ip-range-for-docker $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET "$SERVER_OWN_IP" "$IP_WAN")
   just log debug "Calculated Docker network prefix is '$DOCKER_NETWORK_PREFIX'"
