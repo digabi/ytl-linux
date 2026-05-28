@@ -109,4 +109,18 @@ for arg in "$@"; do
   esac
 done
 
-just --justfile "$PATH_JUSTFILE" "$recipe" "${args[@]}"
+run_just() {
+  just --justfile "$PATH_JUSTFILE" "$recipe" "${args[@]}"
+}
+
+if command -v systemd-cat >/dev/null 2>&1; then
+  echo Examnet command "$recipe" running with journaling
+  run_just \
+    > >(tee >(systemd-cat -t ytl-linux-digabi2-examnet -p info)) \
+    2> >(tee >(systemd-cat -t ytl-linux-digabi2-examnet -p err) >&2)
+else
+  echo Examnet command "$recipe" running
+  run_just
+fi
+
+exit $?
