@@ -9,6 +9,7 @@ export EXIT_CODE_NO_IP_ON_NETWORK_DEVICE=7      # The specified network device d
 export EXIT_CODE_INVALID_SERVER_NUMBER=8        # The specified server number is not an integer between 1 and 24
 export EXIT_CODE_CANNOT_REMOVE_FILES=17         # The script was unable to remove some files
 export EXIT_CODE_CANNOT_REMOVE_CONNECTION=18    # The script was unable to remove some network connection
+export EXIT_CODE_CANNOT_RESTART_DOCKER=19       # The script was unable to tear down or restart Docker
 export EXIT_CODE_NO_SAN_FOR_SERVER_NUMBER=20    # The certificate does not have a SAN entry for the specified server number
 export EXIT_CODE_CANNOT_START_BOUNCER=21        # The script was unable to start the bouncer daemon
 export EXIT_CODE_DAEMON_EXITED_UNEXPECTEDLY=22  # The bouncer or discovery daemon exited unexpectedly

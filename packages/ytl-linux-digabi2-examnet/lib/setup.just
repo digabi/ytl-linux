@@ -5,9 +5,11 @@ mod fs
 mod internet-forwarding
 mod systemd
 mod static-dns-records
+mod docker
 
 EXIT_CODE_CANNOT_CONFIGURE_EXAMNET := env('EXIT_CODE_CANNOT_CONFIGURE_EXAMNET')
 EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE := env('EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE')
+EXIT_CODE_CANNOT_RESTART_DOCKER := env('EXIT_CODE_CANNOT_RESTART_DOCKER')
 
 apply net-device-wan net-device-lan server-number server-friendly-name: \
   (util::assert-envs-set EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
@@ -33,6 +35,7 @@ apply net-device-wan net-device-lan server-number server-friendly-name: \
     "MAX_SERVER_NUMBER"
     "SUBNETS_PER_SERVER"
     "ALLOWED_DOCKER_IP_RANGES"
+    "EXIT_CODE_CANNOT_RESTART_DOCKER"
   ) \
   (assert-server-number-valid server-number) \
   (network::assert-device-exists net-device-wan) \
@@ -105,6 +108,7 @@ apply net-device-wan net-device-lan server-number server-friendly-name: \
   export DOCKER_NETWORK_POOL_BASE_IP
 
   just fs create-file-from-template "$PATH_DOCKER_DAEMON_CONF" "$PATH_DOCKER_DAEMON_CONF_TEMPLATE" $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
+  just docker teardown-project digabi2
   just systemd restart docker
 
   # Enable relevant systemd services
