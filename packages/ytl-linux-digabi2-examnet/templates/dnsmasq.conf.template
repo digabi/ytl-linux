@@ -5,6 +5,7 @@ log-queries=extra
 interface=${NET_DEVICE_LAN}
 interface=docker0
 interface=ytl0
+interface=ytl1
 
 # Set search domain to ktp to support server aliases
 domain=${FRIENDLY_NAME_SEARCH_DOMAIN}

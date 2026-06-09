@@ -709,6 +709,7 @@ describe('examnet (just port)', () => {
           'interface=eth1\n' +
           'interface=docker0\n' +
           'interface=ytl0\n' +
+          'interface=ytl1\n' +
           '\n' +
           '# Set search domain to ktp to support server aliases\n' +
           'domain=internal\n' +
@@ -932,6 +933,7 @@ describe('examnet (just port)', () => {
           'interface=eth1\n' +
           'interface=docker0\n' +
           'interface=ytl0\n' +
+          'interface=ytl1\n' +
           '\n' +
           '# Set search domain to ktp to support server aliases\n' +
           'domain=internal\n' +
@@ -1299,6 +1301,7 @@ describe('examnet (just port)', () => {
         'interface=${NET_DEVICE_LAN}\n' +
         'interface=docker0\n' +
         'interface=ytl0\n' +
+        'interface=ytl1\n' +
         '\n' +
         '# Set search domain to ktp to support server aliases\n' +
         'domain=${FRIENDLY_NAME_SEARCH_DOMAIN}\n' +
