@@ -691,7 +691,7 @@ describe('examnet (just port)', () => {
         callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.timer'),
         callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.service'),
         ...callDig(
-          'microsoft.com windows.com microsoftonline.com msidentity.com live.com live.net windowsupdate.com trafficmanager.net akamaiedge.net edgekey.net akadns.net fastly.net digicert.com globalsign.com skype.com'
+          'endpoint.security.microsoft.com smartscreen-prod.microsoft.com smartscreen.microsoft.com wdcp.microsoft.com wdcpalt.microsoft.com wd.microsoft.com'
         )
       ])
       await assertFileExists(mockExamnetConfigDir, 'net-device-lan')
@@ -742,38 +742,20 @@ describe('examnet (just port)', () => {
           'server=/oma.abitti.fi/#\n' +
           '\n' +
           '# Forward also requests to allowlisted domains to upstream\n' +
-          'server=/microsoft.com/#\n' +
-          'server=/windows.com/#\n' +
-          'server=/microsoftonline.com/#\n' +
-          'server=/msidentity.com/#\n' +
-          'server=/live.com/#\n' +
-          'server=/live.net/#\n' +
-          'server=/windowsupdate.com/#\n' +
-          'server=/trafficmanager.net/#\n' +
-          'server=/akamaiedge.net/#\n' +
-          'server=/edgekey.net/#\n' +
-          'server=/akadns.net/#\n' +
-          'server=/fastly.net/#\n' +
-          'server=/digicert.com/#\n' +
-          'server=/globalsign.com/#\n' +
-          'server=/skype.com/#\n' +
+          'server=/endpoint.security.microsoft.com/#\n' +
+          'server=/smartscreen-prod.microsoft.com/#\n' +
+          'server=/smartscreen.microsoft.com/#\n' +
+          'server=/wdcp.microsoft.com/#\n' +
+          'server=/wdcpalt.microsoft.com/#\n' +
+          'server=/wd.microsoft.com/#\n' +
           '\n' +
           '# IP addresses of allowlisted domains are added to ipset that is used to allow forwarding traffic to those domains in iptables\n' +
-          'ipset=/microsoft.com/ytl_internet_allowlist\n' +
-          'ipset=/windows.com/ytl_internet_allowlist\n' +
-          'ipset=/microsoftonline.com/ytl_internet_allowlist\n' +
-          'ipset=/msidentity.com/ytl_internet_allowlist\n' +
-          'ipset=/live.com/ytl_internet_allowlist\n' +
-          'ipset=/live.net/ytl_internet_allowlist\n' +
-          'ipset=/windowsupdate.com/ytl_internet_allowlist\n' +
-          'ipset=/trafficmanager.net/ytl_internet_allowlist\n' +
-          'ipset=/akamaiedge.net/ytl_internet_allowlist\n' +
-          'ipset=/edgekey.net/ytl_internet_allowlist\n' +
-          'ipset=/akadns.net/ytl_internet_allowlist\n' +
-          'ipset=/fastly.net/ytl_internet_allowlist\n' +
-          'ipset=/digicert.com/ytl_internet_allowlist\n' +
-          'ipset=/globalsign.com/ytl_internet_allowlist\n' +
-          'ipset=/skype.com/ytl_internet_allowlist\n' +
+          'ipset=/endpoint.security.microsoft.com/ytl_internet_allowlist\n' +
+          'ipset=/smartscreen-prod.microsoft.com/ytl_internet_allowlist\n' +
+          'ipset=/smartscreen.microsoft.com/ytl_internet_allowlist\n' +
+          'ipset=/wdcp.microsoft.com/ytl_internet_allowlist\n' +
+          'ipset=/wdcpalt.microsoft.com/ytl_internet_allowlist\n' +
+          'ipset=/wd.microsoft.com/ytl_internet_allowlist\n' +
           '\n' +
           '# Null-route all other traffic\n' +
           '# This prevents software on the student computer from getting confused by when DNS queries work, but the TCP\n' +
@@ -914,7 +896,7 @@ describe('examnet (just port)', () => {
         callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.timer'),
         callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.service'),
         ...callDig(
-          'microsoft.com windows.com microsoftonline.com msidentity.com live.com live.net windowsupdate.com trafficmanager.net akamaiedge.net edgekey.net akadns.net fastly.net digicert.com globalsign.com skype.com'
+          'endpoint.security.microsoft.com smartscreen-prod.microsoft.com smartscreen.microsoft.com wdcp.microsoft.com wdcpalt.microsoft.com wd.microsoft.com'
         )
       ])
 
@@ -966,38 +948,20 @@ describe('examnet (just port)', () => {
           'server=/oma.abitti.fi/#\n' +
           '\n' +
           '# Forward also requests to allowlisted domains to upstream\n' +
-          'server=/microsoft.com/#\n' +
-          'server=/windows.com/#\n' +
-          'server=/microsoftonline.com/#\n' +
-          'server=/msidentity.com/#\n' +
-          'server=/live.com/#\n' +
-          'server=/live.net/#\n' +
-          'server=/windowsupdate.com/#\n' +
-          'server=/trafficmanager.net/#\n' +
-          'server=/akamaiedge.net/#\n' +
-          'server=/edgekey.net/#\n' +
-          'server=/akadns.net/#\n' +
-          'server=/fastly.net/#\n' +
-          'server=/digicert.com/#\n' +
-          'server=/globalsign.com/#\n' +
-          'server=/skype.com/#\n' +
+          'server=/endpoint.security.microsoft.com/#\n' +
+          'server=/smartscreen-prod.microsoft.com/#\n' +
+          'server=/smartscreen.microsoft.com/#\n' +
+          'server=/wdcp.microsoft.com/#\n' +
+          'server=/wdcpalt.microsoft.com/#\n' +
+          'server=/wd.microsoft.com/#\n' +
           '\n' +
           '# IP addresses of allowlisted domains are added to ipset that is used to allow forwarding traffic to those domains in iptables\n' +
-          'ipset=/microsoft.com/ytl_internet_allowlist\n' +
-          'ipset=/windows.com/ytl_internet_allowlist\n' +
-          'ipset=/microsoftonline.com/ytl_internet_allowlist\n' +
-          'ipset=/msidentity.com/ytl_internet_allowlist\n' +
-          'ipset=/live.com/ytl_internet_allowlist\n' +
-          'ipset=/live.net/ytl_internet_allowlist\n' +
-          'ipset=/windowsupdate.com/ytl_internet_allowlist\n' +
-          'ipset=/trafficmanager.net/ytl_internet_allowlist\n' +
-          'ipset=/akamaiedge.net/ytl_internet_allowlist\n' +
-          'ipset=/edgekey.net/ytl_internet_allowlist\n' +
-          'ipset=/akadns.net/ytl_internet_allowlist\n' +
-          'ipset=/fastly.net/ytl_internet_allowlist\n' +
-          'ipset=/digicert.com/ytl_internet_allowlist\n' +
-          'ipset=/globalsign.com/ytl_internet_allowlist\n' +
-          'ipset=/skype.com/ytl_internet_allowlist\n' +
+          'ipset=/endpoint.security.microsoft.com/ytl_internet_allowlist\n' +
+          'ipset=/smartscreen-prod.microsoft.com/ytl_internet_allowlist\n' +
+          'ipset=/smartscreen.microsoft.com/ytl_internet_allowlist\n' +
+          'ipset=/wdcp.microsoft.com/ytl_internet_allowlist\n' +
+          'ipset=/wdcpalt.microsoft.com/ytl_internet_allowlist\n' +
+          'ipset=/wd.microsoft.com/ytl_internet_allowlist\n' +
           '\n' +
           '# Null-route all other traffic\n' +
           '# This prevents software on the student computer from getting confused by when DNS queries work, but the TCP\n' +
