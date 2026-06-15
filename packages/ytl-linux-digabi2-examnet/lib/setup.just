@@ -25,8 +25,11 @@ apply net-device-wan net-device-lan server-number server-friendly-name: \
     "PATH_NETPLAN_CONF"
     "PATH_RESOLVED_CONF"
     "PATH_RESOLVED_CONF_TEMPLATE"
-    "PATH_DNSMASQ_CONF"
-    "PATH_DNSMASQ_CONF_TEMPLATE"
+    "PATH_DNSMASQ"
+    "PATH_DNSMASQ_DOCKER_CONF"
+    "PATH_DNSMASQ_LAN_CONF"
+    "PATH_DNSMASQ_DOCKER_CONF_TEMPLATE"
+    "PATH_DNSMASQ_LAN_CONF_TEMPLATE"
     "PATH_DOCKER_DAEMON_CONF"
     "PATH_DOCKER_DAEMON_CONF_TEMPLATE"
     "MIN_SERVER_NUMBER"
@@ -88,7 +91,8 @@ apply net-device-wan net-device-lan server-number server-friendly-name: \
   export ALLOWLISTED_SERVER_CONFIGURATION="$(just internet-forwarding get-allowlisted-server-configuration $INTERNET_ALLOWLIST_DOMAINS)"
   export ALLOWLISTED_IPSET_CONFIGURATION="$(just internet-forwarding get-allowlisted-ipset-configuration $INTERNET_ALLOWLIST_IPSET_NAME $INTERNET_ALLOWLIST_DOMAINS)"
   just fs empty-directory "$PATH_DNSMASQ"
-  just fs create-file-from-template "$PATH_DNSMASQ_CONF" "$PATH_DNSMASQ_CONF_TEMPLATE" $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
+  just fs create-file-from-template "$PATH_DNSMASQ_DOCKER_CONF" "$PATH_DNSMASQ_DOCKER_CONF_TEMPLATE" $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
+  just fs create-file-from-template "$PATH_DNSMASQ_LAN_CONF" "$PATH_DNSMASQ_LAN_CONF_TEMPLATE" $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
 
   just static-dns-records configure {{server-number}} $SUBNETS_PER_SERVER
 
@@ -109,14 +113,16 @@ apply net-device-wan net-device-lan server-number server-friendly-name: \
 
   # Enable relevant systemd services
   just systemd enable ytl-linux-digabi2-examnet
-  just systemd enable dnsmasq
+  just systemd enable dnsmasq@docker
+  just systemd enable dnsmasq@lan
   just systemd enable ytl-linux-digabi2-examnet-firewall.service
   just systemd enable ytl-linux-digabi2-examnet-discovery.service
   just systemd enable ytl-linux-digabi2-examnet-discovery.timer
 
   # (Re)start services
   just systemd restart systemd-resolved
-  just systemd restart dnsmasq
+  just systemd restart dnsmasq@docker
+  just systemd restart dnsmasq@lan
   just systemd restart ytl-linux-digabi2-examnet
   just systemd restart ytl-linux-digabi2-examnet-discovery.timer
   just systemd restart ytl-linux-digabi2-examnet-discovery.service
@@ -169,8 +175,7 @@ destroy: \
     "PATH_SERVER_FRIENDLY_NAME_CONF"
     "PATH_SERVER_OWN_IP"
     "PATH_DISCOVERY_DB"
-    "PATH_DNSMASQ_CONF"
-    "PATH_DNSMASQ_STATIC_DNS_CONF"
+    "PATH_DNSMASQ"
     "PATH_ETC_HOSTS"
     )
   #!/usr/bin/env bash
@@ -179,7 +184,9 @@ destroy: \
   just log info "Removing all examnet settings"
 
   just systemd disable ytl-linux-digabi2-examnet
-  just systemd disable dnsmasq
+  # TODO Should we also stop dnsmasq@ services?
+  just systemd disable dnsmasq@docker
+  just systemd disable dnsmasq@lan
   just systemd disable ytl-linux-digabi2-examnet-firewall.service
   just systemd disable ytl-linux-digabi2-examnet-discovery.timer
   just systemd disable ytl-linux-digabi2-examnet-discovery.service

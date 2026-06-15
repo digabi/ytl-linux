@@ -2,6 +2,10 @@
 
 set -euo pipefail
 
+# Stop and disable old dnsmasq service
+deb-systemd-invoke stop dnsmasq.service >/dev/null || true
+deb-systemd-helper disable dnsmasq.service >/dev/null || true
+
 systemctl daemon-reload
 
 # Remove old NCSI service if it exists

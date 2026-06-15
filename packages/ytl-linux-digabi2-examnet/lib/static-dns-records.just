@@ -13,7 +13,8 @@ configure server-number subnets-per-server: \
     "PATH_ETC_HOSTS"
     "PATH_NAKSU2_DOMAIN"
     "PATH_NAKSU2_WORKDIR"
-    "PATH_DNSMASQ_STATIC_DNS_CONF"
+    "PATH_DNSMASQ_DOCKER_STATIC_DNS_CONF"
+    "PATH_DNSMASQ_LAN_STATIC_DNS_CONF"
   )
   #!/usr/bin/env bash
   set -euo pipefail
@@ -69,7 +70,8 @@ configure server-number subnets-per-server: \
   just log debug "Generated DNS records: ${DNS_RECORDS[*]}"
   just log debug "Generated /etc/hosts entries: ${ETC_HOSTS[*]}"
 
-  just fs write-file "$PATH_DNSMASQ_STATIC_DNS_CONF" "$(IFS=$'\n'; echo "${DNS_RECORDS[*]}")"
+  just fs write-file "$PATH_DNSMASQ_DOCKER_STATIC_DNS_CONF" "$(IFS=$'\n'; echo "${DNS_RECORDS[*]}")"
+  just fs write-file "$PATH_DNSMASQ_LAN_STATIC_DNS_CONF" "$(IFS=$'\n'; echo "${DNS_RECORDS[*]}")"
 
   just etc-hosts remove-school-domain-entries "$PATH_ETC_HOSTS" $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
 

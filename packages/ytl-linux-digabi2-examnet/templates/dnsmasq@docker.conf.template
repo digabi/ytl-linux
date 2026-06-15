@@ -1,24 +1,18 @@
 # Enable full query logging to assist debugging
 log-queries=extra
 
-# Bind to LAN device and Docker bridge interfaces
-interface=${NET_DEVICE_LAN}
+# Bind only to Docker bridge interfaces
 interface=docker0
 interface=ytl0
 interface=ytl1
 
-# Set search domain to ktp to support server aliases
-domain=${FRIENDLY_NAME_SEARCH_DOMAIN}
+# Generated configurations are in this subdirectory
+conf-dir=/etc/dnsmasq/docker/conf.d
 
 # Tell clients to use this server as DHCP and DNS, also configure its search domain
 dhcp-range=${DHCP_RANGE_START},${DHCP_RANGE_END},255.255.0.0,1h
 dhcp-option=6,${SERVER_OWN_IP}
 dhcp-option=option:domain-name,${FRIENDLY_NAME_SEARCH_DOMAIN}
-
-# Redirect requests for Windows Network Connection Status Indicator (NCSI) to our local NCSI spoofer (digabi2-examnet-bouncer)
-host-record=${NCSI_HOSTNAMES_LIST},${SERVER_OWN_IP}
-# Avoid resolving NCSI IPv6 addresses from upstream DNS
-host-record=${NCSI_HOSTNAMES_LIST},::
 
 # Use WAN device nameservers as upstream
 resolv-file=/etc/resolv.conf
@@ -37,18 +31,8 @@ server=/koe.abitti.net/#
 server=/koe.ylioppilastutkinto.fi/#
 server=/oma.abitti.fi/#
 
-# Forward also requests to allowlisted domains to upstream
-${ALLOWLISTED_SERVER_CONFIGURATION}
-
-# IP addresses of allowlisted domains are added to ipset that is used to allow forwarding traffic to those domains in iptables
-${ALLOWLISTED_IPSET_CONFIGURATION}
-
 # Null-route all other traffic
 # This prevents software on the student computer from getting confused by when DNS queries work, but the TCP
 # request stalls (since this is not a router) for however long the client timeout is set to; possibly Infinity
 address=/#/0.0.0.0
 address=/#/::
-
-# Reduce DNS cache TTLs as Microsoft has very short TTL for the A records of the allowlisted servers
-max-cache-ttl=5
-max-ttl=5
