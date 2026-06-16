@@ -5,7 +5,7 @@ log-queries=extra
 interface=docker0
 interface=ytl0
 interface=ytl1
-bind-interfaces
+bind-dynamic
 
 # Generated configurations are in this subdirectory
 conf-dir=/etc/dnsmasq.d/docker/conf.d,*.conf
