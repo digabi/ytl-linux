@@ -3,6 +3,7 @@ log-queries=extra
 
 # Bind to LAN device and Docker bridge interfaces
 interface=${NET_DEVICE_LAN}
+bind-interfaces
 
 # Set search domain to ktp to support server aliases
 domain=${FRIENDLY_NAME_SEARCH_DOMAIN}
