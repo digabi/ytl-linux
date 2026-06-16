@@ -1270,7 +1270,7 @@ describe('examnet (just port)', () => {
         'interface=ytl1\n' +
         '\n' +
         '# Generated configurations are in this subdirectory\n' +
-        'conf-dir=/etc/dnsmasq/docker/conf.d\n' +
+        'conf-dir=/etc/dnsmasq.d/docker/conf.d\n' +
         '\n' +
         '# Tell clients to use this server as DHCP and DNS, also configure its search domain\n' +
         'dhcp-range=${DHCP_RANGE_START},${DHCP_RANGE_END},255.255.0.0,1h\n' +
@@ -1308,6 +1308,9 @@ describe('examnet (just port)', () => {
         '\n' +
         '# Bind to LAN device and Docker bridge interfaces\n' +
         'interface=${NET_DEVICE_LAN}\n' +
+        '\n' +
+        '# Generated configurations are in this subdirectory\n' +
+        'conf-dir=/etc/dnsmasq.d/lan/conf.d/,*.conf\n' +
         '\n' +
         '# Set search domain to ktp to support server aliases\n' +
         'domain=${FRIENDLY_NAME_SEARCH_DOMAIN}\n' +

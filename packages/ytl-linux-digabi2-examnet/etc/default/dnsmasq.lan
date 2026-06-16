@@ -1,0 +1,6 @@
+# Defaults for dnsmasq@lan.service
+
+DNSMASQ_OPTS="--conf-file=/etc/dnsmasq.d/lan/ytl-linux.conf"
+CONFIG_DIR=
+IGNORE_RESOLVCONF=yes
+DNSMASQ_EXCEPT="lo"

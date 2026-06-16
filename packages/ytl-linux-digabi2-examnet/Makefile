@@ -37,6 +37,10 @@ deb:
 	mkdir -p $(DEB_ROOT)/etc/NetworkManager/conf.d/
 	cp -r NetworkManager/* $(DEB_ROOT)/etc/NetworkManager/conf.d/
 
+	# Defaults for individual dnsmasq services
+	mkdir -p $(DEB_ROOT)/etc/default
+	cp etc/default/* $(DEB_ROOT)/etc/default/
+
 	# Bouncer
 	(cd bouncer; deno run tests)
 	(cd bouncer; deno run build)

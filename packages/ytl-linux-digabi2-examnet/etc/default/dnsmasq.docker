@@ -1,0 +1,6 @@
+# Defaults for dnsmasq@docker.service
+
+DNSMASQ_OPTS="--conf-file=/etc/dnsmasq.d/docker/ytl-linux.conf"
+CONFIG_DIR=
+IGNORE_RESOLVCONF=yes
+DNSMASQ_EXCEPT="lo"
