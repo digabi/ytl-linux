@@ -726,6 +726,49 @@ describe('examnet (just port)', () => {
       await assertFileExists(mockExamnetConfigDir, 'server-friendly-name', 'ktp1\n')
       await assertFileExists(mockResolvedDir, 'ytl-linux.conf')
       await assertFileExists(
+        mockDnsmasqDockerDir,
+        'ytl-linux.conf',
+        '# Enable full query logging to assist debugging\n' +
+          'log-queries=extra\n' +
+          '\n' +
+          '# Bind only to Docker bridge interfaces\n' +
+          'interface=docker0\n' +
+          'interface=ytl0\n' +
+          'interface=ytl1\n' +
+          'bind-dynamic\n' +
+          '\n' +
+          '# Generated configurations are in this subdirectory\n' +
+          'conf-dir=/etc/dnsmasq.d/docker/conf.d,*.conf\n' +
+          '\n' +
+          '# Tell clients to use this server as DHCP and DNS, also configure its search domain\n' +
+          'dhcp-range=192.168.10.10,192.168.19.254,255.255.0.0,1h\n' +
+          'dhcp-option=6,192.168.10.1\n' +
+          'dhcp-option=option:domain-name,internal\n' +
+          '\n' +
+          '# Use WAN device nameservers as upstream\n' +
+          'resolv-file=/etc/resolv.conf\n' +
+          '\n' +
+          '# Forward requests for koe.abitti.net to upstream\n' +
+          '# This is for compatibility with practice exams that use a generated domain name in public DNS, as opposed to\n' +
+          '# examination networks, where the host records are local and static. Public DNS returns a private IP, but we\n' +
+          '# need DNS to tell student computers where to go\n' +
+          'server=/koe.abitti.net/#\n' +
+          '\n' +
+          '# Forward requests to koe.ylioppilastutkinto.fi and oma.abitti.fi to upstream\n' +
+          '# This is to allow other KTPs that temporarily receive DHCP from this server to still resolve the correct address and be able to\n' +
+          '# contact it on its external network interface (that does not lead to this KTP). If we did not do this, the KTP would get\n' +
+          '# koe.ylioppilastutkinto.fi => 0.0.0.0 and be unable to make the request, even on the correct network interface.\n' +
+          '# Student machines will not be able to contact koe.ylioppilastutkinto.fi or oma.abitti.fi either way, since they will get blocked by iptables\n' +
+          'server=/koe.ylioppilastutkinto.fi/#\n' +
+          'server=/oma.abitti.fi/#\n' +
+          '\n' +
+          '# Null-route all other traffic\n' +
+          '# This prevents software on the student computer from getting confused by when DNS queries work, but the TCP\n' +
+          '# request stalls (since this is not a router) for however long the client timeout is set to; possibly Infinity\n' +
+          'address=/#/0.0.0.0\n' +
+          'address=/#/::\n'
+      )
+      await assertFileExists(
         mockDnsmasqLanDir,
         'ytl-linux.conf',
         '# Enable full query logging to assist debugging\n' +
@@ -733,6 +776,10 @@ describe('examnet (just port)', () => {
           '\n' +
           '# Bind to LAN device and Docker bridge interfaces\n' +
           'interface=eth1\n' +
+          'bind-interfaces\n' +
+          '\n' +
+          '# Generated configurations are in this subdirectory\n' +
+          'conf-dir=/etc/dnsmasq.d/lan/conf.d,*.conf\n' +
           '\n' +
           '# Set search domain to ktp to support server aliases\n' +
           'domain=internal\n' +
@@ -920,6 +967,49 @@ describe('examnet (just port)', () => {
       await assertFileExists(mockExamnetConfigDir, 'server-friendly-name', 'perunakellari\n')
       await assertFileExists(mockResolvedDir, 'ytl-linux.conf')
       await assertFileExists(
+        mockDnsmasqDockerDir,
+        'ytl-linux.conf',
+        '# Enable full query logging to assist debugging\n' +
+          'log-queries=extra\n' +
+          '\n' +
+          '# Bind only to Docker bridge interfaces\n' +
+          'interface=docker0\n' +
+          'interface=ytl0\n' +
+          'interface=ytl1\n' +
+          'bind-dynamic\n' +
+          '\n' +
+          '# Generated configurations are in this subdirectory\n' +
+          'conf-dir=/etc/dnsmasq.d/docker/conf.d,*.conf\n' +
+          '\n' +
+          '# Tell clients to use this server as DHCP and DNS, also configure its search domain\n' +
+          'dhcp-range=192.168.10.10,192.168.19.254,255.255.0.0,1h\n' +
+          'dhcp-option=6,192.168.10.1\n' +
+          'dhcp-option=option:domain-name,internal\n' +
+          '\n' +
+          '# Use WAN device nameservers as upstream\n' +
+          'resolv-file=/etc/resolv.conf\n' +
+          '\n' +
+          '# Forward requests for koe.abitti.net to upstream\n' +
+          '# This is for compatibility with practice exams that use a generated domain name in public DNS, as opposed to\n' +
+          '# examination networks, where the host records are local and static. Public DNS returns a private IP, but we\n' +
+          '# need DNS to tell student computers where to go\n' +
+          'server=/koe.abitti.net/#\n' +
+          '\n' +
+          '# Forward requests to koe.ylioppilastutkinto.fi and oma.abitti.fi to upstream\n' +
+          '# This is to allow other KTPs that temporarily receive DHCP from this server to still resolve the correct address and be able to\n' +
+          '# contact it on its external network interface (that does not lead to this KTP). If we did not do this, the KTP would get\n' +
+          '# koe.ylioppilastutkinto.fi => 0.0.0.0 and be unable to make the request, even on the correct network interface.\n' +
+          '# Student machines will not be able to contact koe.ylioppilastutkinto.fi or oma.abitti.fi either way, since they will get blocked by iptables\n' +
+          'server=/koe.ylioppilastutkinto.fi/#\n' +
+          'server=/oma.abitti.fi/#\n' +
+          '\n' +
+          '# Null-route all other traffic\n' +
+          '# This prevents software on the student computer from getting confused by when DNS queries work, but the TCP\n' +
+          '# request stalls (since this is not a router) for however long the client timeout is set to; possibly Infinity\n' +
+          'address=/#/0.0.0.0\n' +
+          'address=/#/::\n'
+      )
+      await assertFileExists(
         mockDnsmasqLanDir,
         'ytl-linux.conf',
         '# Enable full query logging to assist debugging\n' +
@@ -927,6 +1017,10 @@ describe('examnet (just port)', () => {
           '\n' +
           '# Bind to LAN device and Docker bridge interfaces\n' +
           'interface=eth1\n' +
+          'bind-interfaces\n' +
+          '\n' +
+          '# Generated configurations are in this subdirectory\n' +
+          'conf-dir=/etc/dnsmasq.d/lan/conf.d,*.conf\n' +
           '\n' +
           '# Set search domain to ktp to support server aliases\n' +
           'domain=internal\n' +
@@ -1268,9 +1362,10 @@ describe('examnet (just port)', () => {
         'interface=docker0\n' +
         'interface=ytl0\n' +
         'interface=ytl1\n' +
+        'bind-dynamic\n' +
         '\n' +
         '# Generated configurations are in this subdirectory\n' +
-        'conf-dir=/etc/dnsmasq.d/docker/conf.d\n' +
+        'conf-dir=/etc/dnsmasq.d/docker/conf.d,*.conf\n' +
         '\n' +
         '# Tell clients to use this server as DHCP and DNS, also configure its search domain\n' +
         'dhcp-range=${DHCP_RANGE_START},${DHCP_RANGE_END},255.255.0.0,1h\n' +
@@ -1308,9 +1403,10 @@ describe('examnet (just port)', () => {
         '\n' +
         '# Bind to LAN device and Docker bridge interfaces\n' +
         'interface=${NET_DEVICE_LAN}\n' +
+        'bind-interfaces\n' +
         '\n' +
         '# Generated configurations are in this subdirectory\n' +
-        'conf-dir=/etc/dnsmasq.d/lan/conf.d/,*.conf\n' +
+        'conf-dir=/etc/dnsmasq.d/lan/conf.d,*.conf\n' +
         '\n' +
         '# Set search domain to ktp to support server aliases\n' +
         'domain=${FRIENDLY_NAME_SEARCH_DOMAIN}\n' +
