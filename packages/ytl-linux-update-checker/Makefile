@@ -10,6 +10,12 @@ deb:
 
 	mkdir -p deb-root
 
+	mkdir -p deb-root/usr/local/sbin
+	cp ytl-linux-update-checker deb-root/usr/local/sbin
+
+	mkdir -p deb-root/usr/local/bin
+	cp ytl-linux-update-dialog deb-root/usr/local/bin
+
 	fpm -C deb-root/ -s dir --name $(NAME) --architecture all -t deb --version "$(VERSION)" \
 		--description "YTL Linux automatic update checker and notifier tool" \
 		--maintainer "abitti@ylioppilastutkinto.fi" \
