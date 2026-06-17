@@ -94,6 +94,9 @@ for arg in "$@"; do
     --discovery)
       recipe="discovery"
       ;;
+    --restore-internet-forwarding)
+      recipe="restore-internet-forwarding"
+      ;;
     --remove)
       recipe="destroy"
       ;;

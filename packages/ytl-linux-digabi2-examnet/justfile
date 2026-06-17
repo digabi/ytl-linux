@@ -53,5 +53,8 @@ restart-bouncer: util::assert-user-is-root
 discovery: util::assert-user-is-root
     just mod-discovery start
 
+restore-internet-forwarding: util::assert-user-is-root
+    just setup restore-internet-forwarding
+
 wait-for-listen-ip:
     just mod-wait-for-listen-ip start

@@ -1,0 +1,18 @@
+[Unit]
+Description=Restore Digabi 2 examnet firewall rules
+After=NetworkManager.service ytl-linux-digabi2-wait-for-listen-ip.service docker.service
+Wants=NetworkManager.service ytl-linux-digabi2-wait-for-listen-ip.service docker.service
+ConditionPathExists=/etc/ytl-linux-digabi2-examnet/config/net-device-wan
+ConditionPathExists=/etc/ytl-linux-digabi2-examnet/config/net-device-lan
+ConditionPathExists=/etc/ytl-linux-digabi2-examnet/config/server-own-ip
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/ytl-linux-digabi2-examnet --restore-internet-forwarding
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+

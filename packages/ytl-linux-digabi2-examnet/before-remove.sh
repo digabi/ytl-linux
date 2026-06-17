@@ -12,6 +12,9 @@ fi
 systemctl stop ytl-linux-digabi2-examnet
 systemctl disable ytl-linux-digabi2-examnet
 
+systemctl stop ytl-linux-digabi2-examnet-firewall.service
+systemctl disable ytl-linux-digabi2-examnet-firewall.service
+
 systemctl stop ytl-linux-digabi2-examnet-discovery.timer
 systemctl disable ytl-linux-digabi2-examnet-discovery.timer
 
