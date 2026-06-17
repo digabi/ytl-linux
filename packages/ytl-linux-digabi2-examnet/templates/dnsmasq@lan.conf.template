@@ -1,9 +1,9 @@
 # Enable full query logging to assist debugging
 log-queries=extra
 
-# Bind to LAN device and Docker bridge interfaces
+# Bind only to LAN device
 interface=${NET_DEVICE_LAN}
-bind-interfaces
+bind-dynamic
 
 # Generated configurations are in this subdirectory
 conf-dir=/etc/dnsmasq.d/lan/conf.d,*.conf

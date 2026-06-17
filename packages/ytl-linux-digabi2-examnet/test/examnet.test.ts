@@ -774,9 +774,9 @@ describe('examnet (just port)', () => {
         '# Enable full query logging to assist debugging\n' +
           'log-queries=extra\n' +
           '\n' +
-          '# Bind to LAN device and Docker bridge interfaces\n' +
+          '# Bind only to LAN device\n' +
           'interface=eth1\n' +
-          'bind-interfaces\n' +
+          'bind-dynamic\n' +
           '\n' +
           '# Generated configurations are in this subdirectory\n' +
           'conf-dir=/etc/dnsmasq.d/lan/conf.d,*.conf\n' +
@@ -1015,9 +1015,9 @@ describe('examnet (just port)', () => {
         '# Enable full query logging to assist debugging\n' +
           'log-queries=extra\n' +
           '\n' +
-          '# Bind to LAN device and Docker bridge interfaces\n' +
+          '# Bind only to LAN device\n' +
           'interface=eth1\n' +
-          'bind-interfaces\n' +
+          'bind-dynamic\n' +
           '\n' +
           '# Generated configurations are in this subdirectory\n' +
           'conf-dir=/etc/dnsmasq.d/lan/conf.d,*.conf\n' +
@@ -1401,9 +1401,9 @@ describe('examnet (just port)', () => {
       '# Enable full query logging to assist debugging\n' +
         'log-queries=extra\n' +
         '\n' +
-        '# Bind to LAN device and Docker bridge interfaces\n' +
+        '# Bind only to LAN device\n' +
         'interface=${NET_DEVICE_LAN}\n' +
-        'bind-interfaces\n' +
+        'bind-dynamic\n' +
         '\n' +
         '# Generated configurations are in this subdirectory\n' +
         'conf-dir=/etc/dnsmasq.d/lan/conf.d,*.conf\n' +
