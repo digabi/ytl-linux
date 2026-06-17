@@ -3,8 +3,8 @@
 set -euo pipefail
 
 if [[ $EUID -ne 0 ]]; then
-   echo "Error: This script must be run as root" 1>&2
-   exit 1
+  echo "Error: This script must be run as root" 1>&2
+  exit 1
 fi
 
 echo "Checking for updates in YTL Linux repo"
@@ -16,16 +16,22 @@ sudo apt-get update "${APT_FLAGS_CHECK_YTL_LINUX_ONLY[@]}"
 UPGRADE_DRY_RUN_RESULT="$(sudo apt-get upgrade --dry-run "${APT_FLAGS_CHECK_YTL_LINUX_ONLY[@]}")"
 
 if echo "$UPGRADE_DRY_RUN_RESULT" | grep -q "The following packages will be upgraded"; then
-  AVAILABLE_UPGRADES=$(echo "$UPGRADE_DRY_RUN_RESULT" | grep Inst)
+  AVAILABLE_UPDATES=$(echo "$UPGRADE_DRY_RUN_RESULT" | grep Inst)
   echo "Updates are available for the following packages:"
+
+  UPDATES=()
 
   # Read each line
   while read -r upgrade; do
-    PACKAGE_TO_UPGRADE=$(echo "$upgrade" | cut -d ' ' -f2)
-    CURRENT_VERSION=$(echo "$upgrade" | cut -d ' ' -f3 | sed 's/[[\]]//g')
+    PACKAGE=$(echo "$upgrade" | cut -d ' ' -f2)
+    CURRENT_VERSION=$(echo "$upgrade" | cut -d ' ' -f3 | tr -d '[' | tr -d ']') # For some reason eliminating two brackets from the same string with sed just doesn't work
     NEW_VERSION=$(echo "$upgrade" | cut -d ' ' -f4 | sed 's/[()]//g')
-    echo "$PACKAGE_TO_UPGRADE: $CURRENT_VERSION => $NEW_VERSION"
-  done <<< "$AVAILABLE_UPGRADES"
+    UPDATE_DESCRIPTION="$PACKAGE: $CURRENT_VERSION => $NEW_VERSION"
+    echo "$UPDATE_DESCRIPTION"
+    UPDATES+=("$UPDATE_DESCRIPTION")
+  done <<< "$AVAILABLE_UPDATES"
+
+  /usr/local/bin/ytl-linux-update-dialog "${UPDATES[@]}"
 else
   echo "No updates available"
 fi
