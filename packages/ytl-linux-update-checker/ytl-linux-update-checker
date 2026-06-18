@@ -36,7 +36,7 @@ if echo "$UPGRADE_DRY_RUN_RESULT" | grep -q "The following packages will be upgr
   done <<< "$AVAILABLE_UPDATES"
 
   log "The following updates are available: ${UPDATES[*]}"
-  /usr/local/bin/ytl-linux-update-dialog "${UPDATES[@]}" | systemd-cat --identifier $JOURNAL_IDENTIFIER &
+  /usr/local/bin/ytl-linux-update-dialog "${UPDATES[@]}" | systemd-cat --identifier $JOURNAL_IDENTIFIER
 else
   log "No updates available"
 fi
