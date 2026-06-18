@@ -132,6 +132,7 @@ class UpdateDialog(Gtk.Window):
         self.button_commit.set_label(button_label_commit)
 
     def on_commit(self, button):
+        # FIXME: This is not spawning the Polkit authentication window
         subprocess.Popen(["pkexec", "ytl-linux-software-update"])
         Gtk.main_quit()
 
