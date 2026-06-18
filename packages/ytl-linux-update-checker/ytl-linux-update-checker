@@ -2,10 +2,7 @@
 
 set -euo pipefail
 
-if [[ $EUID -ne 0 ]]; then
-  echo "Error: This script must be run as root" 1>&2
-  exit 1
-fi
+export DISPLAY=':0'
 
 JOURNAL_IDENTIFIER="ytl-linux-software-update"
 
@@ -17,9 +14,9 @@ log "Checking for updates in YTL Linux repo"
 
 APT_FLAGS_CHECK_YTL_LINUX_ONLY=(-o Dir::Etc::sourcelist="sources.list.d/ytl-linux.sources" -o Dir::Etc::sourceparts="-" -o APT::Get::List-Cleanup="0")
 
-sudo apt-get update "${APT_FLAGS_CHECK_YTL_LINUX_ONLY[@]}" | systemd-cat --identifier $JOURNAL_IDENTIFIER
+apt-get update "${APT_FLAGS_CHECK_YTL_LINUX_ONLY[@]}" | systemd-cat --identifier $JOURNAL_IDENTIFIER
 
-UPGRADE_DRY_RUN_RESULT="$(sudo apt-get upgrade --dry-run "${APT_FLAGS_CHECK_YTL_LINUX_ONLY[@]}")"
+UPGRADE_DRY_RUN_RESULT="$(apt-get upgrade --dry-run "${APT_FLAGS_CHECK_YTL_LINUX_ONLY[@]}")"
 echo "$UPGRADE_DRY_RUN_RESULT" | systemd-cat --identifier $JOURNAL_IDENTIFIER
 
 if echo "$UPGRADE_DRY_RUN_RESULT" | grep -q "The following packages will be upgraded"; then
@@ -36,7 +33,9 @@ if echo "$UPGRADE_DRY_RUN_RESULT" | grep -q "The following packages will be upgr
   done <<< "$AVAILABLE_UPDATES"
 
   log "The following updates are available: ${UPDATES[*]}"
-  DISPLAY=':0' /usr/local/bin/ytl-linux-update-dialog "${UPDATES[@]}" | systemd-cat --identifier $JOURNAL_IDENTIFIER
+  
+  # FIXME: This is not displaying the updates with newlines and mangles them into one line
+  su school -c "/usr/local/bin/ytl-linux-update-dialog \"${UPDATES[*]}\"" | systemd-cat --identifier $JOURNAL_IDENTIFIER
 else
   log "No updates available"
 fi

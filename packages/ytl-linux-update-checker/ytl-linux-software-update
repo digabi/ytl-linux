@@ -76,7 +76,7 @@ if ! apt-get update | systemd-cat --identifier $JOURNAL_IDENTIFIER; then
   show_error_and_exit
 fi
 
-if ! apt-get upgrade -y | systemd-cat --identifier $JOURNAL_IDENTIFIER; then
+if ! apt-get upgrade -y --dry-run | systemd-cat --identifier $JOURNAL_IDENTIFIER; then
   log "apt-get upgrade failed"
   show_error_and_exit
 fi
