@@ -1,10 +1,36 @@
 #!/usr/bin/env python3
 
 import gi
+from gi.repository import Gtk
 import sys
+import subprocess
+import datetime as dt
+from pathlib import Path
 
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk
+
+CONFIG_PATH = Path("/etc/ytl-linux-update-check")
+SNOOZE_FILE_PATH = Path(CONFIG_PATH, "snoozed-until")
+SNOOZE_TIME = dt.timedelta(hours=24)
+
+
+def snooze():
+    CONFIG_PATH.mkdir(parents=True, exist_ok=True)
+
+    now = dt.datetime.now(dt.timezone.utc)
+    snooze_until = now + SNOOZE_TIME
+
+    with SNOOZE_FILE_PATH.open("w") as snooze_file:
+        snooze_file.write(str(snooze_until.timestamp()))
+
+
+def is_snoozed():
+    if SNOOZE_FILE_PATH.exists():
+        with SNOOZE_FILE_PATH.open("r") as snooze_file:
+            snooze_until = dt.datetime.fromtimestamp(float(snooze_file.read()))
+            return dt.datetime.now(dt.timezone.utc) < snooze_until
+
+    return False
 
 
 class UpdateDialog(Gtk.Window):
@@ -19,7 +45,7 @@ class UpdateDialog(Gtk.Window):
         self.label_text_fi = """
 <span size="large">Ohjelmistopäivityksiä saatavilla</span>
 
-<b>Seuraaviin ohjelmiin on saatavilla päivityksiä:</b>
+<b>Seuraaviin ohjelmistoihin on saatavilla päivityksiä:</b>
 
 {updates}
 
@@ -79,9 +105,9 @@ class UpdateDialog(Gtk.Window):
         box_action = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         box_main.pack_start(box_action, True, True, 0)
 
-        self.button_cancel = Gtk.Button()
-        self.button_cancel.connect("clicked", self.on_cancel)
-        box_action.pack_start(self.button_cancel, True, True, 0)
+        self.button_snooze = Gtk.Button()
+        self.button_snooze.connect("clicked", self.on_snooze)
+        box_action.pack_start(self.button_snooze, True, True, 0)
 
         self.button_commit = Gtk.Button()
         self.button_commit.connect("clicked", self.on_commit)
@@ -92,19 +118,36 @@ class UpdateDialog(Gtk.Window):
         self.connect("destroy", Gtk.main_quit)
         self.show_all()
 
-    def on_language_change(self, button, new_label_text, button_label_cancel, button_label_start):
+    def snooze(self):
+        self.snooze_file_path.mkdir(parents=True, exist_ok=True)
+
+        now = dt.datetime.now(dt.timezone.utc)
+        snooze_until = now + self.snooze_time
+
+        with self.snooze_file_path.open("w") as snooze_file:
+            snooze_file.write(str(snooze_until.timestamp()))
+
+    def is_snoozed(self):
+        if self.snooze_file_path.exists():
+            with self.snooze_file_path.open("r") as snooze_file:
+                snooze_until = dt.datetime.fromtimestamp(float(snooze_file.read()))
+                return dt.datetime.now(dt.timezone.utc) < snooze_until
+
+    def on_language_change(self, button, new_label_text: str, button_label_snooze: str, button_label_commit: str):
         self.label.set_markup(new_label_text)
-        self.button_cancel.set_label(button_label_cancel)
-        self.button_commit.set_label(button_label_start)
+        self.button_snooze.set_label(button_label_snooze)
+        self.button_commit.set_label(button_label_commit)
 
     def on_commit(self, button):
-        # TODO: Run pkexec
+        subprocess.Popen(["pkexec", "ytl-linux-update"])
         Gtk.main_quit()
 
-    def on_cancel(self, button):
+    def on_snooze(self, button):
+        snooze()
         Gtk.main_quit()
 
 
 if __name__ == "__main__":
-    UpdateDialog()
-    Gtk.main()
+    if not is_snoozed():
+        UpdateDialog()
+        Gtk.main()
