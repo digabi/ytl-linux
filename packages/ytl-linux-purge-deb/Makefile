@@ -14,7 +14,9 @@ CONFLICTS := \
 	--conflicts cups-ipp-utils \
 	--conflicts cups-pdf \
 	--conflicts cups-ppdc \
-	--conflicts cups-server-common
+	--conflicts cups-server-common \
+	--conflicts gnome-keyring \
+	--conflicts apport
 
 DEB_ROOT := deb-root
 
