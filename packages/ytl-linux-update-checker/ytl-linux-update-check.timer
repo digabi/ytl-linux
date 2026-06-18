@@ -1,0 +1,8 @@
+[Unit]
+Description=Periodically check for available updates to YTL Linux
+
+[Timer]
+OnUnitInactiveSec=1hour
+
+[Install]
+WantedBy=multi-user.target

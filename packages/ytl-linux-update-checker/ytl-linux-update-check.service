@@ -1,0 +1,10 @@
+[Unit]
+Description=Automatic update checker for YTL Linux
+
+[Service]
+ExecStart=/usr/local/sbin/ytl-linux-update-checker
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
