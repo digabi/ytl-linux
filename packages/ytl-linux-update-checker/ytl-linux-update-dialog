@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
 import gi
-from gi.repository import Gtk
 import sys
 import subprocess
 import datetime as dt
 from pathlib import Path
 
 gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk
 
 CONFIG_PATH = Path("/etc/ytl-linux-update-check")
 SNOOZE_FILE_PATH = Path(CONFIG_PATH, "snoozed-until")
@@ -132,7 +132,7 @@ class UpdateDialog(Gtk.Window):
         self.button_commit.set_label(button_label_commit)
 
     def on_commit(self, button):
-        subprocess.Popen(["pkexec", "ytl-linux-update"])
+        subprocess.Popen(["pkexec", "ytl-linux-software-update"])
         Gtk.main_quit()
 
     def on_snooze(self, button):
