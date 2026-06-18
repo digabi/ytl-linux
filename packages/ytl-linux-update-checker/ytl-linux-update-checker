@@ -31,7 +31,7 @@ if echo "$UPGRADE_DRY_RUN_RESULT" | grep -q "The following packages will be upgr
     UPDATES+=("$UPDATE_DESCRIPTION")
   done <<< "$AVAILABLE_UPDATES"
 
-  /usr/local/bin/ytl-linux-update-dialog "${UPDATES[@]}"
+  /usr/local/bin/ytl-linux-update-dialog "${UPDATES[@]}" &
 else
   echo "No updates available"
 fi
