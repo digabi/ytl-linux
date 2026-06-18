@@ -13,6 +13,7 @@ deb:
 
 	mkdir -p $(DEB_ROOT)/usr/local/sbin
 	cp ytl-linux-update-checker $(DEB_ROOT)/usr/local/sbin
+	cp ytl-linux-software-update $(DEB_ROOT)/usr/local/sbin
 
 	mkdir -p $(DEB_ROOT)/usr/local/bin
 	cp ytl-linux-update-dialog $(DEB_ROOT)/usr/local/bin
@@ -20,6 +21,9 @@ deb:
 	mkdir -p $(DEB_ROOT)/etc/systemd/system
 	cp ytl-linux-update-check.service $(DEB_ROOT)/etc/systemd/system
 	cp ytl-linux-update-check.timer $(DEB_ROOT)/etc/systemd/system
+
+	mkdir -p $(DEB_ROOT)/usr/share/polkit-1/actions/
+	cp ytl-linux-software-update.policy $(DEB_ROOT)/usr/share/polkit-1/actions/
 
 	fpm -C deb-root/ -s dir --name $(NAME) --architecture all -t deb --version "$(VERSION)" \
 		--description "YTL Linux automatic update checker and notifier tool" \
