@@ -207,6 +207,13 @@ describe('examnet (just port)', () => {
     })
   })
 
+  describe('restore-internet-forwarding (--restore-internet-forwarding)', () => {
+    test('skips without error if examnet is not configured', async () => {
+      await runExamnetWithArguments(['--restore-internet-forwarding'], ENV_TEST_MODE)
+      await assertCalls([])
+    })
+  })
+
   describe('destroy (--remove)', () => {
     test('returns error if removing configuration files fails', async () => {
       await writeToTempDir(mockBinDir, 'rm', mockScriptReturningErrorCode)
@@ -215,6 +222,7 @@ describe('examnet (just port)', () => {
       await assertCalls([
         callSystemctl('disable', 'ytl-linux-digabi2-examnet', '--now'),
         callSystemctl('disable', 'dnsmasq', '--now'),
+        callSystemctl('disable', 'ytl-linux-digabi2-examnet-firewall.service', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.timer', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.service', '--now'),
         callRm(`${mockExamnetConfigDir}/server-own-ip`)
@@ -227,6 +235,7 @@ describe('examnet (just port)', () => {
       await assertCalls([
         callSystemctl('disable', 'ytl-linux-digabi2-examnet', '--now'),
         callSystemctl('disable', 'dnsmasq', '--now'),
+        callSystemctl('disable', 'ytl-linux-digabi2-examnet-firewall.service', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.timer', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.service', '--now'),
         callRm(`${mockExamnetConfigDir}/server-own-ip`),
@@ -263,6 +272,7 @@ describe('examnet (just port)', () => {
       await assertCalls([
         callSystemctl('disable', 'ytl-linux-digabi2-examnet', '--now'),
         callSystemctl('disable', 'dnsmasq', '--now'),
+        callSystemctl('disable', 'ytl-linux-digabi2-examnet-firewall.service', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.timer', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.service', '--now'),
         callRm(`${mockExamnetConfigDir}/server-own-ip`),
@@ -297,6 +307,7 @@ describe('examnet (just port)', () => {
       await assertCalls([
         callSystemctl('disable', 'ytl-linux-digabi2-examnet', '--now'),
         callSystemctl('disable', 'dnsmasq', '--now'),
+        callSystemctl('disable', 'ytl-linux-digabi2-examnet-firewall.service', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.timer', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.service', '--now'),
         callRm(`${mockExamnetConfigDir}/server-own-ip`),
@@ -683,6 +694,7 @@ describe('examnet (just port)', () => {
         callSystemctl('restart', 'docker'),
         callSystemctl('enable', 'ytl-linux-digabi2-examnet'),
         callSystemctl('enable', 'dnsmasq'),
+        callSystemctl('enable', 'ytl-linux-digabi2-examnet-firewall.service'),
         callSystemctl('enable', 'ytl-linux-digabi2-examnet-discovery.service'),
         callSystemctl('enable', 'ytl-linux-digabi2-examnet-discovery.timer'),
         callSystemctl('restart', 'systemd-resolved'),
@@ -888,6 +900,7 @@ describe('examnet (just port)', () => {
         callSystemctl('restart', 'docker'),
         callSystemctl('enable', 'ytl-linux-digabi2-examnet'),
         callSystemctl('enable', 'dnsmasq'),
+        callSystemctl('enable', 'ytl-linux-digabi2-examnet-firewall.service'),
         callSystemctl('enable', 'ytl-linux-digabi2-examnet-discovery.service'),
         callSystemctl('enable', 'ytl-linux-digabi2-examnet-discovery.timer'),
         callSystemctl('restart', 'systemd-resolved'),

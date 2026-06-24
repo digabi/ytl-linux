@@ -110,6 +110,7 @@ apply net-device-wan net-device-lan server-number server-friendly-name: \
   # Enable relevant systemd services
   just systemd enable ytl-linux-digabi2-examnet
   just systemd enable dnsmasq
+  just systemd enable ytl-linux-digabi2-examnet-firewall.service
   just systemd enable ytl-linux-digabi2-examnet-discovery.service
   just systemd enable ytl-linux-digabi2-examnet-discovery.timer
 
@@ -125,6 +126,34 @@ apply net-device-wan net-device-lan server-number server-friendly-name: \
   just internet-forwarding populate-ipset $SERVER_OWN_IP $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
 
   just log info "Examnet configuration applied successfully"
+
+
+restore-internet-forwarding: \
+  (util::assert-envs-set EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
+    "PATH_NET_DEVICE_WAN_CONF"
+    "PATH_NET_DEVICE_LAN_CONF"
+    "PATH_SERVER_OWN_IP"
+    "PATH_NAKSU2_DOMAIN"
+  )
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  if [[ ! -f "$PATH_NET_DEVICE_WAN_CONF" || ! -f "$PATH_NET_DEVICE_LAN_CONF" || ! -f "$PATH_SERVER_OWN_IP" ]]; then
+    just log info "Skipping internet forwarding restore because examnet is not configured"
+    exit 0
+  fi
+
+  NET_DEVICE_WAN=$(just fs read-file "$PATH_NET_DEVICE_WAN_CONF" "WAN network device" $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET)
+  NET_DEVICE_LAN=$(just fs read-file "$PATH_NET_DEVICE_LAN_CONF" "LAN network device" $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET)
+  SERVER_OWN_IP=$(just fs read-file "$PATH_SERVER_OWN_IP" "server own IP" $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET)
+  THIS_SERVER_DOMAIN=$(just fs read-file "$PATH_NAKSU2_DOMAIN" "canonical server hostname" $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET)
+
+  just log info "Restoring internet forwarding for WAN device '$NET_DEVICE_WAN' and LAN device '$NET_DEVICE_LAN'"
+
+  just internet-forwarding enable "$NET_DEVICE_WAN" "$NET_DEVICE_LAN" "$THIS_SERVER_DOMAIN" $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
+  just internet-forwarding populate-ipset "$SERVER_OWN_IP" $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
+
+  just log info "Internet forwarding restored successfully"
 
 
 destroy: \
@@ -151,6 +180,7 @@ destroy: \
 
   just systemd disable ytl-linux-digabi2-examnet
   just systemd disable dnsmasq
+  just systemd disable ytl-linux-digabi2-examnet-firewall.service
   just systemd disable ytl-linux-digabi2-examnet-discovery.timer
   just systemd disable ytl-linux-digabi2-examnet-discovery.service
 

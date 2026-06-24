@@ -1,5 +1,5 @@
 NAME := ytl-linux-digabi2-examnet
-VERSION := 1.5.1
+VERSION := 1.6.0
 
 DEPENDENCIES := \
 	--depends apt \
@@ -50,6 +50,7 @@ deb:
 	# systemd unit files
 	mkdir -p $(DEB_ROOT)/etc/systemd/system/
 	cp ytl-linux-digabi2-examnet.service $(DEB_ROOT)/etc/systemd/system/
+	cp ytl-linux-digabi2-examnet-firewall.service $(DEB_ROOT)/etc/systemd/system/
 	cp ytl-linux-digabi2-examnet-discovery.service $(DEB_ROOT)/etc/systemd/system/
 	cp ytl-linux-digabi2-examnet-discovery.timer $(DEB_ROOT)/etc/systemd/system/
 	cp ytl-linux-digabi2-wait-for-listen-ip.service $(DEB_ROOT)/etc/systemd/system/
