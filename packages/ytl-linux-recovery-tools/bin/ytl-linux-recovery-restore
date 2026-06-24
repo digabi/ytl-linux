@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+exec /usr/local/lib/ytl-linux-recovery-tools/restore-clean-install.sh "$@"
+
