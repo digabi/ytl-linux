@@ -736,7 +736,7 @@ describe('examnet (just port)', () => {
           'bind-dynamic\n' +
           '\n' +
           '# Generated static dns records are in this file (other generated configurations are not included)\n' +
-          'conf-file=/etc/dnsmasq.d/conf.d/ytl-linux-static-dns-records.conf\n' +
+          `conf-file=${mockDnsmasqConfDir}/ytl-linux-static-dns-records.conf\n` +
           '\n' +
           '# Tell clients to use this server as DHCP and DNS, also configure its search domain\n' +
           'dhcp-range=192.168.10.10,192.168.19.254,255.255.0.0,1h\n' +
@@ -968,7 +968,7 @@ describe('examnet (just port)', () => {
           'bind-dynamic\n' +
           '\n' +
           '# Generated static dns records are in this file (other generated configurations are not included)\n' +
-          'conf-file=/etc/dnsmasq.d/conf.d/ytl-linux-static-dns-records.conf\n' +
+          `conf-file=${mockDnsmasqConfDir}/ytl-linux-static-dns-records.conf\n` +
           '\n' +
           '# Tell clients to use this server as DHCP and DNS, also configure its search domain\n' +
           'dhcp-range=192.168.10.10,192.168.19.254,255.255.0.0,1h\n' +
