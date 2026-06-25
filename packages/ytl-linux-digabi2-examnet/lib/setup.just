@@ -184,7 +184,6 @@ destroy: \
   just log info "Removing all examnet settings"
 
   just systemd disable ytl-linux-digabi2-examnet
-  # TODO Should we also stop dnsmasq@ services?
   just systemd disable dnsmasq@docker
   just systemd disable dnsmasq@lan
   just systemd disable ytl-linux-digabi2-examnet-firewall.service
