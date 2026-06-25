@@ -6,7 +6,7 @@ interface=${NET_DEVICE_LAN}
 bind-dynamic
 
 # Generated configurations are in this subdirectory
-conf-dir=/etc/dnsmasq.d/lan/conf.d,*.conf
+conf-dir=/etc/dnsmasq.d/conf.d,*.conf
 
 # Set search domain to ktp to support server aliases
 domain=${FRIENDLY_NAME_SEARCH_DOMAIN}
