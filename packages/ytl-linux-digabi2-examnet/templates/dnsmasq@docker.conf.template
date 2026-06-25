@@ -18,12 +18,6 @@ dhcp-option=option:domain-name,${FRIENDLY_NAME_SEARCH_DOMAIN}
 # Use WAN device nameservers as upstream
 resolv-file=/etc/resolv.conf
 
-# Forward requests for koe.abitti.net to upstream
-# This is for compatibility with practice exams that use a generated domain name in public DNS, as opposed to
-# examination networks, where the host records are local and static. Public DNS returns a private IP, but we
-# need DNS to tell student computers where to go
-server=/koe.abitti.net/#
-
 # Forward requests to koe.ylioppilastutkinto.fi and oma.abitti.fi to upstream
 # This is to allow other KTPs that temporarily receive DHCP from this server to still resolve the correct address and be able to
 # contact it on its external network interface (that does not lead to this KTP). If we did not do this, the KTP would get
