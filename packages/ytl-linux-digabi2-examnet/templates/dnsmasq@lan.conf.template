@@ -21,6 +21,9 @@ host-record=${NCSI_HOSTNAMES_LIST},${SERVER_OWN_IP}
 # Avoid resolving NCSI IPv6 addresses from upstream DNS
 host-record=${NCSI_HOSTNAMES_LIST},::
 
+# Use WAN device nameservers as upstream
+resolv-file=/etc/resolv.conf
+
 # Forward also requests to allowlisted domains to upstream
 ${ALLOWLISTED_SERVER_CONFIGURATION}
 
