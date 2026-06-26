@@ -1,0 +1,31 @@
+# Enable full query logging to assist debugging
+log-queries=extra
+
+# Bind only to Docker bridge interfaces
+interface=docker0
+interface=ytl0
+interface=ytl1
+bind-dynamic
+
+# Generated static dns records are in this file (other generated configurations are not included)
+conf-file=${PATH_DNSMASQ_STATIC_DNS_CONF}
+
+# Tell clients to use this server as DHCP and DNS, also configure its search domain
+dhcp-range=${DHCP_RANGE_START},${DHCP_RANGE_END},255.255.0.0,1h
+dhcp-option=6,${SERVER_OWN_IP}
+dhcp-option=option:domain-name,${FRIENDLY_NAME_SEARCH_DOMAIN}
+
+# Use WAN device nameservers as upstream
+resolv-file=/etc/resolv.conf
+
+# Forward requests to koe.ylioppilastutkinto.fi and oma.abitti.fi to upstream
+# This is to allow other KTPs that temporarily receive DHCP from this server to still resolve the correct address and be able to
+# contact it on its external network interface (that does not lead to this KTP). If we did not do this, the KTP would get
+# koe.ylioppilastutkinto.fi => 0.0.0.0 and be unable to make the request, even on the correct network interface.
+server=/koe.ylioppilastutkinto.fi/#
+server=/oma.abitti.fi/#
+
+# Null-route all other traffic
+# This prevents docker containers from making DNS queries for servers that are not allowlisted.
+address=/#/0.0.0.0
+address=/#/::

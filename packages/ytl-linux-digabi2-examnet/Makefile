@@ -1,5 +1,5 @@
 NAME := ytl-linux-digabi2-examnet
-VERSION := 1.6.0
+VERSION := 2.0.0
 
 DEPENDENCIES := \
 	--depends apt \
@@ -36,6 +36,10 @@ deb:
 	# NetworkManager configuration
 	mkdir -p $(DEB_ROOT)/etc/NetworkManager/conf.d/
 	cp -r NetworkManager/* $(DEB_ROOT)/etc/NetworkManager/conf.d/
+
+	# Defaults for individual dnsmasq services
+	mkdir -p $(DEB_ROOT)/etc/default
+	cp etc/default/* $(DEB_ROOT)/etc/default/
 
 	# Bouncer
 	(cd bouncer; deno run tests)

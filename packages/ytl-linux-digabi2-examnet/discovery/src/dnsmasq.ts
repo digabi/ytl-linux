@@ -19,7 +19,7 @@ async function restartDnsmasq(config: Config) {
     return
   }
 
-  const command = new Deno.Command('systemctl', { args: ['restart', 'dnsmasq'] })
+  const command = new Deno.Command('systemctl', { args: ['restart', 'dnsmasq@docker', 'dnsmasq@lan'] })
   const { code } = await command.output()
 
   if (code !== 0) {

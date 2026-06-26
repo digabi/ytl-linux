@@ -15,6 +15,9 @@ describe('examnet (just port)', () => {
   let mockResolvedDir
   let mockDockerDir
   let mockDnsmasqDir
+  let mockDnsmasqDockerDir
+  let mockDnsmasqLanDir
+  let mockDnsmasqConfDir
   let mockSysctlDir
   let mockRsyslogDir
   let mockLogrotateDir
@@ -37,6 +40,9 @@ describe('examnet (just port)', () => {
       mockResolvedDir,
       mockDockerDir,
       mockDnsmasqDir,
+      mockDnsmasqDockerDir,
+      mockDnsmasqLanDir,
+      mockDnsmasqConfDir,
       mockSysctlDir,
       mockRsyslogDir,
       mockLogrotateDir,
@@ -193,17 +199,17 @@ describe('examnet (just port)', () => {
       await assertCalls([])
     })
     test('returns error if discovery returns error', async () => {
-      await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
+      await writeToTempDir(mockDnsmasqConfDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
       await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '10.0.10.1')
       await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-discovery', mockScriptReturningErrorCode)
       await runExamnetReturnsExitCode(22, ['--discovery'], ENV_TEST_MODE)
-      await assertCalls([callDiscovery(mockDnsmasqDir, mockExamnetConfigDir)])
+      await assertCalls([callDiscovery(mockDnsmasqConfDir, mockExamnetConfigDir)])
     })
     test('runs discovery when correct parameters are given', async () => {
-      await writeToTempDir(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
+      await writeToTempDir(mockDnsmasqConfDir, 'ytl-linux-static-dns-records.conf', 'xyzzy')
       await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '10.0.10.1')
       await runExamnetWithArguments(['--discovery'], ENV_TEST_MODE)
-      await assertCalls([callDiscovery(mockDnsmasqDir, mockExamnetConfigDir)])
+      await assertCalls([callDiscovery(mockDnsmasqConfDir, mockExamnetConfigDir)])
     })
   })
 
@@ -221,7 +227,8 @@ describe('examnet (just port)', () => {
       await runExamnetReturnsExitCode(17, ['--remove'], ENV_TEST_MODE)
       await assertCalls([
         callSystemctl('disable', 'ytl-linux-digabi2-examnet', '--now'),
-        callSystemctl('disable', 'dnsmasq', '--now'),
+        callSystemctl('disable', 'dnsmasq@docker', '--now'),
+        callSystemctl('disable', 'dnsmasq@lan', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-firewall.service', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.timer', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.service', '--now'),
@@ -234,13 +241,14 @@ describe('examnet (just port)', () => {
       await runExamnetReturnsExitCode(18, ['--remove'], ENV_TEST_MODE)
       await assertCalls([
         callSystemctl('disable', 'ytl-linux-digabi2-examnet', '--now'),
-        callSystemctl('disable', 'dnsmasq', '--now'),
+        callSystemctl('disable', 'dnsmasq@docker', '--now'),
+        callSystemctl('disable', 'dnsmasq@lan', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-firewall.service', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.timer', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.service', '--now'),
         callRm(`${mockExamnetConfigDir}/server-own-ip`),
         callRm(`${mockExamnetConfigDir}/discovery.db`),
-        callRmRecursive(`${mockDnsmasqDir}/*`),
+        callRmRecursive(`${mockDnsmasqDir}/conf.d`, `${mockDnsmasqDir}/docker`, `${mockDnsmasqDir}/lan`),
         callSed(`${mockEtcDir}/hosts`),
         callSudoTeeWriteToFile(`${mockEtcDir}/hosts`),
         callRm(`${mockEtcDir}/hosts.tmp`),
@@ -271,13 +279,14 @@ describe('examnet (just port)', () => {
       await runExamnetWithArguments(['--remove'], ENV_TEST_MODE)
       await assertCalls([
         callSystemctl('disable', 'ytl-linux-digabi2-examnet', '--now'),
-        callSystemctl('disable', 'dnsmasq', '--now'),
+        callSystemctl('disable', 'dnsmasq@docker', '--now'),
+        callSystemctl('disable', 'dnsmasq@lan', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-firewall.service', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.timer', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.service', '--now'),
         callRm(`${mockExamnetConfigDir}/server-own-ip`),
         callRm(`${mockExamnetConfigDir}/discovery.db`),
-        callRmRecursive(`${mockDnsmasqDir}/*`),
+        callRmRecursive(`${mockDnsmasqDir}/conf.d`, `${mockDnsmasqDir}/docker`, `${mockDnsmasqDir}/lan`),
         callSed(`${mockEtcDir}/hosts`),
         callSudoTeeWriteToFile(`${mockEtcDir}/hosts`),
         callRm(`${mockEtcDir}/hosts.tmp`),
@@ -306,13 +315,14 @@ describe('examnet (just port)', () => {
       await runExamnetWithArguments(['--remove'], ENV_TEST_MODE)
       await assertCalls([
         callSystemctl('disable', 'ytl-linux-digabi2-examnet', '--now'),
-        callSystemctl('disable', 'dnsmasq', '--now'),
+        callSystemctl('disable', 'dnsmasq@docker', '--now'),
+        callSystemctl('disable', 'dnsmasq@lan', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-firewall.service', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.timer', '--now'),
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.service', '--now'),
         callRm(`${mockExamnetConfigDir}/server-own-ip`),
         callRm(`${mockExamnetConfigDir}/discovery.db`),
-        callRmRecursive(`${mockDnsmasqDir}/*`),
+        callRmRecursive(`${mockDnsmasqDir}/conf.d`, `${mockDnsmasqDir}/docker`, `${mockDnsmasqDir}/lan`),
         callSed(`${mockEtcDir}/hosts`),
         callSudoTeeWriteToFile(`${mockEtcDir}/hosts`),
         callRm(`${mockEtcDir}/hosts.tmp`),
@@ -418,7 +428,7 @@ describe('examnet (just port)', () => {
         callNmicliConnectionUp('yo-eth1'),
         callSystemctl('restart', 'NetworkManager'),
         callNmonline(),
-        callRmRecursive(`${mockDnsmasqDir}/*`)
+        callRmRecursive(`${mockDnsmasqDir}/conf.d`, `${mockDnsmasqDir}/docker`, `${mockDnsmasqDir}/lan`)
       ])
     })
     test('returns error if cert.pem is missing', async () => {
@@ -437,7 +447,7 @@ describe('examnet (just port)', () => {
         callRm(`${mockNetplanConfDir}/50-cloud-init.yaml`),
         callSystemctl('restart', 'NetworkManager'),
         callNmonline(),
-        callRmRecursive(`${mockDnsmasqDir}/*`)
+        callRmRecursive(`${mockDnsmasqDir}/conf.d`, `${mockDnsmasqDir}/docker`, `${mockDnsmasqDir}/lan`)
       ])
     })
     test('returns error if certificate does not contain valid domain for server number', async () => {
@@ -458,7 +468,7 @@ describe('examnet (just port)', () => {
         callRm(`${mockNetplanConfDir}/50-cloud-init.yaml`),
         callSystemctl('restart', 'NetworkManager'),
         callNmonline(),
-        callRmRecursive(`${mockDnsmasqDir}/*`),
+        callRmRecursive(`${mockDnsmasqDir}/conf.d`, `${mockDnsmasqDir}/docker`, `${mockDnsmasqDir}/lan`),
         callOpenssl(mockNaksu2CertsDir)
       ])
     })
@@ -481,7 +491,7 @@ describe('examnet (just port)', () => {
         callRm(`${mockNetplanConfDir}/50-cloud-init.yaml`),
         callSystemctl('restart', 'NetworkManager'),
         callNmonline(),
-        callRmRecursive(`${mockDnsmasqDir}/*`),
+        callRmRecursive(`${mockDnsmasqDir}/conf.d`, `${mockDnsmasqDir}/docker`, `${mockDnsmasqDir}/lan`),
         callOpenssl(mockNaksu2CertsDir),
         callSudoTeeWriteToFile(`${mockEtcDir}/hosts`),
         callRm(`${mockEtcDir}/hosts.tmp`),
@@ -563,7 +573,7 @@ describe('examnet (just port)', () => {
         callRm(`${mockNetplanConfDir}/50-cloud-init.yaml`),
         callSystemctl('restart', 'NetworkManager'),
         callNmonline(),
-        callRmRecursive(`${mockDnsmasqDir}/*`),
+        callRmRecursive(`${mockDnsmasqDir}/conf.d`, `${mockDnsmasqDir}/docker`, `${mockDnsmasqDir}/lan`),
         callOpenssl(mockNaksu2CertsDir),
         callSudoTeeWriteToFile(`${mockEtcDir}/hosts`),
         callRm(`${mockEtcDir}/hosts.tmp`),
@@ -629,7 +639,7 @@ describe('examnet (just port)', () => {
         callRm(`${mockNetplanConfDir}/50-cloud-init.yaml`),
         callSystemctl('restart', 'NetworkManager'),
         callNmonline(),
-        callRmRecursive(`${mockDnsmasqDir}/*`),
+        callRmRecursive(`${mockDnsmasqDir}/conf.d`, `${mockDnsmasqDir}/docker`, `${mockDnsmasqDir}/lan`),
         callOpenssl(mockNaksu2CertsDir),
         callSudoTeeWriteToFile(`${mockEtcDir}/hosts`),
         callRm(`${mockEtcDir}/hosts.tmp`),
@@ -693,12 +703,14 @@ describe('examnet (just port)', () => {
 
         callSystemctl('restart', 'docker'),
         callSystemctl('enable', 'ytl-linux-digabi2-examnet'),
-        callSystemctl('enable', 'dnsmasq'),
+        callSystemctl('enable', 'dnsmasq@docker'),
+        callSystemctl('enable', 'dnsmasq@lan'),
         callSystemctl('enable', 'ytl-linux-digabi2-examnet-firewall.service'),
         callSystemctl('enable', 'ytl-linux-digabi2-examnet-discovery.service'),
         callSystemctl('enable', 'ytl-linux-digabi2-examnet-discovery.timer'),
         callSystemctl('restart', 'systemd-resolved'),
-        callSystemctl('restart', 'dnsmasq'),
+        callSystemctl('restart', 'dnsmasq@docker'),
+        callSystemctl('restart', 'dnsmasq@lan'),
         callSystemctl('restart', 'ytl-linux-digabi2-examnet'),
         callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.timer'),
         callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.service'),
@@ -712,16 +724,52 @@ describe('examnet (just port)', () => {
       await assertFileExists(mockExamnetConfigDir, 'server-friendly-name', 'ktp1\n')
       await assertFileExists(mockResolvedDir, 'ytl-linux.conf')
       await assertFileExists(
-        mockDnsmasqDir,
+        mockDnsmasqDockerDir,
         'ytl-linux.conf',
         '# Enable full query logging to assist debugging\n' +
           'log-queries=extra\n' +
           '\n' +
-          '# Bind to LAN device and Docker bridge interfaces\n' +
-          'interface=eth1\n' +
+          '# Bind only to Docker bridge interfaces\n' +
           'interface=docker0\n' +
           'interface=ytl0\n' +
           'interface=ytl1\n' +
+          'bind-dynamic\n' +
+          '\n' +
+          '# Generated static dns records are in this file (other generated configurations are not included)\n' +
+          `conf-file=${mockDnsmasqConfDir}/ytl-linux-static-dns-records.conf\n` +
+          '\n' +
+          '# Tell clients to use this server as DHCP and DNS, also configure its search domain\n' +
+          'dhcp-range=192.168.10.10,192.168.19.254,255.255.0.0,1h\n' +
+          'dhcp-option=6,192.168.10.1\n' +
+          'dhcp-option=option:domain-name,internal\n' +
+          '\n' +
+          '# Use WAN device nameservers as upstream\n' +
+          'resolv-file=/etc/resolv.conf\n' +
+          '\n' +
+          '# Forward requests to koe.ylioppilastutkinto.fi and oma.abitti.fi to upstream\n' +
+          '# This is to allow other KTPs that temporarily receive DHCP from this server to still resolve the correct address and be able to\n' +
+          '# contact it on its external network interface (that does not lead to this KTP). If we did not do this, the KTP would get\n' +
+          '# koe.ylioppilastutkinto.fi => 0.0.0.0 and be unable to make the request, even on the correct network interface.\n' +
+          'server=/koe.ylioppilastutkinto.fi/#\n' +
+          'server=/oma.abitti.fi/#\n' +
+          '\n' +
+          '# Null-route all other traffic\n' +
+          '# This prevents docker containers from making DNS queries for servers that are not allowlisted.\n' +
+          'address=/#/0.0.0.0\n' +
+          'address=/#/::\n'
+      )
+      await assertFileExists(
+        mockDnsmasqLanDir,
+        'ytl-linux.conf',
+        '# Enable full query logging to assist debugging\n' +
+          'log-queries=extra\n' +
+          '\n' +
+          '# Bind only to LAN device\n' +
+          'interface=eth1\n' +
+          'bind-dynamic\n' +
+          '\n' +
+          '# Generated configurations are in this subdirectory\n' +
+          'conf-dir=/etc/dnsmasq.d/conf.d,*.conf\n' +
           '\n' +
           '# Set search domain to ktp to support server aliases\n' +
           'domain=internal\n' +
@@ -735,23 +783,6 @@ describe('examnet (just port)', () => {
           'host-record=dns.msftncsi.com,www.msftncsi.com,www.msftconnecttest.com,ipv6.msftconnecttest.com,192.168.10.1\n' +
           '# Avoid resolving NCSI IPv6 addresses from upstream DNS\n' +
           'host-record=dns.msftncsi.com,www.msftncsi.com,www.msftconnecttest.com,ipv6.msftconnecttest.com,::\n' +
-          '\n' +
-          '# Use WAN device nameservers as upstream\n' +
-          'resolv-file=/etc/resolv.conf\n' +
-          '\n' +
-          '# Forward requests for koe.abitti.net to upstream\n' +
-          '# This is for compatibility with practice exams that use a generated domain name in public DNS, as opposed to\n' +
-          '# examination networks, where the host records are local and static. Public DNS returns a private IP, but we\n' +
-          '# need DNS to tell student computers where to go\n' +
-          'server=/koe.abitti.net/#\n' +
-          '\n' +
-          '# Forward requests to koe.ylioppilastutkinto.fi and oma.abitti.fi to upstream\n' +
-          '# This is to allow other KTPs that temporarily receive DHCP from this server to still resolve the correct address and be able to\n' +
-          '# contact it on its external network interface (that does not lead to this KTP). If we did not do this, the KTP would get\n' +
-          '# koe.ylioppilastutkinto.fi => 0.0.0.0 and be unable to make the request, even on the correct network interface.\n' +
-          '# Student machines will not be able to contact koe.ylioppilastutkinto.fi or oma.abitti.fi either way, since they will get blocked by iptables\n' +
-          'server=/koe.ylioppilastutkinto.fi/#\n' +
-          'server=/oma.abitti.fi/#\n' +
           '\n' +
           '# Forward also requests to allowlisted domains to upstream\n' +
           'server=/endpoint.security.microsoft.com/#\n' +
@@ -777,9 +808,13 @@ describe('examnet (just port)', () => {
           '# This prevents software on the student computer from getting confused by when DNS queries work, but the TCP\n' +
           '# request stalls (since this is not a router) for however long the client timeout is set to; possibly Infinity\n' +
           'address=/#/0.0.0.0\n' +
-          'address=/#/::\n'
+          'address=/#/::\n' +
+          '\n' +
+          '# Reduce DNS cache TTLs as Microsoft has very short TTL for the A records of the allowlisted servers\n' +
+          'max-cache-ttl=5\n' +
+          'max-ttl=5\n'
       )
-      await assertFileExists(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf')
+      await assertFileExists(mockDnsmasqConfDir, 'ytl-linux-static-dns-records.conf')
       await assertFileExists(mockSysctlDir, '99-ytl-linux-digabi2-examnet.conf')
       await assertFileExists(
         mockRsyslogDir,
@@ -839,7 +874,7 @@ describe('examnet (just port)', () => {
         callRm(`${mockNetplanConfDir}/50-cloud-init.yaml`),
         callSystemctl('restart', 'NetworkManager'),
         callNmonline(),
-        callRmRecursive(`${mockDnsmasqDir}/*`),
+        callRmRecursive(`${mockDnsmasqDir}/conf.d`, `${mockDnsmasqDir}/docker`, `${mockDnsmasqDir}/lan`),
         callOpenssl(mockNaksu2CertsDir),
         callSudoTeeWriteToFile(`${mockEtcDir}/hosts`),
         callRm(`${mockEtcDir}/hosts.tmp`),
@@ -903,12 +938,14 @@ describe('examnet (just port)', () => {
 
         callSystemctl('restart', 'docker'),
         callSystemctl('enable', 'ytl-linux-digabi2-examnet'),
-        callSystemctl('enable', 'dnsmasq'),
+        callSystemctl('enable', 'dnsmasq@docker'),
+        callSystemctl('enable', 'dnsmasq@lan'),
         callSystemctl('enable', 'ytl-linux-digabi2-examnet-firewall.service'),
         callSystemctl('enable', 'ytl-linux-digabi2-examnet-discovery.service'),
         callSystemctl('enable', 'ytl-linux-digabi2-examnet-discovery.timer'),
         callSystemctl('restart', 'systemd-resolved'),
-        callSystemctl('restart', 'dnsmasq'),
+        callSystemctl('restart', 'dnsmasq@docker'),
+        callSystemctl('restart', 'dnsmasq@lan'),
         callSystemctl('restart', 'ytl-linux-digabi2-examnet'),
         callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.timer'),
         callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.service'),
@@ -923,16 +960,52 @@ describe('examnet (just port)', () => {
       await assertFileExists(mockExamnetConfigDir, 'server-friendly-name', 'perunakellari\n')
       await assertFileExists(mockResolvedDir, 'ytl-linux.conf')
       await assertFileExists(
-        mockDnsmasqDir,
+        mockDnsmasqDockerDir,
         'ytl-linux.conf',
         '# Enable full query logging to assist debugging\n' +
           'log-queries=extra\n' +
           '\n' +
-          '# Bind to LAN device and Docker bridge interfaces\n' +
-          'interface=eth1\n' +
+          '# Bind only to Docker bridge interfaces\n' +
           'interface=docker0\n' +
           'interface=ytl0\n' +
           'interface=ytl1\n' +
+          'bind-dynamic\n' +
+          '\n' +
+          '# Generated static dns records are in this file (other generated configurations are not included)\n' +
+          `conf-file=${mockDnsmasqConfDir}/ytl-linux-static-dns-records.conf\n` +
+          '\n' +
+          '# Tell clients to use this server as DHCP and DNS, also configure its search domain\n' +
+          'dhcp-range=192.168.10.10,192.168.19.254,255.255.0.0,1h\n' +
+          'dhcp-option=6,192.168.10.1\n' +
+          'dhcp-option=option:domain-name,internal\n' +
+          '\n' +
+          '# Use WAN device nameservers as upstream\n' +
+          'resolv-file=/etc/resolv.conf\n' +
+          '\n' +
+          '# Forward requests to koe.ylioppilastutkinto.fi and oma.abitti.fi to upstream\n' +
+          '# This is to allow other KTPs that temporarily receive DHCP from this server to still resolve the correct address and be able to\n' +
+          '# contact it on its external network interface (that does not lead to this KTP). If we did not do this, the KTP would get\n' +
+          '# koe.ylioppilastutkinto.fi => 0.0.0.0 and be unable to make the request, even on the correct network interface.\n' +
+          'server=/koe.ylioppilastutkinto.fi/#\n' +
+          'server=/oma.abitti.fi/#\n' +
+          '\n' +
+          '# Null-route all other traffic\n' +
+          '# This prevents docker containers from making DNS queries for servers that are not allowlisted.\n' +
+          'address=/#/0.0.0.0\n' +
+          'address=/#/::\n'
+      )
+      await assertFileExists(
+        mockDnsmasqLanDir,
+        'ytl-linux.conf',
+        '# Enable full query logging to assist debugging\n' +
+          'log-queries=extra\n' +
+          '\n' +
+          '# Bind only to LAN device\n' +
+          'interface=eth1\n' +
+          'bind-dynamic\n' +
+          '\n' +
+          '# Generated configurations are in this subdirectory\n' +
+          'conf-dir=/etc/dnsmasq.d/conf.d,*.conf\n' +
           '\n' +
           '# Set search domain to ktp to support server aliases\n' +
           'domain=internal\n' +
@@ -946,23 +1019,6 @@ describe('examnet (just port)', () => {
           'host-record=dns.msftncsi.com,www.msftncsi.com,www.msftconnecttest.com,ipv6.msftconnecttest.com,192.168.10.1\n' +
           '# Avoid resolving NCSI IPv6 addresses from upstream DNS\n' +
           'host-record=dns.msftncsi.com,www.msftncsi.com,www.msftconnecttest.com,ipv6.msftconnecttest.com,::\n' +
-          '\n' +
-          '# Use WAN device nameservers as upstream\n' +
-          'resolv-file=/etc/resolv.conf\n' +
-          '\n' +
-          '# Forward requests for koe.abitti.net to upstream\n' +
-          '# This is for compatibility with practice exams that use a generated domain name in public DNS, as opposed to\n' +
-          '# examination networks, where the host records are local and static. Public DNS returns a private IP, but we\n' +
-          '# need DNS to tell student computers where to go\n' +
-          'server=/koe.abitti.net/#\n' +
-          '\n' +
-          '# Forward requests to koe.ylioppilastutkinto.fi and oma.abitti.fi to upstream\n' +
-          '# This is to allow other KTPs that temporarily receive DHCP from this server to still resolve the correct address and be able to\n' +
-          '# contact it on its external network interface (that does not lead to this KTP). If we did not do this, the KTP would get\n' +
-          '# koe.ylioppilastutkinto.fi => 0.0.0.0 and be unable to make the request, even on the correct network interface.\n' +
-          '# Student machines will not be able to contact koe.ylioppilastutkinto.fi or oma.abitti.fi either way, since they will get blocked by iptables\n' +
-          'server=/koe.ylioppilastutkinto.fi/#\n' +
-          'server=/oma.abitti.fi/#\n' +
           '\n' +
           '# Forward also requests to allowlisted domains to upstream\n' +
           'server=/endpoint.security.microsoft.com/#\n' +
@@ -988,9 +1044,13 @@ describe('examnet (just port)', () => {
           '# This prevents software on the student computer from getting confused by when DNS queries work, but the TCP\n' +
           '# request stalls (since this is not a router) for however long the client timeout is set to; possibly Infinity\n' +
           'address=/#/0.0.0.0\n' +
-          'address=/#/::\n'
+          'address=/#/::\n' +
+          '\n' +
+          '# Reduce DNS cache TTLs as Microsoft has very short TTL for the A records of the allowlisted servers\n' +
+          'max-cache-ttl=5\n' +
+          'max-ttl=5\n'
       )
-      await assertFileExists(mockDnsmasqDir, 'ytl-linux-static-dns-records.conf')
+      await assertFileExists(mockDnsmasqConfDir, 'ytl-linux-static-dns-records.conf')
       await assertFileExists(mockSysctlDir, '99-ytl-linux-digabi2-examnet.conf')
       await assertFileExists(
         mockRsyslogDir,
@@ -1142,6 +1202,9 @@ describe('examnet (just port)', () => {
     const mockResolvedDir = await makeTempDir(root, 'mock-resolved-dir')
     const mockDockerDir = await makeTempDir(root, 'mock-docker-dir')
     const mockDnsmasqDir = await makeTempDir(root, 'mock-dnsmasq-dir')
+    const mockDnsmasqDockerDir = await makeTempDir(mockDnsmasqDir, 'docker')
+    const mockDnsmasqLanDir = await makeTempDir(mockDnsmasqDir, 'lan')
+    const mockDnsmasqConfDir = await makeTempDir(mockDnsmasqDir, 'conf.d')
     const mockSysctlDir = await makeTempDir(root, 'mock-sysctl-dir')
     const mockRsyslogDir = await makeTempDir(root, 'mock-rsyslog-dir')
     const mockLogrotateDir = await makeTempDir(root, 'mock-logrotate-dir')
@@ -1278,15 +1341,51 @@ describe('examnet (just port)', () => {
     )
     await writeToTempDir(
       mockTemplatesDir,
-      'dnsmasq.conf.template',
+      'dnsmasq@docker.conf.template',
       '# Enable full query logging to assist debugging\n' +
         'log-queries=extra\n' +
         '\n' +
-        '# Bind to LAN device and Docker bridge interfaces\n' +
-        'interface=${NET_DEVICE_LAN}\n' +
+        '# Bind only to Docker bridge interfaces\n' +
         'interface=docker0\n' +
         'interface=ytl0\n' +
         'interface=ytl1\n' +
+        'bind-dynamic\n' +
+        '\n' +
+        '# Generated static dns records are in this file (other generated configurations are not included)\n' +
+        'conf-file=${PATH_DNSMASQ_STATIC_DNS_CONF}\n' +
+        '\n' +
+        '# Tell clients to use this server as DHCP and DNS, also configure its search domain\n' +
+        'dhcp-range=${DHCP_RANGE_START},${DHCP_RANGE_END},255.255.0.0,1h\n' +
+        'dhcp-option=6,${SERVER_OWN_IP}\n' +
+        'dhcp-option=option:domain-name,${FRIENDLY_NAME_SEARCH_DOMAIN}\n' +
+        '\n' +
+        '# Use WAN device nameservers as upstream\n' +
+        'resolv-file=/etc/resolv.conf\n' +
+        '\n' +
+        '# Forward requests to koe.ylioppilastutkinto.fi and oma.abitti.fi to upstream\n' +
+        '# This is to allow other KTPs that temporarily receive DHCP from this server to still resolve the correct address and be able to\n' +
+        '# contact it on its external network interface (that does not lead to this KTP). If we did not do this, the KTP would get\n' +
+        '# koe.ylioppilastutkinto.fi => 0.0.0.0 and be unable to make the request, even on the correct network interface.\n' +
+        'server=/koe.ylioppilastutkinto.fi/#\n' +
+        'server=/oma.abitti.fi/#\n' +
+        '\n' +
+        '# Null-route all other traffic\n' +
+        '# This prevents docker containers from making DNS queries for servers that are not allowlisted.\n' +
+        'address=/#/0.0.0.0\n' +
+        'address=/#/::\n'
+    )
+    await writeToTempDir(
+      mockTemplatesDir,
+      'dnsmasq@lan.conf.template',
+      '# Enable full query logging to assist debugging\n' +
+        'log-queries=extra\n' +
+        '\n' +
+        '# Bind only to LAN device\n' +
+        'interface=${NET_DEVICE_LAN}\n' +
+        'bind-dynamic\n' +
+        '\n' +
+        '# Generated configurations are in this subdirectory\n' +
+        'conf-dir=/etc/dnsmasq.d/conf.d,*.conf\n' +
         '\n' +
         '# Set search domain to ktp to support server aliases\n' +
         'domain=${FRIENDLY_NAME_SEARCH_DOMAIN}\n' +
@@ -1301,23 +1400,6 @@ describe('examnet (just port)', () => {
         '# Avoid resolving NCSI IPv6 addresses from upstream DNS\n' +
         'host-record=${NCSI_HOSTNAMES_LIST},::\n' +
         '\n' +
-        '# Use WAN device nameservers as upstream\n' +
-        'resolv-file=/etc/resolv.conf\n' +
-        '\n' +
-        '# Forward requests for koe.abitti.net to upstream\n' +
-        '# This is for compatibility with practice exams that use a generated domain name in public DNS, as opposed to\n' +
-        '# examination networks, where the host records are local and static. Public DNS returns a private IP, but we\n' +
-        '# need DNS to tell student computers where to go\n' +
-        'server=/koe.abitti.net/#\n' +
-        '\n' +
-        '# Forward requests to koe.ylioppilastutkinto.fi and oma.abitti.fi to upstream\n' +
-        '# This is to allow other KTPs that temporarily receive DHCP from this server to still resolve the correct address and be able to\n' +
-        '# contact it on its external network interface (that does not lead to this KTP). If we did not do this, the KTP would get\n' +
-        '# koe.ylioppilastutkinto.fi => 0.0.0.0 and be unable to make the request, even on the correct network interface.\n' +
-        '# Student machines will not be able to contact koe.ylioppilastutkinto.fi or oma.abitti.fi either way, since they will get blocked by iptables\n' +
-        'server=/koe.ylioppilastutkinto.fi/#\n' +
-        'server=/oma.abitti.fi/#\n' +
-        '\n' +
         '# Forward also requests to allowlisted domains to upstream\n' +
         '${ALLOWLISTED_SERVER_CONFIGURATION}\n' +
         '\n' +
@@ -1328,7 +1410,11 @@ describe('examnet (just port)', () => {
         '# This prevents software on the student computer from getting confused by when DNS queries work, but the TCP\n' +
         '# request stalls (since this is not a router) for however long the client timeout is set to; possibly Infinity\n' +
         'address=/#/0.0.0.0\n' +
-        'address=/#/::\n'
+        'address=/#/::\n' +
+        '\n' +
+        '# Reduce DNS cache TTLs as Microsoft has very short TTL for the A records of the allowlisted servers\n' +
+        'max-cache-ttl=5\n' +
+        'max-ttl=5\n'
     )
     await writeToTempDir(mockNetplanConfDir, '50-cloud-init.yaml', 'baz')
     await writeToTempDir(mockEtcDir, 'hosts', '# test /etc/hosts file\n')
@@ -1350,6 +1436,9 @@ describe('examnet (just port)', () => {
       mockResolvedDir,
       mockDockerDir,
       mockDnsmasqDir,
+      mockDnsmasqDockerDir,
+      mockDnsmasqLanDir,
+      mockDnsmasqConfDir,
       mockSysctlDir,
       mockRsyslogDir,
       mockLogrotateDir,
@@ -1519,8 +1608,8 @@ function callRm(path: string) {
   return { cmd: 'rm', argv: ['-f', path] }
 }
 
-function callRmRecursive(path: string) {
-  return { cmd: 'rm', argv: ['-rf', path] }
+function callRmRecursive(path1: string, path2: string, path3: string) {
+  return { cmd: 'rm', argv: ['-rf', path1, path2, path3] }
 }
 
 function callSed(path: string) {
