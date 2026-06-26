@@ -1,0 +1,147 @@
+#!/usr/bin/env python3
+
+import gi
+import sys
+import subprocess
+import datetime as dt
+from pathlib import Path
+
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk
+
+CONFIG_PATH = Path("/etc/ytl-linux-update-check")
+SNOOZE_FILE_PATH = Path(CONFIG_PATH, "snoozed-until")
+SNOOZE_TIME = dt.timedelta(hours=24)
+
+
+def snooze():
+    CONFIG_PATH.mkdir(parents=True, exist_ok=True)
+
+    now = dt.datetime.now(dt.timezone.utc)
+    snooze_until = now + SNOOZE_TIME
+
+    print(f"Snoozing update notification until {snooze_until}")
+
+    with SNOOZE_FILE_PATH.open("w") as snooze_file:
+        snooze_file.write(str(snooze_until.timestamp()))
+
+
+def is_snoozed():
+    print("Checking if update notification is snoozed")
+
+    if SNOOZE_FILE_PATH.exists():
+        with SNOOZE_FILE_PATH.open("r") as snooze_file:
+            now = dt.datetime.now(dt.timezone.utc)
+            snooze_until = dt.datetime.fromtimestamp(float(snooze_file.read()), tz=dt.timezone.utc)
+            is_snoozed = now < snooze_until
+            print(f"Update notification is {'' if is_snoozed else 'not '}snoozed (now={now}, snooze_until={snooze_until})")
+            return is_snoozed
+
+    print("Update notification has not been snoozed")
+    return False
+
+
+class UpdateDialog(Gtk.Window):
+    def __init__(self):
+        super().__init__(title="YTL Linux Software Update")
+        self.set_border_width(10)
+        self.set_position(Gtk.WindowPosition.CENTER)
+        self.set_default_size(400, 200)
+
+        self.available_updates = "\n".join(sys.argv[1:])
+
+        self.label_text_fi = """
+<span size="large">Ohjelmistopäivityksiä saatavilla</span>
+
+<b>Seuraaviin ohjelmistoihin on saatavilla päivityksiä:</b>
+
+{updates}
+
+<span size="large"><b>Haluatko asentaa päivitykset nyt?</b></span>
+        """.format(updates=self.available_updates)
+
+        self.label_text_sv = """
+<span size="large">Programvaruupddateringar tillgängliga</span>
+
+<b>Följande programvara har tillgängliga uppdateringar:</b>
+
+{updates}
+
+<span size="large"><b>Vill du installera uppdateringarna nu?</b></span>
+        """.format(updates=self.available_updates)
+
+        self.label_text_en = """
+<span size="large">Software updates available</span>
+
+<b>The following software has available updates:</b>
+
+{updates}
+
+<span size="large"><b>Do you want to install the updates now?</b></span>
+        """.format(updates=self.available_updates)
+
+        box_main = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        self.add(box_main)
+
+        # Language selection box
+
+        box_language_selection = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        box_main.pack_start(box_language_selection, True, True, 0)
+
+        button_fi = Gtk.Button(label="suomeksi")
+        button_fi.connect("clicked", self.on_language_change, self.label_text_fi, "Ei nyt", "Päivitä")
+        box_language_selection.pack_start(button_fi, True, True, 0)
+
+        button_sv = Gtk.Button(label="på svenska")
+        button_sv.connect("clicked", self.on_language_change, self.label_text_sv, "Inte nu", "Uppdatera")
+        box_language_selection.pack_start(button_sv, True, True, 0)
+
+        button_en = Gtk.Button(label="in English")
+        button_en.connect("clicked", self.on_language_change, self.label_text_en, "Not now", "Update")
+        box_language_selection.pack_start(button_en, True, True, 0)
+
+        # Label box
+
+        box_label = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        box_main.pack_start(box_label, True, True, 0)
+
+        self.label = Gtk.Label()
+        box_label.pack_start(self.label, True, True, 0)
+
+        # Action box
+
+        box_action = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        box_main.pack_start(box_action, True, True, 0)
+
+        self.button_snooze = Gtk.Button()
+        self.button_snooze.connect("clicked", self.on_snooze)
+        box_action.pack_start(self.button_snooze, True, True, 0)
+
+        self.button_commit = Gtk.Button()
+        self.button_commit.connect("clicked", self.on_commit)
+        box_action.pack_start(self.button_commit, True, True, 0)
+
+        self.on_language_change(None, self.label_text_fi, "Ei nyt", "Päivitä")
+
+        self.connect("destroy", Gtk.main_quit)
+        self.show_all()
+
+    def on_language_change(self, button, new_label_text: str, button_label_snooze: str, button_label_commit: str):
+        self.label.set_markup(new_label_text)
+        self.button_snooze.set_label(button_label_snooze)
+        self.button_commit.set_label(button_label_commit)
+
+    def on_commit(self, button):
+        # FIXME: This is not spawning the Polkit authentication window
+        subprocess.Popen(["pkexec", "ytl-linux-software-update"])
+        Gtk.main_quit()
+
+    def on_snooze(self, button):
+        snooze()
+        Gtk.main_quit()
+
+
+if __name__ == "__main__":
+    if not is_snoozed():
+        UpdateDialog()
+        Gtk.main()

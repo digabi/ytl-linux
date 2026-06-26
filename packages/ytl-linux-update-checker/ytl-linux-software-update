@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+if [[ $EUID -ne 0 ]]; then
+  echo "Error: This script must be run as root" 1>&2
+  exit 1
+fi
+
+JOURNAL_IDENTIFIER="ytl-linux-software-update"
+
+log() {
+  echo "$1" | systemd-cat --identifier $JOURNAL_IDENTIFIER
+}
+
+if [[ -z "${1:-}" || ("$1" != "fi" && "$1" != "sv" && "$1" != "en") ]]; then
+  LANGUAGE="fi"
+else
+  LANGUAGE="$1"
+fi
+
+PROGRESS_BAR_TITLE="YTL Linux Software Update"
+
+if [[ $LANGUAGE == "fi" ]]; then
+  PROGRESS_BAR_TEXT="Ohjelmistopäivityksiä asennetaan, ole hyvä ja odota..."
+  SUCCESS_TEXT="Ohjelmistopäivitykset asennettu onnistuneesti."
+  ERROR_TEXT="Ohjelmistopäivitysten asennus epäonnistui. Ole hyvä ja yritä uudelleen. Jos ongelma jatkuu, ota yhteyttä Abitti-tukeen."
+elif [[ $LANGUAGE == "sv" ]]; then
+  PROGRESS_BAR_TEXT="Programvaruuppdateringar installeras, var god vänta..."
+  SUCCESS_TEXT="Installering av programvaruuppdateringar lyckades."
+  ERROR_TEXT="Installering av programvaruupdateringar misslyckades. Var god och försök igen. Om problemet fortsätter, kontakta Abitti-stödet."
+elif [[ $LANGUAGE == "en" ]]; then
+  PROGRESS_BAR_TEXT="Software updates are being installed, please wait..."
+  SUCCESS_TEXT="Software updates installed successfully."
+  ERROR_TEXT="Installation of software updates failed. Please try again. If the problem persists, contact Abitti support."
+fi
+
+log "Starting YTL Linux software update at $(date)"
+
+zenity \
+  --title "$PROGRESS_BAR_TITLE" \
+  --text "$PROGRESS_BAR_TEXT" \
+  --progress \
+  --pulsate &
+
+PROGRESS_BAR_PID=$!
+
+trap 'kill $PROGRESS_BAR_PID' SIGINT SIGTERM
+
+show_success_and_exit() {
+  kill $PROGRESS_BAR_PID
+
+  zenity \
+    --info \
+    --title "$PROGRESS_BAR_TITLE" \
+    --text "$SUCCESS_TEXT"
+
+  exit 0
+}
+
+show_error_and_exit() {
+  kill $PROGRESS_BAR_PID
+
+  zenity \
+    --error \
+    --title "$PROGRESS_BAR_TITLE" \
+    --text "$ERROR_TEXT"
+
+  exit 1
+}
+
+log "Performing apt-get update"
+
+if ! apt-get update | systemd-cat --identifier $JOURNAL_IDENTIFIER; then
+  log "apt-get update failed"
+  show_error_and_exit
+fi
+
+if ! apt-get upgrade -y --dry-run | systemd-cat --identifier $JOURNAL_IDENTIFIER; then
+  log "apt-get upgrade failed"
+  show_error_and_exit
+fi
+
+log "Software update succeeded"
+show_success_and_exit
