@@ -703,7 +703,7 @@ describe('examnet (just port)', () => {
         callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.timer'),
         callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.service'),
         ...callDig(
-          'endpoint.security.microsoft.com smartscreen-prod.microsoft.com smartscreen.microsoft.com wdcp.microsoft.com wdcpalt.microsoft.com wd.microsoft.com'
+          'endpoint.security.microsoft.com smartscreen-prod.microsoft.com smartscreen.microsoft.com wdcp.microsoft.com wdcpalt.microsoft.com wd.microsoft.com ctldl.windowsupdate.com crl.microsoft.com'
         )
       ])
       await assertFileExists(mockExamnetConfigDir, 'net-device-lan')
@@ -760,6 +760,8 @@ describe('examnet (just port)', () => {
           'server=/wdcp.microsoft.com/#\n' +
           'server=/wdcpalt.microsoft.com/#\n' +
           'server=/wd.microsoft.com/#\n' +
+          'server=/ctldl.windowsupdate.com/#\n' +
+          'server=/crl.microsoft.com/#\n' +
           '\n' +
           '# IP addresses of allowlisted domains are added to ipset that is used to allow forwarding traffic to those domains in iptables\n' +
           'ipset=/endpoint.security.microsoft.com/ytl_internet_allowlist\n' +
@@ -768,6 +770,8 @@ describe('examnet (just port)', () => {
           'ipset=/wdcp.microsoft.com/ytl_internet_allowlist\n' +
           'ipset=/wdcpalt.microsoft.com/ytl_internet_allowlist\n' +
           'ipset=/wd.microsoft.com/ytl_internet_allowlist\n' +
+          'ipset=/ctldl.windowsupdate.com/ytl_internet_allowlist\n' +
+          'ipset=/crl.microsoft.com/ytl_internet_allowlist\n' +
           '\n' +
           '# Null-route all other traffic\n' +
           '# This prevents software on the student computer from getting confused by when DNS queries work, but the TCP\n' +
@@ -909,7 +913,7 @@ describe('examnet (just port)', () => {
         callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.timer'),
         callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.service'),
         ...callDig(
-          'endpoint.security.microsoft.com smartscreen-prod.microsoft.com smartscreen.microsoft.com wdcp.microsoft.com wdcpalt.microsoft.com wd.microsoft.com'
+          'endpoint.security.microsoft.com smartscreen-prod.microsoft.com smartscreen.microsoft.com wdcp.microsoft.com wdcpalt.microsoft.com wd.microsoft.com ctldl.windowsupdate.com crl.microsoft.com'
         )
       ])
 
@@ -967,6 +971,8 @@ describe('examnet (just port)', () => {
           'server=/wdcp.microsoft.com/#\n' +
           'server=/wdcpalt.microsoft.com/#\n' +
           'server=/wd.microsoft.com/#\n' +
+          'server=/ctldl.windowsupdate.com/#\n' +
+          'server=/crl.microsoft.com/#\n' +
           '\n' +
           '# IP addresses of allowlisted domains are added to ipset that is used to allow forwarding traffic to those domains in iptables\n' +
           'ipset=/endpoint.security.microsoft.com/ytl_internet_allowlist\n' +
@@ -975,6 +981,8 @@ describe('examnet (just port)', () => {
           'ipset=/wdcp.microsoft.com/ytl_internet_allowlist\n' +
           'ipset=/wdcpalt.microsoft.com/ytl_internet_allowlist\n' +
           'ipset=/wd.microsoft.com/ytl_internet_allowlist\n' +
+          'ipset=/ctldl.windowsupdate.com/ytl_internet_allowlist\n' +
+          'ipset=/crl.microsoft.com/ytl_internet_allowlist\n' +
           '\n' +
           '# Null-route all other traffic\n' +
           '# This prevents software on the student computer from getting confused by when DNS queries work, but the TCP\n' +
