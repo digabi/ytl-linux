@@ -2,6 +2,8 @@ NAME := ytl-linux-cups-dummy
 VERSION := 0.1
 
 DEPENDENCIES := --depends cinnamon-common --depends bash
+CONFLICTS := --conflicts cups-client --conflicts cups-bsd --conflicts lpr --conflicts lprng
+REPLACES := --replaces cups-client --replaces cups-bsd --replaces lpr --replaces lprng
 
 deb:
 	if [ -d deb-root ]; then rm -fR deb-root/; fi
@@ -28,4 +30,6 @@ deb:
 		 --url "https://github.com/digabi/ytl-linux" \
 		 --deb-no-default-config-files \
 		 $(DEPENDENCIES) \
+		 $(CONFLICTS) \
+		 $(REPLACES) \
 		.
