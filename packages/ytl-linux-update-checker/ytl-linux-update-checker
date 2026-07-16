@@ -37,9 +37,20 @@ if echo "${UPGRADE_DRY_RUN_RESULT}" | grep -q "The following packages will be up
   done <<< "${AVAILABLE_UPDATES}"
 
   log "The following updates are available: ${UPDATES[*]}"
+
+  if [[ ! -d /var/lib/ytl-linux-update-check ]]; then
+    install -d -o school -g school -m 0755 /var/lib/ytl-linux-update-check
+  fi
   
-  # FIXME: This is not displaying the updates with newlines and mangles them into one line
-  su school -c "/usr/local/bin/ytl-linux-update-dialog \"${UPDATES[*]}\"" | systemd-cat --identifier $JOURNAL_IDENTIFIER
+  if ! loginctl show-user school -p State --value 2>/dev/null | grep -qx active; then
+    log info "Updates are available, but no user is currently logged in."
+    exit 0
+  fi
+  
+  if ! systemd-run --machine=school@ --user --unit=ytl-linux-update-dialog --description="YTL Linux Update Dialog" --collect /usr/local/bin/ytl-linux-update-dialog "${UPDATES[*]}"; then
+    log "Failed to launch the update notification dialog."
+    exit 1
+  fi
 else
   log "No updates available"
 fi
