@@ -2,6 +2,7 @@
 Description=Automatic update checker for YTL Linux
 
 [Service]
+Type=oneshot
 ExecStart=/usr/local/sbin/ytl-linux-update-checker
 StandardOutput=journal
 StandardError=journal
