@@ -5,6 +5,3 @@ Description=Automatic update checker for YTL Linux
 ExecStart=/usr/local/sbin/ytl-linux-update-checker
 StandardOutput=journal
 StandardError=journal
-
-[Install]
-WantedBy=multi-user.target
