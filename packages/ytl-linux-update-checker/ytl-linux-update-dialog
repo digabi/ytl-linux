@@ -1,43 +1,65 @@
 #!/usr/bin/env python3
 
-import gi
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring, invalid-name
+
 import sys
 import subprocess
 import datetime as dt
 from pathlib import Path
+import gi
+from systemd import journal  # pylint: disable=import-error # pyright: ignore[reportMissingImports]
 
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk
 
-CONFIG_PATH = Path("/etc/ytl-linux-update-check")
+from gi.repository import GLib  # pylint: disable=wrong-import-position # pyright: ignore[reportAttributeAccessIssue]
+from gi.repository import Gtk  # pylint: disable=wrong-import-position # pyright: ignore[reportAttributeAccessIssue]
+
+CONFIG_PATH = Path("/var/lib/ytl-linux-update-check")
 SNOOZE_FILE_PATH = Path(CONFIG_PATH, "snoozed-until")
 SNOOZE_TIME = dt.timedelta(hours=24)
+SYSLOG_IDENTIFIER = "ytl-linux-software-update"
+LOGLEVEL_INFO = 6
+LOGLEVEL_WARN = 4
+LOGLEVEL_ERR = 3
+LOGLEVEL_DEBUG = 7
+
+
+def log(msg: str, level=LOGLEVEL_INFO):
+    journal.send(msg, SYSLOG_IDENTIFIER=SYSLOG_IDENTIFIER, PRIORITY=level)
 
 
 def snooze():
-    CONFIG_PATH.mkdir(parents=True, exist_ok=True)
+    try:
+        CONFIG_PATH.mkdir(parents=True, exist_ok=True)
+    except PermissionError as e:
+        log(f"ERR: {e}", LOGLEVEL_ERR)
 
     now = dt.datetime.now(dt.timezone.utc)
     snooze_until = now + SNOOZE_TIME
 
-    print(f"Snoozing update notification until {snooze_until}")
+    log(f"Snoozing update notification until {snooze_until.astimezone()}")
 
-    with SNOOZE_FILE_PATH.open("w") as snooze_file:
-        snooze_file.write(str(snooze_until.timestamp()))
+    try:
+        with SNOOZE_FILE_PATH.open("w", encoding="UTF-8") as snooze_file:
+            snooze_file.write(str(snooze_until.timestamp()))
+    except FileNotFoundError as e:
+        log(f"ERR: {e}", LOGLEVEL_ERR)
 
 
 def is_snoozed():
-    print("Checking if update notification is snoozed")
+    log("Checking if update notification is snoozed")
 
     if SNOOZE_FILE_PATH.exists():
-        with SNOOZE_FILE_PATH.open("r") as snooze_file:
+        with SNOOZE_FILE_PATH.open("r", encoding="UTF-8") as snooze_file:
             now = dt.datetime.now(dt.timezone.utc)
-            snooze_until = dt.datetime.fromtimestamp(float(snooze_file.read()), tz=dt.timezone.utc)
-            is_snoozed = now < snooze_until
-            print(f"Update notification is {'' if is_snoozed else 'not '}snoozed (now={now}, snooze_until={snooze_until})")
-            return is_snoozed
+            snooze_until = dt.datetime.fromtimestamp(
+                float(snooze_file.read()), tz=dt.timezone.utc)
+            snooze_not_expired = now < snooze_until
+            log(f"Update notification is {'' if snooze_not_expired else 'not '}" +
+                f"snoozed (now={now.astimezone()}, snooze_until={snooze_until.astimezone()})")
+            return snooze_not_expired
 
-    print("Update notification has not been snoozed")
+    log("Update notification has not been snoozed")
     return False
 
 
@@ -47,57 +69,46 @@ class UpdateDialog(Gtk.Window):
         self.set_border_width(10)
         self.set_position(Gtk.WindowPosition.CENTER)
         self.set_default_size(400, 200)
+        self.selected_lang = "fi"
+        self.will_update = False
+        self.proc: subprocess.Popen[bytes] | None = None
 
-        self.available_updates = "\n".join(sys.argv[1:])
+        self.available_updates = "\n".join(
+            update.strip() for update in "".join(sys.argv[1:]).split(";"))
 
-        self.label_text_fi = """
-<span size="large">Ohjelmistopäivityksiä saatavilla</span>
+        translations = i18n(self.available_updates)
 
-<b>Seuraaviin ohjelmistoihin on saatavilla päivityksiä:</b>
+        self.label_text = translations.label_text
 
-{updates}
+        self.progress_bar_text = translations.progress_bar_text
 
-<span size="large"><b>Haluatko asentaa päivitykset nyt?</b></span>
-        """.format(updates=self.available_updates)
+        self.success_text = translations.success_text
 
-        self.label_text_sv = """
-<span size="large">Programvaruupddateringar tillgängliga</span>
+        self.error_text = translations.error_text
 
-<b>Följande programvara har tillgängliga uppdateringar:</b>
+        self.button_snooze_text = translations.button_snooze_text
 
-{updates}
-
-<span size="large"><b>Vill du installera uppdateringarna nu?</b></span>
-        """.format(updates=self.available_updates)
-
-        self.label_text_en = """
-<span size="large">Software updates available</span>
-
-<b>The following software has available updates:</b>
-
-{updates}
-
-<span size="large"><b>Do you want to install the updates now?</b></span>
-        """.format(updates=self.available_updates)
+        self.button_commit_text = translations.button_commit_text
 
         box_main = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         self.add(box_main)
 
         # Language selection box
 
-        box_language_selection = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        box_language_selection = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         box_main.pack_start(box_language_selection, True, True, 0)
 
         button_fi = Gtk.Button(label="suomeksi")
-        button_fi.connect("clicked", self.on_language_change, self.label_text_fi, "Ei nyt", "Päivitä")
+        button_fi.connect("clicked", self.on_language_change, "fi")
         box_language_selection.pack_start(button_fi, True, True, 0)
 
         button_sv = Gtk.Button(label="på svenska")
-        button_sv.connect("clicked", self.on_language_change, self.label_text_sv, "Inte nu", "Uppdatera")
+        button_sv.connect("clicked", self.on_language_change, "sv")
         box_language_selection.pack_start(button_sv, True, True, 0)
 
         button_en = Gtk.Button(label="in English")
-        button_en.connect("clicked", self.on_language_change, self.label_text_en, "Not now", "Update")
+        button_en.connect("clicked", self.on_language_change, "en")
         box_language_selection.pack_start(button_en, True, True, 0)
 
         # Label box
@@ -105,8 +116,16 @@ class UpdateDialog(Gtk.Window):
         box_label = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         box_main.pack_start(box_label, True, True, 0)
 
+        self.stack = Gtk.Stack()
+
         self.label = Gtk.Label()
-        box_label.pack_start(self.label, True, True, 0)
+        self.stack.add_named(self.label, "label")
+
+        self.progress_bar = Gtk.ProgressBar()
+        self.stack.add_named(self.progress_bar, "progress_bar")
+
+        self.stack.set_visible_child_name("label")
+        box_label.pack_start(self.stack, True, True, 0)
 
         # Action box
 
@@ -121,27 +140,150 @@ class UpdateDialog(Gtk.Window):
         self.button_commit.connect("clicked", self.on_commit)
         box_action.pack_start(self.button_commit, True, True, 0)
 
-        self.on_language_change(None, self.label_text_fi, "Ei nyt", "Päivitä")
+        self.on_language_change(None, "fi")
 
-        self.connect("destroy", Gtk.main_quit)
-        self.show_all()
+        # Closing the window should snooze too
+        self.connect("destroy", self.on_snooze)
 
-    def on_language_change(self, button, new_label_text: str, button_label_snooze: str, button_label_commit: str):
-        self.label.set_markup(new_label_text)
-        self.button_snooze.set_label(button_label_snooze)
-        self.button_commit.set_label(button_label_commit)
+    def on_language_change(self, _, lang: str):
+        self.selected_lang = lang
+        self.label.set_markup(self.label_text[self.selected_lang])
+        self.button_snooze.set_label(self.button_snooze_text[self.selected_lang])
+        self.button_commit.set_label(self.button_commit_text[self.selected_lang])
+        self.progress_bar.set_text(self.progress_bar_text[self.selected_lang])
 
-    def on_commit(self, button):
-        # FIXME: This is not spawning the Polkit authentication window
-        subprocess.Popen(["pkexec", "ytl-linux-software-update"])
-        Gtk.main_quit()
+    def on_commit(self, _):
+        self.button_commit.set_sensitive(False)
+        self.button_snooze.set_sensitive(False)
 
-    def on_snooze(self, button):
+        self.progress_bar.set_show_text(True)
+        self.progress_bar.set_text(self.progress_bar_text[self.selected_lang])
+        self.progress_bar.set_fraction(0.0)
+        self.stack.set_visible_child_name("progress_bar")
+        self.progress_bar.pulse()
+        try:
+            self.proc = subprocess.Popen(
+                ["/usr/bin/pkexec", "/usr/local/sbin/ytl-linux-software-update",
+                 self.selected_lang])
+        except OSError as e:
+            log(f"ERR: {e}", LOGLEVEL_ERR)
+            self.progress_bar.set_text("Update failed")
+            self.button_commit.set_sensitive(True)
+            self.button_snooze.set_sensitive(True)
+
+        GLib.timeout_add(100, self.check_updater)
+
+    def check_updater(self):
+        assert self.proc is not None
+
+        if self.proc.poll() is None:
+            self.progress_bar.pulse()
+            return True      # keep timer running
+
+        # updater has exited
+        if self.proc.returncode == 0:
+            self.progress_bar.set_fraction(1.0)
+            self.progress_bar.set_text("Update complete")
+            popup = Gtk.MessageDialog(
+                transient_for=self,
+                modal=True,
+                message_type=Gtk.MessageType.INFO,
+                buttons=Gtk.ButtonsType.OK,
+                text="Update complete"
+            )
+            popup.format_secondary_text(self.success_text[self.selected_lang])
+            popup.run()
+            popup.destroy()
+            Gtk.main_quit()
+        else:
+            self.progress_bar.set_text("Update failed")
+            popup = Gtk.MessageDialog(
+                transient_for=self,
+                modal=True,
+                message_type=Gtk.MessageType.ERROR,
+                buttons=Gtk.ButtonsType.OK,
+                text="Update failed"
+            )
+            popup.format_secondary_text(self.error_text[self.selected_lang])
+            popup.run()
+            popup.destroy()
+            self.stack.set_visible_child_name("label")
+            self.button_commit.set_sensitive(True)
+            self.button_snooze.set_sensitive(True)
+
+        return False         # stop timer
+
+    def on_snooze(self, _):
         snooze()
         Gtk.main_quit()
 
 
+class i18n:
+    def __init__(self, available_updates):
+        self.label_text = {
+            "fi": f"""
+<span size="large">Ohjelmistopäivityksiä saatavilla</span>
+
+<b>Seuraaviin ohjelmistoihin on saatavilla päivityksiä:</b>
+
+{available_updates}
+
+<span size="large"><b>Haluatko asentaa päivitykset nyt?</b></span>
+        """,
+
+        "sv": f"""
+<span size="large">Programvaruupddateringar tillgängliga</span>
+
+<b>Följande programvara har tillgängliga uppdateringar:</b>
+
+{available_updates}
+
+<span size="large"><b>Vill du installera uppdateringarna nu?</b></span>
+        """,
+
+        "en": f"""
+<span size="large">Software updates available</span>
+
+<b>The following software has available updates:</b>
+
+{available_updates}
+
+<span size="large"><b>Do you want to install the updates now?</b></span>
+        """}
+
+        self.progress_bar_text = {
+            "fi": "Ohjelmistopäivityksiä asennetaan, ole hyvä ja odota...",
+            "sv": "Programvaruuppdateringar installeras, var god vänta...",
+            "en": "Software updates are being installed, please wait..."
+        }
+
+        self.success_text = {
+            "fi": "Ohjelmistopäivitykset asennettu onnistuneesti.",
+            "sv": "Installering av programvaruuppdateringar lyckades.",
+            "en": "Software updates installed successfully."
+        }
+
+        self.error_text = {
+            "fi": "Ohjelmistopäivitysten asennus epäonnistui. Ole hyvä ja yritä uudelleen. Jos ongelma jatkuu, ota yhteyttä Abitti-tukeen.",
+            "sv": "Installering av programvaruupdateringar misslyckades. Var god och försök igen. Om problemet fortsätter, kontakta Abitti-stödet.",
+            "en": "Installation of software updates failed. Please try again. If the problem persists, contact Abitti support."
+        }
+
+        self.button_snooze_text = {
+            "fi": "Ei nyt",
+            "sv": "Inte nu",
+            "en": "Not now"
+        }
+
+        self.button_commit_text = {
+            "fi": "Päivitä",
+            "sv": "Uppdatera",
+            "en": "Update"
+        }
+
 if __name__ == "__main__":
     if not is_snoozed():
-        UpdateDialog()
+        dialog = UpdateDialog()
+        dialog.present()
+        dialog.show_all()
         Gtk.main()
