@@ -6,4 +6,4 @@ OnStartupSec=60seconds
 OnUnitInactiveSec=1hour
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=timers.target
