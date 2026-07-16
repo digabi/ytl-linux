@@ -148,8 +148,10 @@ class UpdateDialog(Gtk.Window):
     def on_language_change(self, _, lang: str):
         self.selected_lang = lang
         self.label.set_markup(self.label_text[self.selected_lang])
-        self.button_snooze.set_label(self.button_snooze_text[self.selected_lang])
-        self.button_commit.set_label(self.button_commit_text[self.selected_lang])
+        self.button_snooze.set_label(
+            self.button_snooze_text[self.selected_lang])
+        self.button_commit.set_label(
+            self.button_commit_text[self.selected_lang])
         self.progress_bar.set_text(self.progress_bar_text[self.selected_lang])
 
     def on_commit(self, _):
@@ -231,7 +233,7 @@ class i18n:
 <span size="large"><b>Haluatko asentaa päivitykset nyt?</b></span>
         """,
 
-        "sv": f"""
+            "sv": f"""
 <span size="large">Programvaruupddateringar tillgängliga</span>
 
 <b>Följande programvara har tillgängliga uppdateringar:</b>
@@ -241,7 +243,7 @@ class i18n:
 <span size="large"><b>Vill du installera uppdateringarna nu?</b></span>
         """,
 
-        "en": f"""
+            "en": f"""
 <span size="large">Software updates available</span>
 
 <b>The following software has available updates:</b>
@@ -264,9 +266,12 @@ class i18n:
         }
 
         self.error_text = {
-            "fi": "Ohjelmistopäivitysten asennus epäonnistui. Ole hyvä ja yritä uudelleen. Jos ongelma jatkuu, ota yhteyttä Abitti-tukeen.",
-            "sv": "Installering av programvaruupdateringar misslyckades. Var god och försök igen. Om problemet fortsätter, kontakta Abitti-stödet.",
-            "en": "Installation of software updates failed. Please try again. If the problem persists, contact Abitti support."
+            "fi": "Ohjelmistopäivitysten asennus epäonnistui." +
+            "Ole hyvä ja yritä uudelleen. Jos ongelma jatkuu, ota yhteyttä Abitti-tukeen.",
+            "sv": "Installering av programvaruupdateringar misslyckades." +
+            "Var god och försök igen. Om problemet fortsätter, kontakta Abitti-stödet.",
+            "en": "Installation of software updates failed." +
+            "Please try again. If the problem persists, contact Abitti support."
         }
 
         self.button_snooze_text = {
@@ -280,6 +285,7 @@ class i18n:
             "sv": "Uppdatera",
             "en": "Update"
         }
+
 
 if __name__ == "__main__":
     if not is_snoozed():
