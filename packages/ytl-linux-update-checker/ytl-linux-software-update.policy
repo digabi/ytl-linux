@@ -5,6 +5,7 @@
   <vendor_url>http://github.com/digabi/ytl-linux/</vendor_url>
   <action id="fi.ylioppilastutkinto.fi.ytl-linux-software-update">
     <description>Support GUI authentication for installing YTL Linux software updates</description>
+    <message>Authentication is required to update software. Please enter your password.</message>
     <message xml:lang="fi">Järjestelmä tarvitsee luvan päivittääkseen ohjelmistoja. Syötä tietokoneen salasana.</message>
     <message xml:lang="sv">Systemet behöver tillstånd för att uppdatera mjukvara. Mata in datorns lösenord.</message>
     <defaults>
