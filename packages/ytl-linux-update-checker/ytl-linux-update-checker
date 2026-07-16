@@ -23,18 +23,18 @@ apt-get update "${APT_FLAGS_CHECK_YTL_LINUX_ONLY[@]}" | log
 UPGRADE_DRY_RUN_RESULT="$(apt-get upgrade --dry-run "${APT_FLAGS_CHECK_YTL_LINUX_ONLY[@]}")"
 log "${UPGRADE_DRY_RUN_RESULT}"
 
-if echo "$UPGRADE_DRY_RUN_RESULT" | grep -q "The following packages will be upgraded"; then
-  AVAILABLE_UPDATES=$(echo "$UPGRADE_DRY_RUN_RESULT" | grep Inst)
+if echo "${UPGRADE_DRY_RUN_RESULT}" | grep -q "The following packages will be upgraded"; then
+  AVAILABLE_UPDATES=$(echo "${UPGRADE_DRY_RUN_RESULT}" | grep Inst)
   UPDATES=()
 
   # Read each line
   while read -r upgrade; do
-    PACKAGE=$(echo "$upgrade" | cut -d ' ' -f2)
-    CURRENT_VERSION=$(echo "$upgrade" | cut -d ' ' -f3 | tr -d '[' | tr -d ']') # For some reason eliminating two brackets from the same string with sed just doesn't work
-    NEW_VERSION=$(echo "$upgrade" | cut -d ' ' -f4 | sed 's/[()]//g')
-    UPDATE_DESCRIPTION="$PACKAGE: $CURRENT_VERSION => $NEW_VERSION"
-    UPDATES+=("$UPDATE_DESCRIPTION")
-  done <<< "$AVAILABLE_UPDATES"
+    PACKAGE=$(echo "${upgrade}" | cut -d ' ' -f2)
+    CURRENT_VERSION=$(echo "${upgrade}" | cut -d ' ' -f3 | sed 's/[][]//g')
+    NEW_VERSION=$(echo "${upgrade}" | cut -d ' ' -f4 | sed 's/[()]//g')
+    UPDATE_DESCRIPTION="${PACKAGE}: ${CURRENT_VERSION} => ${NEW_VERSION};"
+    UPDATES+=("${UPDATE_DESCRIPTION}")
+  done <<< "${AVAILABLE_UPDATES}"
 
   log "The following updates are available: ${UPDATES[*]}"
   
