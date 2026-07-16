@@ -41,12 +41,12 @@ if echo "${UPGRADE_DRY_RUN_RESULT}" | grep -q "The following packages will be up
   if [[ ! -d /var/lib/ytl-linux-update-check ]]; then
     install -d -o school -g school -m 0755 /var/lib/ytl-linux-update-check
   fi
-  
+
   if ! loginctl show-user school -p State --value 2>/dev/null | grep -qx active; then
     log info "Updates are available, but no user is currently logged in."
     exit 0
   fi
-  
+
   if ! systemd-run --machine=school@ --user --unit=ytl-linux-update-dialog --description="YTL Linux Update Dialog" --collect /usr/local/bin/ytl-linux-update-dialog "${UPDATES[*]}"; then
     log "Failed to launch the update notification dialog."
     exit 1
