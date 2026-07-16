@@ -1,5 +1,5 @@
 NAME := ytl-linux-update-checker
-VERSION := 0.3.6
+VERSION := 0.4.0
 
 DEPENDENCIES := --depends python3-systemd --depends python3-gi --depends python3-gi-cairo --depends gir1.2-gtk-3.0
 DEB_ROOT := deb-root
