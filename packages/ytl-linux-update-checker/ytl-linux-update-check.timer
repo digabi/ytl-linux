@@ -2,7 +2,7 @@
 Description=Periodically check for available updates to YTL Linux
 
 [Timer]
-OnStartupSec=60seconds
+OnStartupSec=90seconds
 OnUnitInactiveSec=1hour
 
 [Install]
