@@ -9,6 +9,7 @@ from pathlib import Path
 import gi
 from systemd import journal  # pylint: disable=import-error # pyright: ignore[reportMissingImports]
 
+# N.B.: this line _has_ to be executed before `from gi.repository import Gtk`
 gi.require_version('Gtk', '3.0')
 
 from gi.repository import GLib  # pylint: disable=wrong-import-position # pyright: ignore[reportAttributeAccessIssue]
