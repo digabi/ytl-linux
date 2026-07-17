@@ -1,0 +1,10 @@
+[Unit]
+Description=Automatic update checker for YTL Linux
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/ytl-linux-update-checker
+StandardOutput=journal
+StandardError=journal

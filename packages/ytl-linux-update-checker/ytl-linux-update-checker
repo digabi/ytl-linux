@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+export DISPLAY=':0'
+
+JOURNAL_IDENTIFIER="ytl-linux-software-update"
+
+log() {
+  if [[ $# -gt 0 ]]; then
+    printf '%s\n' "$*"
+  else
+    cat
+  fi | systemd-cat --identifier "${JOURNAL_IDENTIFIER}"
+}
+
+log "Checking for updates in YTL Linux repo"
+
+APT_FLAGS_CHECK_YTL_LINUX_ONLY=(-o Dir::Etc::sourcelist="sources.list.d/ytl-linux.sources" -o Dir::Etc::sourceparts="-" -o APT::Get::List-Cleanup="0")
+
+apt-get update "${APT_FLAGS_CHECK_YTL_LINUX_ONLY[@]}" | log
+
+UPGRADE_DRY_RUN_RESULT="$(apt-get upgrade --dry-run "${APT_FLAGS_CHECK_YTL_LINUX_ONLY[@]}")"
+log "${UPGRADE_DRY_RUN_RESULT}"
+
+if echo "${UPGRADE_DRY_RUN_RESULT}" | grep -q "The following packages will be upgraded"; then
+  AVAILABLE_UPDATES=$(echo "${UPGRADE_DRY_RUN_RESULT}" | grep Inst)
+  UPDATES=()
+
+  # Read each line
+  while read -r upgrade; do
+    PACKAGE=$(echo "${upgrade}" | cut -d ' ' -f2)
+    CURRENT_VERSION=$(echo "${upgrade}" | cut -d ' ' -f3 | sed 's/[][]//g')
+    NEW_VERSION=$(echo "${upgrade}" | cut -d ' ' -f4 | sed 's/[()]//g')
+    UPDATE_DESCRIPTION="${PACKAGE}: ${CURRENT_VERSION} => ${NEW_VERSION};"
+    UPDATES+=("${UPDATE_DESCRIPTION}")
+  done <<< "${AVAILABLE_UPDATES}"
+
+  log "The following updates are available: ${UPDATES[*]}"
+
+  if [[ ! -d /var/lib/ytl-linux-update-check ]]; then
+    install -d -o school -g school -m 0755 /var/lib/ytl-linux-update-check
+  fi
+
+  if ! loginctl show-user school -p State --value 2>/dev/null | grep -qx active; then
+    log info "Updates are available, but no user is currently logged in."
+    exit 0
+  fi
+
+  if ! systemd-run --machine=school@ --user --unit=ytl-linux-update-dialog --description="YTL Linux Update Dialog" --collect /usr/local/bin/ytl-linux-update-dialog "${UPDATES[*]}"; then
+    log "Failed to launch the update notification dialog."
+    exit 1
+  fi
+else
+  log "No updates available"
+fi

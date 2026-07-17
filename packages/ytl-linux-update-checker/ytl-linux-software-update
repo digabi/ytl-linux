@@ -1,0 +1,43 @@
+#!/bin/bash
+
+set -euo pipefail
+
+if [[ ${EUID} -ne 0 ]]; then
+  echo "Error: This script must be run as root" 1>&2
+  exit 1
+fi
+
+JOURNAL_IDENTIFIER="ytl-linux-software-update"
+
+log() {
+  if [[ $# -gt 0 ]]; then
+    printf '%s\n' "$*"
+  else
+    cat
+  fi | systemd-cat --identifier "${JOURNAL_IDENTIFIER}"
+}
+
+exec 2> >(systemd-cat --identifier "${JOURNAL_IDENTIFIER}" -p err)
+
+log "Starting YTL Linux software update at $(date)"
+
+log "Performing apt-get update"
+
+if ! DEBIAN_FRONTEND=noninteractive apt-get update --error-on=any | log; then
+  log "apt-get update failed"
+  exit 1
+fi
+
+log "Performing apt-get upgrade"
+
+# Let's consider adding these later down the line if the current implementation doesn't seem robust
+# -o Dpkg::Options::="--force-confdef"
+# -o Dpkg::Options::="--force-confnew"
+
+if ! DEBIAN_FRONTEND=noninteractive apt-get -y upgrade | log; then
+  log "apt-get upgrade failed"
+  exit 1
+fi
+
+log "Software update succeeded"
+exit 0

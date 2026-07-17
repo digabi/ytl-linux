@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN" "https://specifications.freedesktop.org/PolicyKit/1.0/policyconfig.dtd">
+<policyconfig>
+  <vendor>Matriculation Examination Board</vendor>
+  <vendor_url>http://github.com/digabi/ytl-linux/</vendor_url>
+  <action id="fi.ylioppilastutkinto.fi.ytl-linux-software-update">
+    <description>Support GUI authentication for installing YTL Linux software updates</description>
+    <message>Authentication is required to update software. Please enter your password.</message>
+    <message xml:lang="fi">Järjestelmä tarvitsee luvan päivittääkseen ohjelmistoja. Syötä tietokoneen salasana.</message>
+    <message xml:lang="sv">Systemet behöver tillstånd för att uppdatera mjukvara. Mata in datorns lösenord.</message>
+    <defaults>
+     <allow_any>auth_admin</allow_any>
+     <allow_inactive>auth_admin</allow_inactive>
+     <allow_active>auth_admin</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/local/sbin/ytl-linux-software-update</annotate>
+  </action>
+</policyconfig>
