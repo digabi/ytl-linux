@@ -39,5 +39,11 @@ if ! DEBIAN_FRONTEND=noninteractive apt-get -y upgrade | log; then
   exit 1
 fi
 
+echo 'APT::NeverAutoRemove::KernelCount "2";' >/etc/apt/apt.conf.d/99kernel-retention
+
+if ! DEBIAN_FRONTEND=noninteractive apt-get autoremove -y | log; then
+  log "apt-get autoremove failed"
+fi
+
 log "Software update succeeded"
 exit 0
