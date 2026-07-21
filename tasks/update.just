@@ -17,7 +17,7 @@ naksu2:
         exit 1
     fi
 
-    git add debs/naksu2*.deb
+    git add naksu2*.deb
     git commit -m "Update Naksu 2 to $NEW_NAKSU_VERSION"
     git push
 
@@ -40,13 +40,16 @@ anydesk:
         exit 1
     fi
 
-    git add debs/anydesk-meb*.deb
-    git commit -m "Update AnyDesk to $LATEST_ANYDESK_VERSION"
+    git add anydesk-meb*.deb
+    git commit -m "Update AnyDesk to $NEW_ANYDESK_VERSION"
     git push
 
 # Update vendored just for ytl-linux-tasks to latest version
 [working-directory('../packages/ytl-linux-tasks')]
-@vendored-just:
+vendored-just:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
     rm -rf vendor/*
     cd vendor
     gh release download --repo casey/just --pattern "just-*-x86_64-unknown-linux-musl.tar.gz"
