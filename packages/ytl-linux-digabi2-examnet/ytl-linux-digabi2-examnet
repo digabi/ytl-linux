@@ -116,4 +116,4 @@ for arg in "$@"; do
   esac
 done
 
-just --justfile "$PATH_JUSTFILE" "$recipe" "${args[@]}"
+just --justfile "$PATH_JUSTFILE" --ceiling "${PATH_JUSTFILE%/*}" "$recipe" "${args[@]}"

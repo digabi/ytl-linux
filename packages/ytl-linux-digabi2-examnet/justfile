@@ -1,3 +1,6 @@
+# This fallback is to allow `just deb` to work during development; the runner script in production uses the --ceiling parameter to use only this file
+set fallback
+
 [private]
 mod mod-bouncer 'lib/bouncer.just'
 [private]
