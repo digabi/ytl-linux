@@ -25,6 +25,7 @@ format:
     @just --unstable --fmt
     @for file in tasks/*.just; do just --unstable --fmt --justfile "$file"; done
 
+# Build ytl-install.iso
 [arg('flags', pattern='--force-download')]
 build *flags: (download-ubuntu-base-image flags)
     #!/usr/bin/env bash
@@ -45,6 +46,7 @@ build *flags: (download-ubuntu-base-image flags)
 
     docker cp 'ytl-linux-builder:/app/{{ INSTALL_IMAGE_FILE }}' .
 
+# Create a VirtualBox VM that will install ytl-install.iso from the locally built ytl-install.iso
 create-vb-vm:
     -VBoxManage controlvm '{{ VM_NAME }}' poweroff
     -VBoxManage unregistervm '{{ VM_NAME }}' --delete
@@ -57,6 +59,7 @@ create-vb-vm:
     VBoxManage storageattach '{{ VM_NAME }}' --storagectl 'SATA' --device 0 --port 1 --type dvddrive --medium '{{ INSTALL_IMAGE_FILE }}'
     VBoxManage sharedfolder add '{{ VM_NAME }}' --name ytl-linux --hostpath $PWD --automount --auto-mount-point /home/school/ytl-linux
 
+# Run a HTTP server to serve local changes to autoinstall config for testing in e.g. VirtualBox
 serve:
     @echo "Starting HTTP server to serve local autoinstall config."
     @echo "Build an ytl-install.iso image with the following command to use the local autoinstall config:"

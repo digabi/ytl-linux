@@ -1,3 +1,4 @@
+# Update Naksu 2 to latest version and push changes to GitHub
 [working-directory('../debs')]
 naksu2:
     #!/usr/bin/env bash
@@ -20,6 +21,7 @@ naksu2:
     git commit -m "Update Naksu 2 to $NEW_NAKSU_VERSION"
     git push
 
+# Update AnyDesk to latest version and push changes to GitHub
 [working-directory('../debs')]
 anydesk:
     #!/usr/bin/env bash
@@ -42,6 +44,7 @@ anydesk:
     git commit -m "Update AnyDesk to $LATEST_ANYDESK_VERSION"
     git push
 
+# Update vendored just for ytl-linux-tasks to latest version
 [working-directory('../packages/ytl-linux-tasks')]
 @vendored-just:
     rm -rf vendor/*
