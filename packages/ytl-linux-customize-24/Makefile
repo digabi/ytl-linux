@@ -1,4 +1,4 @@
-VERSION := 1.7.0
+VERSION := 1.7.1
 
 # Dependencies which are not related to any code in the
 DEPENDENCIES_META := --depends ethtool --depends exfat-fuse --depends update-manager --depends gnome-icon-theme \
