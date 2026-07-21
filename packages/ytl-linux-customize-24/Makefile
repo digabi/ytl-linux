@@ -2,7 +2,7 @@ VERSION := 1.7.0
 
 # Dependencies which are not related to any code in the
 DEPENDENCIES_META := --depends ethtool --depends exfat-fuse --depends update-manager --depends gnome-icon-theme \
-	--depends dconf-cli --depends ytl-linux-cpu-governor --depends ytl-linux-digabi1-examnet --depends ytl-linux-digabi2 --depends ytl-linux-digabi2-examnet \
+	--depends dconf-cli --depends ytl-linux-cpu-governor --depends ytl-linux-digabi2 --depends ytl-linux-digabi2-examnet \
 	--depends anydesk-meb --depends ytl-linux-tasks --depends ytl-linux-sysmon --depends ytl-linux-digabi2-diagnostics --depends ytl-linux-cups-dummy \
 	--depends ytl-linux-update-checker --depends gnome-screenshot
 RECOMMENDS_META := --deb-recommends digabi-usb-monster
