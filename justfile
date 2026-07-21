@@ -36,15 +36,15 @@ build *flags: (download-ubuntu-base-image flags)
 
     docker run \
       --name ytl-linux-builder \
-      --workdir /app \
+      --workdir /iso \
       --env "AUTOINSTALL_URL={{ AUTOINSTALL_URL }}" \
       --env 'BASE_IMAGE_FILE={{ BASE_IMAGE_FILE }}' \
       --env 'INSTALL_IMAGE_FILE={{ INSTALL_IMAGE_FILE }}' \
-      --volume './{{ BASE_IMAGE_FILE }}:/app/{{ BASE_IMAGE_FILE }}' \
+      --volume './{{ BASE_IMAGE_FILE }}:/iso/{{ BASE_IMAGE_FILE }}:ro' \
       ytl-linux-build-img:latest \
-      ./build-ytl-image
+      build-ytl-image
 
-    docker cp 'ytl-linux-builder:/app/{{ INSTALL_IMAGE_FILE }}' .
+    docker cp 'ytl-linux-builder:/iso/{{ INSTALL_IMAGE_FILE }}' .
 
 # Create a VirtualBox VM that will install ytl-install.iso from the locally built ytl-install.iso
 create-vb-vm:
