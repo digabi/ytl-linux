@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+REQUIRED_ENV_VARS=(AUTOINSTALL_URL BASE_IMAGE_FILE INSTALL_IMAGE_FILE)
+
+for var in "${REQUIRED_ENV_VARS[@]}"; do
+  if [[ -z "${!var:-}" ]]; then
+    echo "Error: Required environment variable $var is not set"
+    exit 1
+  fi
+done
+
+# Label on the modified ISO image
+ISO_LABEL="YTL Ubuntu Install CD"
+
+# Extract image to workdir
+WORKDIR=$(mktemp -d)
+bsdtar xf "$BASE_IMAGE_FILE" -C "$WORKDIR"
+chmod -R u+w "$WORKDIR"
+
+# Modify UEFI boot mode / GRUB configuration to boot directly into autoinstall mode
+sed -i '/Install Ubuntu Server/iINCLUDE_YTL_MENU' "$WORKDIR"/boot/grub/grub.cfg
+sed -i '/INCLUDE_YTL_MENU/r templates/ytl-grub.cfg' "$WORKDIR"/boot/grub/grub.cfg
+sed -i '/INCLUDE_YTL_MENU/d' "$WORKDIR"/boot/grub/grub.cfg
+sed -i "s|##AUTOINSTALL_URL##|$AUTOINSTALL_URL|" "$WORKDIR"/boot/grub/grub.cfg
+
+# Disable timeout to avoid installation loops and accidents
+sed -i 's/timeout=[[:digit:]]\+/timeout=-1/' "$WORKDIR"/boot/grub/grub.cfg
+
+# Repack the image
+# Based on https://help.ubuntu.com/community/InstallCDCustomization#Building_the_ISO_image
+
+MBR_FILE="$(mktemp).mbr"
+EFI_FILE="$(mktemp).efi"
+dd if="$BASE_IMAGE_FILE" bs=1 count=446 of="$MBR_FILE"
+
+# Extract EFI partition image
+SKIP="$(fdisk -l "$BASE_IMAGE_FILE" | grep -F '.iso2 ' | awk '{print $2}')"
+SIZE="$(fdisk -l "$BASE_IMAGE_FILE" | grep -F '.iso2 ' | awk '{print $4}')"
+dd if="$BASE_IMAGE_FILE" bs=512 skip="$SKIP" count="$SIZE" of="$EFI_FILE"
+
+xorriso \
+  -as mkisofs \
+  -r \
+  -V "$ISO_LABEL" \
+  -iso-level 3 \
+  -partition_offset 16 \
+  --grub2-mbr "$MBR_FILE" \
+  --mbr-force-bootable \
+  -append_partition 2 0xEF "$EFI_FILE" \
+  -appended_part_as_gpt \
+  -c /boot.catalog \
+  -b /boot/grub/i386-pc/eltorito.img \
+  -no-emul-boot -boot-load-size 4 -boot-info-table --grub2-boot-info \
+  -eltorito-alt-boot \
+  -e '--interval:appended_partition_2:all::' \
+  -no-emul-boot \
+  -o "$INSTALL_IMAGE_FILE" \
+  "$WORKDIR"

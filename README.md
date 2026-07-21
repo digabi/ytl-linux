@@ -1,207 +1,120 @@
 # YTL Linux
 
-The YTL Linux is an Ubuntu environment which installs automatically
-everything you need to run a virtual Abitti server (Oracle VirtualBox and Naksu). The ultimate goals are:
- * Move the pain of updating servers and finding working combinations of software from the schools to the Matriculation Examination Board (Ylioppilastutkintolautakunta YTL in Finnish).
- * Make the Linux servers more uniform in order to help communication between the schools and the Abitti support in case of trouble.
- * In the long term make it possible to provide remote support during the exams.
+The YTL Linux is an Ubuntu environment which automatically installs everything needed to run an Abitti 2 server (Docker, Naksu 2, auxiliary software components). The ultimate goals are:
 
-This is the advised way to install a Linux-based Abitti server. For the end-user instructions see [Abitti.fi](https://www.abitti.fi/fi/ohjeet/koetilan-palvelin/).
-If you have problems with SecureBoot installation see the [tech version of the installation instructions](INSTALL.md).
+- Move the pain of updating servers and finding working combinations of software from the schools to the Matriculation Examination Board (Ylioppilastutkintolautakunta YTL in Finnish).
+- Make Linux servers run in schools more uniform in order to help communication between the schools and Abitti support in case of trouble.
+- Provide remote support during the exams.
 
-## USB Monster
+This is the advised way to install a Linux-based Abitti server. For end-user instructions, see instructions on [Abitti.fi](https://abitti.fi).
 
-### Using USB Monster with YTL Linux
+## Repository structure
 
-The default behaviour of Cinnamon (thus, YTL Linux) is to automount all USB memories inserted into
-the workstation. Before starting to use USB Monster this feature should be disabled by entering
-following commands:
+This repository contains two main things:
 
-```
-gsettings set org.cinnamon.desktop.media-handling automount-open false
-gsettings set org.cinnamon.desktop.media-handling automount false
-```
+- Infrastructure to build and distribute the YTL Linux install image, as well as the Ubuntu autoinstall config used by the image
+- YTL-created deb packages performing various functions within YTL Linux, distributed via the APT repository at linux.abitti.fi
 
-These commands are per-user so your Abitti server user (e.g. the default `school`) can have the automount
-on while the USB monster user may have the automount turned off. 
+Sources for the deb packages are in the [`packages`](./packages) directory. The [`debs`](./debs) directory contains vendored deb packages hosted and built elsewhere but distributed with YTL Linux (e.g. Naksu 2, MEB Remote Control / AnyDesk, usb-monster).
 
-### Install USB Monster without YTL Linux
+The Ubuntu autoinstall config is in the [`docs`](./docs) directory and is published to GitHub Pages (https://digabi.github.io/ytl-linux) every time YTL Linux updates are released.
 
-The YTL Linux contains world-famous [USB Monster](https://github.com/digabi/usb-monster) which handles simulaneous writes
-to massive amount of USB memories. The Matriculation Examination Board uses USB
-Monster to write its fleet for biannual exams.
+Software for building the YTL Linux install ISO is in the [`builder`](./builder) folder.
 
-Here are the steps to install USB Monster to your non-YTL Linux deb-based distro:
- * Import the key: \
-   `wget -qO- https://linux.abitti.fi/apt-signing-key.pub | sudo tee /etc/apt/trusted.gpg.d/ytl-linux.asc`
- * Add our repo to your sources: \
-   `sudo bash -c 'echo "deb https://linux.abitti.fi/deb ytl-linux main" >/etc/apt/sources.list.d/usbmonster.list'`
- * Update your packages and install: \
-   `sudo apt update && sudo apt install digabi-usb-monster`
+## Releasing
 
-After this your USB Monster will be updated automatically.
+### Publishing YTL deb packages
 
-If you have added the signing key with legacy `apt-key` tool and get `Key is stored in legacy trusted.gpg keyring` errors
-you can change the location of the key with following procedure:
+The packages and the package repository are built in the [Update Debian repository](https://github.com/digabi/ytl-linux/actions/workflows/reprepro.yml) workflow automatically on push to `main`. Vendored packages in the [`debs`](./debs) directory will also be included in the APT repository as-is.
 
-```
-$ sudo apt-key del "19A4 3050 953F DEC0 F0D6  2C81 1B26 415C 1E66 6A78"
-Warning: apt-key is deprecated. Manage keyring files in trusted.gpg.d instead (see apt-key(8)).
-OK
-$ wget -qO- https://linux.abitti.fi/apt-signing-key.pub | sudo tee /etc/apt/trusted.gpg.d/ytl-linux.asc
------BEGIN PGP PUBLIC KEY BLOCK-----
+To update the APT repository and thus publish changes to end users, go to [Actions](https://github.com/digabi/ytl-linux/actions/workflows/reprepro.yml), click "Run workflow" and tick the "Publish built .deb packages" option.
 
-mQINBF/OM8EBEADbtIT8en8PLczP2egPDeBXIXaSsQFzGgCBGd1vjCLbe1bhZ3ii
-O/FWr2QqORnbzrNim5VyzeZ8Qq4Yj0XoQNhvkw9eD2old1mThjra5BMesMNXHnEB
-PG6LAfPFDE9hsUaQDIJrHRO09GKlMJDIFX/cSPkzlQw2Pnzf6UTY8E2L6CORPWih
-...
-ZZYZdDCRzHPA90AVFdev65Yd+2xt+JjmnbldS6z7HaIiCeT5XhhhgSd9AUoM+Hyu
-NkP7g8coWb57JQj63AgO9ukfqYuR4XqQHW3ga6U4cKhPUU1ChE5H
-=swfs
------END PGP PUBLIC KEY BLOCK-----
+### Publishing the publicly distributed ytl-install-24.iso
+
+Pushing a tag of the form 'v24.X' to the will trigger the [upload-image-24.yml workflow](https://github.com/digabi/ytl-linux/actions/workflows/upload-image-24.yml), which automatically builds the `ytl-install-24.iso` image and uploads it to https://linux.abitti.fi/ytl-install-24.iso, from where users are instructed to download it.
+
+Use Ubuntu version numbers with local build version number. Build number 2 of Ubuntu 24.04.3 would get version number (tag) `v24.04.3-2`.
+
+### Updating additional software components
+
+```bash
+# Naksu 2
+just update naksu2
+
+# AnyDesk (MEB)
+just update anydesk
+
+# Vendored just for ytl-linux-tasks
+# Note: This requires manually bumping the version number of ytl-linux-tasks before publishing
+just update vendored-just
 ```
 
-Run `sudo apt update` and make sure the legacy keyring warning has disappeared.
+Running any of these will not yet push the changes to end users; to do so, you need to publish the APT repository as detailed in [Publishing YTL deb packages](#publishing-ytl-deb-packages).
 
-## Naksu 2
+## Development
 
-Install and set up [git-lfs](https://git-lfs.com). 
-1. Run `scripts/update-naksu2.sh` to download the latest version of the Naksu 2 deb from GitHub Releases.
-2. `git add .` and `git commit -m "Update Naksu 2 to x.x.x"`
-3. `git push`
-4. Go to [Actions](https://github.com/digabi/ytl-linux/actions).
-5. When the build action is finished, click on "Update Debian Repository" in the left sidebar.
-6. Click on "Run Workflow" dropdown -> check "Publish built .deb packages" -> Run workflow.
-7. When the "Update Debian Repository" job is finished, Naksu 2 has been published.
-8. Check it yourself: Naksu reads the latest version from [https://linux.abitti.fi/meta/naksu2-latest-version.json](https://linux.abitti.fi/meta/naksu2-latest-version.json)
+Most of the deb packages are only used in YTL Linux. However, there is one singular exception: [ytl-linux-digabi2-wsl](./packages/ytl-linux-digabi2-wsl/), which provides support for running the Abitti 2 server in Windows Subsystem for Linux (WSL). That package and any packages depended upon by it must also be tested in WSL before release. For others, testing with a YTL Linux installation is sufficient.
 
-## AnyDesk
+### Building ytl-install.iso locally
 
-Install and set up [git-lfs](https://git-lfs.com).
+During building, the default Ubuntu install ISO is modified to boot directly into an autoinstall mode, pointed at our autoinstall configuration.
 
-1. Run `scripts/update-anydesk.sh` to download the latest version of the AnyDesk deb from GitHub Releases.
-2. `git add .` and `git commit -m "Update AnyDesk to xxxx-xx-xx-x"`
-3. `git push`
+```bash
+just build
+```
 
-## Building the image
+The resultant `ytl-install.iso` can be burned onto a USB drive for hardware installation, or mounted into VMs in a CD-ROM slot to run the full install process as if it was a real computer.
 
-### Building the image locally
+### Testing autoinstall config changes locally
 
-The build script will download a Ubuntu installation ISO image and modify
-it so that it will boot by default to an autoinstall mode and download
-our install configuration.
+To test changes to your autoinstall config locally without having to publish them to GitHub Pages, build an `ytl-install.iso` that points to your local autoinstall configuration:
 
-The build script `build-ytl-image` can be executed with or without Docker. Both
-should give you a new ISO file `ytl-install-24.iso` which can be tested with
-instructions given below.
+```bash
+just serve
 
- * Building with Docker: `make docker`
- * Building on your bare OS: `./build-ytl-image`
+# The command will print what build command you need to use to create an installer pointed at the local autoinstall config, like this:
+AUTOINSTALL_URL=http://<your-local-ip-address>:8080/autoinstall-config-24/ just build
+```
 
-### Testing the image and install script locally
+## Testing YTL Linux
 
-To test the image and the install script `docs/autoinstall-config-XX/user-data`
-you can do the following:
+YTL Linux is only built for x86 environments. It is strongly advised to use a machine with a native x86 CPU for testing, as x86 emulation on macOS is painfully sluggish (VM installation takes 1hr+ even on the most modern Macs, system commands may have multi-minute execution times, etc).
 
- * Start a local httpd server at port 8080: `make start-httpd`
- * Run `AUTOINSTALL_URL=http://<your-ip-address-here-but-not-localhost>:8080/autoinstall-config-24/ ./build-ytl-image` (or same with `make docker` for Docker)
-
-**Note:** On macOS, it is possible to get KVM working for testing, but it's probably easier to use something like https://github.com/utmapp/UTM. After building the ISO, create an x86_64 emulator VM, select the built ytl-install-24.iso, and leave all other options at default.
-
-### Building the image with GitHub automation
-
-Pushing a tag of the form 'v24.X' to the digabi/ytl-linux GitHub
-repository will trigger an action that automatically rebuilds the image
-and uploads it to https://linux.abitti.fi/ytl-install-24.iso .
-
-Use Ubuntu version numbers with local build version number. A build 
-number two of Ubuntu 24.04.3 would get version number (tag) `v24.04.3-2`.
-
-## Updating configuration
-
-The installation configuration is in
-[``docs/autoinstall-config-XX/user-data``](https://github.com/digabi/ytl-linux/blob/main/docs/autoinstall-config-XX/user-data)
-(where XX stands 1st part of Ubuntu version number, e.g. 22)
-and the format is documented
-[here](https://ubuntu.com/server/docs/install/autoinstall-reference).
-Pushing changes to the file will make
-it available to installers via [GitHub
-pages](https://digabi.github.io/ytl-linux/autoinstall-config/user-data)
-
-## APT repository and deb packages
-
-Sources for the deb packages making up YTL Linux all the way up to `ytl-linux-customize[-24]` are in the [packages](./packages) directory.
-Other vendored packages in the `debs/` directory will be included in the resulting package repository.
-
-The packages and the package repository are built in the [Update Debian repository](https://github.com/digabi/ytl-linux/actions/workflows/reprepro.yml) workflow automatically on push to `main`, and published when the workflow is launched manually.
-The resulting repository is available at
-
-`deb https://linux.abitti.fi/deb ytl-linux main`
-
-and are signed with the GPG key currently available at
-
-`https://linux.abitti.fi/apt-signing-key.pub`
-
-The installation ISO image will pull in the relevant `ytl-linux-customize[-24]` package from there.
-
-### Testing deb packages
-
-When adding/updating deb packages in this repository remember to test the
-packages in following environments:
- * YTL Linux - the current production version of this very flavour of Ubuntu Linux
- * WSL - the currently instructed environment to run Abitti 2 servers
-
-For the official instructions on installing production versions see
-https://abitti.fi/abitti2/
-
-## Testing instructions
-
-In its current state the image will fetch the autoinstall configuration
-(located in the docs/autoinstall-config subdirectory) over the network
-from GitHub. This can be changed by modifying the build script.
-
-### Testing with VirtualBox
+### On a native x86 system using VirtualBox
 
 This option requires VirtualBox to be installed (`sudo apt install virtualbox`). **Note:** VirtualBox is not supported on macOS, as it cannot do x86 emulation on ARM.
 
 ```bash
-make create-vb-vm
+just create-vb-vm
 ```
 
-VM parameters can be customized; see top of [Makefile](./Makefile) for all available options. E.g.:
+VM parameters can be customized; see top of [justfile](./justfile) for all available options. E.g.:
 
 ```bash
-make create-vb-vm VM_CPUS=8 VM_MEMORY_SIZE=8192
+VM_CPUS=8 VM_MEMORY_SIZE=8192 just create-vb-vm
 ```
 
-The repo folder is automatically mounted into the VirtualBox VM as a shared folder. To access it and build the debs for testing inside the VM, run the following commands:
+The repo folder is automatically mounted into the VirtualBox VM as a shared folder. To allow access to changes you make in your host OS for testing, run the following commands:
 
-```
-sudo apt install virtualbox-guest-utils ruby-dev build-essential
-sudo gem i -f fpm
+```bash
+sudo apt install virtualbox-guest-utils
 sudo usermod -aG vboxsf $USER
 sudo reboot now
 ```
 
-Debs can then be created with `make deb` and installed with `sudo apt install --reinstall ./ytl-linux-(...).deb`.
+Debs can then be created with `make deb` on the host OS and installed in the VM with `sudo apt install --reinstall ./ytl-linux-(...).deb`.
 
-### Testing with KVM
+### On an ARM system with x86 emulation using UTM
 
-```bash
-make create-kvm-vm
-```
-
-**Note:** The KVM setup does not currently support automatically mounting the repo into the VM as a shared folder for testing.
+After building the ISO, create an x86_64 emulator VM in UTM, select the built ytl-install-24.iso, and leave all other options at default.
 
 ## Debugging failing installations
 
-When installation fails the installer stops and prints a Python traceback or similar
-error log describing the problem. In this case you can open a new console by
-pressing Alt+F2 (Alt+F3...) and study the log files. The most relevant log files
-are:
- * `/var/log/cloud-init-output.log` Output of the cloud-init part of the installation
- * `/var/log/cloud-init.log` Log of the cloud-init part of the installation
- * `/var/log/curtin/install.log` Log of the Curtin part of the installation
+When installation fails the installer stops and prints a Python traceback or similar error log describing the problem. In this case you can open a new console by pressing Alt+F2 (Alt+F3...) and study the log files. The most relevant log files are:
+
+- `/var/log/cloud-init-output.log`: Output of the cloud-init part of the installation
+- `/var/log/cloud-init.log`: Log of the cloud-init part of the installation
+- `/var/log/curtin/install.log`: Log of the Curtin part of the installation
 
 If a package installation failed, look for the syslog identifier of the failing Subiquity task (something like `SyslogIdentifier=subiquity_log.1234`) and then grep it from `/var/log/syslog` to look for the true source of the issue:
 
