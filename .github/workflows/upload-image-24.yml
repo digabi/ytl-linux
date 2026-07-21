@@ -8,16 +8,10 @@ jobs:
   build-and-upload:
     runs-on: ubuntu-24.04
     steps:
-      - name: Disable man-db updates
-        run: sudo rm -f /var/lib/man-db/auto-update
-      - name: Install prerequisite packages
-        run: |
-          sudo apt -y install wget fdisk libarchive-tools xorriso cd-boot-images-amd64
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Build installation image
-        run: |
-          ./build-ytl-image
+      - uses: actions/checkout@v4
+      - uses: extractions/setup-just@v4
+      - name: Build ytl-install-24.iso
+        run: just build
       - name: Look up AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
