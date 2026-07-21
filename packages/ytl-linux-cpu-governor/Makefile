@@ -4,10 +4,6 @@ VERSION := 0.1
 DEPENDENCIES := --depends cpufrequtils
 
 deb:
-	if [ -d deb-root ]; then rm -fR deb-root/; fi
-	if [ -d deb-scripts ]; then rm -fR deb-scripts/; fi
-	if [ -f $(NAME)_$(VERSION)_all.deb ]; then rm $(NAME)_$(VERSION)_all.deb; fi
-
 	# The carrot
 	mkdir -p deb-root/etc/default
 	cp cpufrequtils deb-root/etc/default/
@@ -17,11 +13,10 @@ deb:
 	mkdir -p deb-root/usr/local/share/doc/$(NAME)
 	cp *.md deb-root/usr/local/share/doc/$(NAME)/
 
-	fpm -C deb-root/ -s dir --name $(NAME) --architecture all -t deb --version "$(VERSION)" \
-		 --description "Sets CPU governor 'performance' to all CPUs/cores" \
-		 --maintainer "abitti@ylioppilastutkinto.fi" \
-		 --vendor "Matriculation Examination Board" \
-		 --url "https://github.com/digabi/ytl-linux" \
-		 --deb-no-default-config-files \
-		 $(DEPENDENCIES) \
+	${FPM} \
+		--name $(NAME) \
+		--version "$(VERSION)" \
+		--description "Sets CPU governor 'performance' to all CPUs/cores" \
+		--deb-no-default-config-files \
+		$(DEPENDENCIES) \
 		.

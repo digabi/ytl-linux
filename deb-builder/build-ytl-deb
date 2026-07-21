@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Default FPM invocation with static unchanging options to reduce duplications
+export FPM="fpm \
+  --force \
+  --chdir deb-root/ \
+  --input-type dir \
+  --output-type deb \
+  --architecture amd64 \
+  --maintainer 'abitti@ylioppilastutkinto.fi' \
+  --vendor 'Matriculation Examination Board' \
+  --url 'https://github.com/digabi/ytl-linux' \
+  "
+
+# Copy from host volume for working, since it's read-only
+cp -r deb-src/* .
+
+# Remove 
+
+# Run Makefile in package directory
+make deb
+
+# Copy built deb back to host volume
+cp ./*.deb deb-src/

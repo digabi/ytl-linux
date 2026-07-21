@@ -46,6 +46,26 @@ build *flags: (download-ubuntu-base-image flags)
 
     docker cp 'ytl-linux-builder:/iso/{{ INSTALL_IMAGE_FILE }}' .
 
+# Build deb package; must be invoked from a directory inside packages/
+deb:
+    #!/usr/bin/env bash
+    set -euxo pipefail
+
+    if [[ ! {{ invocation_directory() }} =~ .+\/packages\/.+ ]]; then
+      echo "Error: This command must be invoked from a directory inside packages/, no idea what package you're trying to build"
+      exit 1
+    fi
+
+    docker rm --force --volumes ytl-linux-deb-builder
+    docker build -t ytl-linux-deb-build-img:latest -f deb-builder/Dockerfile .
+
+    docker run \
+      --name ytl-linux-deb-builder \
+      --workdir /deb \
+      --volume '{{ invocation_directory() }}:/deb/deb-src' \
+      ytl-linux-deb-build-img:latest \
+      build-ytl-deb
+
 # Create a VirtualBox VM that will install ytl-install.iso from the locally built ytl-install.iso
 create-vb-vm:
     -VBoxManage controlvm '{{ VM_NAME }}' poweroff
