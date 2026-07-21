@@ -53,12 +53,14 @@ Running any of these will not yet push the changes to end users; to do so, you n
 
 ## Development
 
+Most of the deb packages are only used in YTL Linux. However, there is one singular exception: [ytl-linux-digabi2-wsl](./packages/ytl-linux-digabi2-wsl/), which provides support for running the Abitti 2 server in Windows Subsystem for Linux (WSL). That package and any packages depended upon by it must also be tested in WSL before release. For others, testing with a YTL Linux installation is sufficient.
+
 ### Building ytl-install.iso locally
 
 During building, the default Ubuntu install ISO is modified to boot directly into an autoinstall mode, pointed at our autoinstall configuration.
 
 ```bash
-just build-ytl-install-image
+just build
 ```
 
 The resultant `ytl-install.iso` can be burned onto a USB drive for hardware installation, or mounted into VMs in a CD-ROM slot to run the full install process as if it was a real computer.
@@ -67,9 +69,11 @@ The resultant `ytl-install.iso` can be burned onto a USB drive for hardware inst
 
 To test changes to your autoinstall config locally without having to publish them to GitHub Pages, build an `ytl-install.iso` that points to your local autoinstall configuration:
 
-```
+```bash
 just serve
-AUTOINSTALL_URL="http://<your-ip-address-here-but-not-localhost>:8080/autoinstall-config-24/" just build-ytl-install-image
+
+# The command will print what build command you need to use to create an installer pointed at the local autoinstall config, like this:
+AUTOINSTALL_URL=http://<your-local-ip-address>:8080/autoinstall-config-24/ just build
 ```
 
 ## Testing YTL Linux
@@ -90,9 +94,9 @@ VM parameters can be customized; see top of [justfile](./justfile) for all avail
 VM_CPUS=8 VM_MEMORY_SIZE=8192 just create-vb-vm
 ```
 
-The repo folder is automatically mounted into the VirtualBox VM as a shared folder. To access it and build the debs for testing inside the VM, run the following commands:
+The repo folder is automatically mounted into the VirtualBox VM as a shared folder. To allow access to changes you make in your host OS for testing, run the following commands:
 
-```
+```bash
 sudo apt install virtualbox-guest-utils
 sudo usermod -aG vboxsf $USER
 sudo reboot now

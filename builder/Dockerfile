@@ -7,5 +7,5 @@ RUN apt-get update && \
 
 RUN mkdir /app
 
-COPY build-ytl-image /app/
+COPY builder/build-ytl-image /app/
 COPY templates/ /app/templates/

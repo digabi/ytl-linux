@@ -2,21 +2,21 @@
 
 set -euo pipefail
 
-export AUTOINSTALL_URL="${AUTOINSTALL_URL:-https://digabi.github.io/ytl-linux/autoinstall-config-24/}"
-echo "Using autoinstall URL $AUTOINSTALL_URL"
+REQUIRED_ENV_VARS=(AUTOINSTALL_URL BASE_IMAGE_FILE INSTALL_IMAGE_FILE)
 
-# Filename of the source image
-IMAGE=ubuntu.iso
+for var in "${REQUIRED_ENV_VARS[@]}"; do
+  if [[ -z "${!var:-}" ]]; then
+    echo "Error: Required environment variable $var is not set"
+    exit 1
+  fi
+done
 
 # Label on the modified ISO image
 ISO_LABEL="YTL Ubuntu Install CD"
 
-# Filename of the resulting image
-RESULT_IMAGE=ytl-install-24.iso
-
 # Extract image to workdir
 WORKDIR=$(mktemp -d)
-bsdtar xf $IMAGE  -C "$WORKDIR"
+bsdtar xf "$BASE_IMAGE_FILE" -C "$WORKDIR"
 chmod -R u+w "$WORKDIR"
 
 # Modify UEFI boot mode / GRUB configuration to boot directly into autoinstall mode
@@ -33,12 +33,12 @@ sed -i 's/timeout=[[:digit:]]\+/timeout=-1/' "$WORKDIR"/boot/grub/grub.cfg
 
 MBR_FILE="$(mktemp).mbr"
 EFI_FILE="$(mktemp).efi"
-dd if="$IMAGE" bs=1 count=446 of="$MBR_FILE"
+dd if="$BASE_IMAGE_FILE" bs=1 count=446 of="$MBR_FILE"
 
 # Extract EFI partition image
-SKIP="$(fdisk -l "$IMAGE" | grep -F '.iso2 ' | awk '{print $2}')"
-SIZE="$(fdisk -l "$IMAGE" | grep -F '.iso2 ' | awk '{print $4}')"
-dd if="$IMAGE" bs=512 skip="$SKIP" count="$SIZE" of="$EFI_FILE"
+SKIP="$(fdisk -l "$BASE_IMAGE_FILE" | grep -F '.iso2 ' | awk '{print $2}')"
+SIZE="$(fdisk -l "$BASE_IMAGE_FILE" | grep -F '.iso2 ' | awk '{print $4}')"
+dd if="$BASE_IMAGE_FILE" bs=512 skip="$SKIP" count="$SIZE" of="$EFI_FILE"
 
 xorriso \
   -as mkisofs \
@@ -56,8 +56,5 @@ xorriso \
   -eltorito-alt-boot \
   -e '--interval:appended_partition_2:all::' \
   -no-emul-boot \
-  -o "$RESULT_IMAGE" \
+  -o "$INSTALL_IMAGE_FILE" \
   "$WORKDIR"
-
-# Cleanup
-rm -rf "$WORKDIR" "$MBR_FILE" "$EFI_FILE"

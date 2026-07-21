@@ -1,4 +1,4 @@
-[working-directory: '../debs']
+[working-directory('../debs')]
 naksu2:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -20,7 +20,7 @@ naksu2:
     git commit -m "Update Naksu 2 to $NEW_NAKSU_VERSION"
     git push
 
-[working-directory: '../debs']
+[working-directory('../debs')]
 anydesk:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -42,7 +42,7 @@ anydesk:
     git commit -m "Update AnyDesk to $LATEST_ANYDESK_VERSION"
     git push
 
-[working-directory: '../packages/ytl-linux-tasks']
+[working-directory('../packages/ytl-linux-tasks')]
 @vendored-just:
     rm -rf vendor/*
     cd vendor
