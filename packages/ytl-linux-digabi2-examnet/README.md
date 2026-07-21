@@ -1,82 +1,24 @@
 # ytl-linux-digabi2-examnet
 
-## Purpose
+This package contains setup tools and background services for Abitti 2 exam networks.
 
-This is a proof-of-concept of a procedure which creates proper network settings
-for Abitti 2 exam server. The setup requires that the server has two network devices
-
-- A WAN device connected to the internet. At the moment this is used to get a
-  SSL certificate and DNS address for the server. According to the initial plans
-  it might be later used e.g. to download exam items and upload candidate data.
-  At the moment a wireless device is good enough for a WAN connection.
-- A LAN device connected to the closed local area network. This is an Abitti 1
-  style network without any external DHCP/DNS servers. After executing the script
-  the server starts working as a DHCP/DNS server for the LAN.
-
-## Usage
-
-The script is executed from command line:
+To build the deb package, run:
 
 ```bash
-sudo ytl-linux-digabi2-examnet
+just deb
 ```
 
-If executed without parameters, it asks the WAN and LAN devices as well as the
-server number. It is possible to run multiple servers in one LAN but they must have
-different server numbers.
+The main things this package contains are:
 
-It is possible to supply the three parameters in command line:
+- Examnet setup utility ([`ytl-linux-digabi2-examnet`](./ytl-linux-digabi2-examnet) script, [`justfile`](./justfile) and [`lib`](./lib) directory)
+  - Sets up the YTL-Linux machine to function as an exam network server, acting as DNS, DHCP and default gateway
+  - Configures NetworkManager, dnsmasq, iptables, systemd, Docker etc. for this purpose
+- Examnet bouncer service ([`bouncer`](./bouncer))
+  - Bounces queries to server names (e.g. `liikuntasali`) to the full address of the Abitti 2 server (e.g. `ktp1.1000.koe.abitti.net`)
+  - Opens an endpoint that the examnet alias discovery service will query when scanning for server names in the network
+  - Fools Windows' Network Connection Status Indicator (NCSI) into thinking the exam network has internet, to prevent user confusion
+- Examnet discovery service ([`discovery`](./discovery))
+  - Periodically scans all known Abitti 2 server domains for their server names, allowing all servers in the same network to correctly redirect queries for server names, in an eventually-consistent distributed system
+  - This makes the server name system indifferent to the fact that student machines choose their DHCP and DNS pseudo-randomly; no matter which server the student machine is connected to, server names will redirect correctly
 
-```bash
-ytl-linux-digabi2-examnet wan-device lan-device server-number`
-```
-
-Example:
-
-```bash
-sudo ytl-linux-digabi2-examnet wlo1 eth0 1
-```
-
-It is also possible to run the script in GUI mode (parameter `--gui`). In this case the
-parameters are asked with Zenity.
-
-## Removing settings
-
-Following command should restore the system to pristine state:
-
-```bash
-sudo ytl-linux-digabi2-examnet --remove
-```
-
-It removes the settings files created by this script. It also removes all NetworkManager
-connections which have a name starting with `yo-`. This is the prefix used by the
-script to create the static connection for the local network.
-
-## Debugging
-
-The debugging messages can be printed to a given file:
-
-```bash
-DEBUG=/tmp/whatta.log sudo ytl-linux-digabi2-examnet
-```
-
-The list of exit codes can be found in the script.
-
-## Building locally
-
-For macOS, install fpm e.g. with Ruby gem:
-
-```bash
-# Install Ruby and gem, set path
-brew install ruby
-echo 'export PATH="/opt/homebrew/opt/ruby/bin:$PATH"' >> ~/.zshrc
-echo 'export PATH="$(gem environment gemdir)/bin:$PATH"' >> ~/.zshrc
-# Install fpm
-gem install fpm
-```
-
-Then build the Debian package:
-
-```bash
-make deb
-```
+The examnet setup utility is just-based to support better modularisation than Bash scripts. The justfile in this directory is very complex and not meant to be invoked manually, it's invoked by the `ytl-linux-digabi2-examnet` script. That script is itself also rather complex and not per se meant for manual invocation either, but it can be done; see the script for what flags it can be run with.

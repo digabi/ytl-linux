@@ -15,6 +15,7 @@ for var in "${REQUIRED_ENV_VARS[@]}"; do
   fi
 done
 
+# FPM flags that are the same for all of our packages, to avoid duplication
 FPM_FLAGS=(
   --force # Overwrite deb if it already exists
   --chdir deb-root/

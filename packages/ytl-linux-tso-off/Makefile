@@ -1,5 +1,5 @@
 export NAME := ytl-linux-tso-off
-export DESCRIPTION := "Turn TSO off for all ethernet devices"
+export DESCRIPTION := "Turn TSO off for all Ethernet devices"
 export VERSION := 0.1
 
 DEPENDENCIES := --depends ethtool --depends bash --depends bsdutils

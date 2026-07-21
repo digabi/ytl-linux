@@ -6,6 +6,10 @@ export VERSION := 0.1.0
 DEPENDENCIES := --depends netdata
 
 deb:
+	# Package documentation
+	mkdir -p deb-root/usr/local/share/doc/$(NAME)
+	cp *.md deb-root/usr/local/share/doc/$(NAME)/
+
 	mkdir -p deb-root/usr/share/applications/
 	cp -r desktop/* deb-root/usr/share/applications/
 

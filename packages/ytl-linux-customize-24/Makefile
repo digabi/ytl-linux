@@ -25,7 +25,7 @@ RECOMMENDS := --deb-recommends digabi-usb-monster
 deb:
 	# Package documentation
 	mkdir -p deb-root/usr/local/share/doc/$(NAME)
-	cp README.md deb-root/usr/local/share/doc/$(NAME)
+	cp *.md deb-root/usr/local/share/doc/$(NAME)
 
 	# Qogir icons
 	mkdir -p deb-root/usr/share/icons
