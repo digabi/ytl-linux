@@ -1,5 +1,6 @@
-NAME := ytl-linux-purge-deb
-VERSION := 0.0.4
+export NAME := ytl-linux-purge-deb
+export DESCRIPTION := "Metapackage to remove obsolete deb packages installed by Ubuntu Autoinstall"
+export VERSION := 0.0.4
 
 CONFLICTS := \
 	--conflicts open-iscsi \
@@ -16,21 +17,11 @@ CONFLICTS := \
 	--conflicts cups-ppdc \
 	--conflicts cups-server-common
 
-DEB_ROOT := deb-root
-
 deb:
-	if [ -d $(DEB_ROOT) ]; then rm -fR $(DEB_ROOT)/; fi
-	if [ -f $(NAME)_$(VERSION)_amd64.deb ]; then rm $(NAME)_$(VERSION)_amd64.deb; fi
-
 	# Package documentation
 	mkdir -p deb-root/usr/local/share/doc/$(NAME)
 	cp *.md deb-root/usr/local/share/doc/$(NAME)/
 
-	fpm -C $(DEB_ROOT)/ -s dir --name $(NAME) --architecture native -t deb --version "$(VERSION)" \
-		--description "Metapackage to remove obsolete deb packages installed by Ubuntu Autoinstall" \
-		--maintainer "abitti@ylioppilastutkinto.fi" \
-		--vendor "Matriculation Examination Board" \
-		--url "https://github.com/digabi/ytl-linux" \
+	ytl-fpm \
 		--after-install after-install.sh \
-		$(CONFLICTS) \
-		.
+		$(CONFLICTS)

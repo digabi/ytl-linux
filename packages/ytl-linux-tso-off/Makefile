@@ -1,12 +1,10 @@
-VERSION := 0.1
+export NAME := ytl-linux-tso-off
+export DESCRIPTION := "Turn TSO off for all ethernet devices"
+export VERSION := 0.1
 
 DEPENDENCIES := --depends ethtool --depends bash --depends bsdutils
 
 deb:
-	if [ -d deb-root ]; then rm -fR deb-root/; fi
-	if [ -d deb-scripts ]; then rm -fR deb-scripts/; fi
-	if [ -f ytl-linux-tso-off_$(VERSION)_all.deb ]; then rm ytl-linux-tso-off_$(VERSION)_all.deb; fi
-
 	# The carrot (for traditional Debian-style /etc/network)
 	mkdir -p deb-root/etc/network/if-up.d
 	cp ytl-linux-tso-off-network deb-root/etc/network/if-up.d/
@@ -21,11 +19,5 @@ deb:
 	mkdir -p deb-root/usr/local/share/doc/ytl-linux-tso-off
 	cp *.md deb-root/usr/local/share/doc/ytl-linux-tso-off/
 
-	fpm -C deb-root/ -s dir --name ytl-linux-tso-off --architecture all -t deb --version "$(VERSION)" \
-		 --description "Turn TSO off for all ethernet devices" \
-		 --maintainer "abitti@ylioppilastutkinto.fi" \
-		 --vendor "Matriculation Examination Board" \
-		 --url "https://github.com/digabi/ytl-linux" \
-		 --deb-no-default-config-files \
-		 $(DEPENDENCIES) \
-		.
+	ytl-fpm \
+		$(DEPENDENCIES)
