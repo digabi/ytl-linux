@@ -210,12 +210,64 @@ autoinstall:
     - cinnamon-core
     - ytl-linux-customize-24
     - ytl-linux-purge-deb
+    - ytl-linux-recovery-tools
     - snapd
   snaps:
     - name: firefox
   storage:
-      layout:
-          name: direct
+      config:
+        - id: disk0
+          type: disk
+          match:
+            size: largest
+          ptable: gpt
+          wipe: superblock-recursive
+          grub_device: true
+        - id: partition-efi
+          type: partition
+          device: disk0
+          size: 512M
+          flag: boot
+        - id: format-efi
+          type: format
+          volume: partition-efi
+          fstype: fat32
+          label: YTL_EFI
+        - id: mount-efi
+          type: mount
+          device: format-efi
+          path: /boot/efi
+        - id: partition-recovery
+          type: partition
+          device: disk0
+          size: 2G
+        - id: format-recovery
+          type: format
+          volume: partition-recovery
+          fstype: ext4
+          label: YTL_RECOVERY
+        - id: partition-clean-install-storage
+          type: partition
+          device: disk0
+          size: 8G
+        - id: format-clean-install-storage
+          type: format
+          volume: partition-clean-install-storage
+          fstype: ext4
+          label: YTL_CLEAN_INSTALL
+        - id: partition-root
+          type: partition
+          device: disk0
+          size: -1
+        - id: format-root
+          type: format
+          volume: partition-root
+          fstype: ext4
+          label: YTL_ROOT
+        - id: mount-root
+          type: mount
+          device: format-root
+          path: /
   user-data:
       timezone: Europe/Helsinki
       users:
@@ -255,3 +307,10 @@ autoinstall:
     # Set hostname (cannot be set in identity section as we use user-data to create the user)
     # Tried using hostnamectl set-hostname, but it doesn't properly work in curtin for some unexplained reason, so good ol' echo it is
     - echo ktp > /target/etc/hostname
+    # Install tools into the installer environment for building the recovery partition and creating a root snapshot
+    - apt-get update
+    - DEBIAN_FRONTEND=noninteractive apt-get install -y debootstrap fsarchiver
+    # Build the recovery Linux, add a GRUB recovery entry and create the post-install root snapshot
+    - /target/usr/local/sbin/ytl-linux-recovery-prepare --target /target --release noble --mirror http://mirrors.nic.funet.fi/ubuntu/
+    # Refresh grub once more so the newly installed recovery menu entry becomes bootable
+    - curtin in-target --target=/target -- update-grub
