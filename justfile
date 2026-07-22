@@ -60,6 +60,7 @@ deb:
     docker build -t ytl-linux-deb-build-img:latest -f deb-builder/Dockerfile .
 
     docker run \
+      --rm \
       --name ytl-linux-deb-builder \
       --workdir /deb \
       --volume '{{ invocation_directory() }}:/deb/deb-src' \

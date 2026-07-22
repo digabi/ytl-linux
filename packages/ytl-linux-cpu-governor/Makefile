@@ -1,5 +1,6 @@
-NAME := ytl-linux-cpu-governor
-VERSION := 0.1
+export NAME := ytl-linux-cpu-governor
+export DESCRIPTION := "Sets CPU governor 'performance' to all CPUs/cores"
+export VERSION := 0.1
 
 DEPENDENCIES := --depends cpufrequtils
 
@@ -13,10 +14,5 @@ deb:
 	mkdir -p deb-root/usr/local/share/doc/$(NAME)
 	cp *.md deb-root/usr/local/share/doc/$(NAME)/
 
-	${FPM} \
-		--name $(NAME) \
-		--version "$(VERSION)" \
-		--description "Sets CPU governor 'performance' to all CPUs/cores" \
-		--deb-no-default-config-files \
-		$(DEPENDENCIES) \
-		.
+	ytl-fpm \
+	  $(DEPENDENCIES)

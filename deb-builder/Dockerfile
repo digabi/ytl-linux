@@ -8,6 +8,7 @@ RUN apt-get update && \
 
 RUN mkdir /deb
 WORKDIR /deb
-RUN mkdir deb-root deb-scripts
+RUN mkdir deb-root
 
+COPY deb-builder/ytl-fpm /usr/bin
 COPY deb-builder/build-ytl-deb /usr/bin
