@@ -1,8 +1,8 @@
 export NAME := ytl-linux-customize-24
 export DESCRIPTION := "YTL Linux specific customisations for Ubuntu 24.04"
-export VERSION := 1.7.1
+export VERSION := 2.0.0
 
-DEPENDENCIES_META := \
+DEPENDENCIES := \
 	--depends ethtool \
 	--depends exfat-fuse \
 	--depends update-manager \
@@ -17,11 +17,10 @@ DEPENDENCIES_META := \
 	--depends ytl-linux-sysmon \
 	--depends ytl-linux-digabi2-diagnostics \
 	--depends ytl-linux-cups-dummy \
-	--depends ytl-linux-update-checker
+	--depends ytl-linux-update-checker \
+	--depends ytl-linux-grub-safe-graphics
 
-RECOMMENDS_META := --deb-recommends digabi-usb-monster
-
-DEPENDENCIES_YTL-GRUB-SAFE-GRAPHICS := --depends policykit-1
+RECOMMENDS := --deb-recommends digabi-usb-monster
 
 deb:
 	# Package documentation
@@ -44,28 +43,8 @@ deb:
 	cp dconf/01-power-settings deb-root/etc/dconf/db/local.d/
 	cp dconf/02-desktop-theme deb-root/etc/dconf/db/local.d/
 
-	# ytl-grub-safe-graphics depends
-	mkdir -p deb-root/usr/local/sbin/
-	cp ytl-grub-safe-graphics/ytl-grub-safe-graphics-on deb-root/usr/local/sbin/
-	cp ytl-grub-safe-graphics/ytl-grub-safe-graphics-off deb-root/usr/local/sbin/
-	chmod 755 deb-root/usr/local/sbin/ytl-grub-safe-graphics-*
-
-	mkdir -p deb-root/usr/share/applications/
-	cp ytl-grub-safe-graphics/ytl-grub-safe-graphics-on.desktop deb-root/usr/share/applications/
-	cp ytl-grub-safe-graphics/ytl-grub-safe-graphics-off.desktop deb-root/usr/share/applications/
-
-	mkdir -p deb-root/usr/share/polkit-1/actions
-	cp ytl-grub-safe-graphics/ytl-grub-safe-graphics.policy deb-root/usr/share/polkit-1/actions/
-
-	mkdir -p deb-root/usr/local/share/pixmaps/
-	cp ytl-grub-safe-graphics/ytl-grub-safe-graphics.png deb-root/usr/local/share/pixmaps/
-
-	cp ytl-grub-safe-graphics/*.md deb-root/usr/local/share/doc/ytl-linux-customize-24/
-
 	ytl-fpm \
 		--after-install after-install.sh \
 		--after-remove after-remove.sh \
-		$(DEPENDENCIES_META) \
-		$(DEPENDENCIES_YTL-GRUB-SAFE-GRAPHICS) \
-		$(RECOMMENDS_META) \
-		.
+		$(DEPENDENCIES) \
+		$(RECOMMENDS)
