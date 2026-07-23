@@ -255,3 +255,6 @@ autoinstall:
     # Set hostname (cannot be set in identity section as we use user-data to create the user)
     # Tried using hostnamectl set-hostname, but it doesn't properly work in curtin for some unexplained reason, so good ol' echo it is
     - echo ktp > /target/etc/hostname
+    # Add loopback
+    - echo '127.0.0.1 localhost' >> /target/etc/hosts
+    - echo '127.0.1.1 ktp' >> /target/etc/hosts
