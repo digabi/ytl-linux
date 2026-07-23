@@ -22,10 +22,6 @@ deb:
 	mkdir -p deb-root/usr/share/polkit-1/actions/
 	cp ytl-linux-software-update.policy deb-root/usr/share/polkit-1/actions/
 
-	# Package documentation
-	mkdir -p deb-root/usr/local/share/doc/$(NAME)
-	cp *.md deb-root/usr/local/share/doc/$(NAME)/
-
 	ytl-fpm \
 		--after-install after-install.sh \
 		--before-remove before-remove.sh \

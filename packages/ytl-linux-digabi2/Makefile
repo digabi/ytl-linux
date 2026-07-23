@@ -13,10 +13,6 @@ DEPENDENCIES := \
 	--depends ethtool
 
 deb:
-	# Package documentation
-	mkdir -p deb-root/usr/local/share/doc/$(NAME)
-	cp *.md deb-root/usr/local/share/doc/$(NAME)/
-
 	# APT preferences to pin Docker Engine to v28
 	mkdir -p deb-root/etc/apt/preferences.d
 	cp apt-prefs/* deb-root/etc/apt/preferences.d/

@@ -10,9 +10,5 @@ deb:
 	cp cpufrequtils deb-root/etc/default/
 	chmod 644 deb-root/etc/default/cpufrequtils
 
-	# Package documentation
-	mkdir -p deb-root/usr/local/share/doc/$(NAME)
-	cp *.md deb-root/usr/local/share/doc/$(NAME)/
-
 	ytl-fpm \
 	  $(DEPENDENCIES)

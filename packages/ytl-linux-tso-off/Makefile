@@ -15,9 +15,5 @@ deb:
 	cp ytl-linux-tso-off-nm deb-root/etc/NetworkManager/dispatcher.d/
 	chmod 755 deb-root/etc/NetworkManager/dispatcher.d/ytl-linux-tso-off-nm
 
-	# Package documentation
-	mkdir -p deb-root/usr/local/share/doc/ytl-linux-tso-off
-	cp *.md deb-root/usr/local/share/doc/ytl-linux-tso-off/
-
 	ytl-fpm \
 		$(DEPENDENCIES)

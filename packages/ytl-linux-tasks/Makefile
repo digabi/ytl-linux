@@ -3,10 +3,6 @@ export DESCRIPTION := "Command runner specialized for YTL Linux administration t
 export VERSION := 0.4.0
 
 deb:
-	# Package documentation
-	mkdir -p deb-root/usr/local/share/doc/$(NAME)
-	cp *.md deb-root/usr/local/share/doc/$(NAME)/
-
 	# Install a more up-to-date version of just than is available in the Ubuntu repos
 
 	# Unzip stored tarball

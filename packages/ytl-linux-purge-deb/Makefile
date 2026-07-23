@@ -18,10 +18,6 @@ CONFLICTS := \
 	--conflicts cups-server-common
 
 deb:
-	# Package documentation
-	mkdir -p deb-root/usr/local/share/doc/$(NAME)
-	cp *.md deb-root/usr/local/share/doc/$(NAME)/
-
 	ytl-fpm \
 		--after-install after-install.sh \
 		$(CONFLICTS)

@@ -5,10 +5,6 @@ export VERSION := 0.1
 DEPENDENCIES := --depends policykit-1
 
 deb:
-	# Package documentation
-	mkdir -p deb-root/usr/local/share/doc/$(NAME)
-	cp *.md deb-root/usr/local/share/doc/$(NAME)/
-
 	mkdir -p deb-root/usr/local/sbin/
 	cp ytl-grub-safe-graphics deb-root/usr/local/sbin/
 	chmod 755 deb-root/usr/local/sbin/ytl-grub-safe-graphics

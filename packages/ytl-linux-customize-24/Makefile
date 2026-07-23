@@ -23,10 +23,6 @@ DEPENDENCIES := \
 RECOMMENDS := --deb-recommends digabi-usb-monster
 
 deb:
-	# Package documentation
-	mkdir -p deb-root/usr/local/share/doc/$(NAME)
-	cp *.md deb-root/usr/local/share/doc/$(NAME)
-
 	# Qogir icons
 	mkdir -p deb-root/usr/share/icons
 	tar --get --xz --overwrite --file=Qogir.tar.xz --directory=deb-root/usr/share/icons

@@ -16,10 +16,6 @@ deb:
 	cp lpstat deb-root/usr/bin/
 	chmod 755 deb-root/usr/bin/lpstat
 
-	# Package documentation
-	mkdir -p deb-root/usr/local/share/doc/$(NAME)
-	cp *.md deb-root/usr/local/share/doc/$(NAME)/
-
 	ytl-fpm \
 		$(DEPENDENCIES) \
 		$(CONFLICTS) \

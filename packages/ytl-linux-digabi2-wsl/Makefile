@@ -26,10 +26,6 @@ deb:
 	mkdir -p deb-root/etc/apt/preferences.d
 	cp apt-prefs/* deb-root/etc/apt/preferences.d/
 
-	# Package documentation
-	mkdir -p deb-root/usr/local/share/doc/$(NAME)
-	cp *.md deb-root/usr/local/share/doc/$(NAME)/
-
 	# Systemd service to downgrade Docker if needed
 	mkdir -p deb-root/etc/systemd/system/ deb-root/usr/local/sbin/
 	cp downgrade-docker.service deb-root/etc/systemd/system/
