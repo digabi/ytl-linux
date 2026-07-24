@@ -1,5 +1,6 @@
-NAME := ytl-linux-digabi2-examnet
-VERSION := 2.0.0
+export NAME := ytl-linux-digabi2-examnet
+export DESCRIPTION := "Setup tools and background services for Abitti 2 exam networks"
+export VERSION := 2.0.0
 
 DEPENDENCIES := \
 	--depends apt \
@@ -9,37 +10,33 @@ DEPENDENCIES := \
 	--depends iptables \
 	--depends jq \
 	--depends network-manager
-DEB_ROOT := deb-root
 
 deb:
-	if [ -d $(DEB_ROOT) ]; then rm -fR $(DEB_ROOT)/; fi
-	if [ -f $(NAME)_$(VERSION)_amd64.deb ]; then rm $(NAME)_$(VERSION)_amd64.deb; fi
-
 	# Script files
-	mkdir -p $(DEB_ROOT)/usr/local/sbin/
-	cp ytl-linux-digabi2-examnet-legacy $(DEB_ROOT)/usr/local/sbin/
-	cp ytl-linux-digabi2-docker-configure.sh $(DEB_ROOT)/usr/local/sbin/
-	cp ytl-linux-digabi2-examnet $(DEB_ROOT)/usr/local/sbin/
+	mkdir -p deb-root/usr/local/sbin/
+	cp ytl-linux-digabi2-examnet-legacy deb-root/usr/local/sbin/
+	cp ytl-linux-digabi2-docker-configure.sh deb-root/usr/local/sbin/
+	cp ytl-linux-digabi2-examnet deb-root/usr/local/sbin/
 
-	mkdir -p $(DEB_ROOT)/usr/local/libexec/ytl-linux-digabi2-examnet/lib
-	cp justfile $(DEB_ROOT)/usr/local/libexec/ytl-linux-digabi2-examnet/justfile
-	cp lib/* $(DEB_ROOT)/usr/local/libexec/ytl-linux-digabi2-examnet/lib/
+	mkdir -p deb-root/usr/local/libexec/ytl-linux-digabi2-examnet/lib
+	cp justfile deb-root/usr/local/libexec/ytl-linux-digabi2-examnet/justfile
+	cp lib/* deb-root/usr/local/libexec/ytl-linux-digabi2-examnet/lib/
 
 	# Config templates
 	mkdir -p ${DEB_ROOT}/etc/ytl-linux-digabi2-examnet/templates/
 	cp templates/* ${DEB_ROOT}/etc/ytl-linux-digabi2-examnet/templates
 
 	# Examnet configs
-	mkdir -p $(DEB_ROOT)/etc/ytl-linux-digabi2-examnet/config/
-	cp conf/* $(DEB_ROOT)/etc/ytl-linux-digabi2-examnet/config/
+	mkdir -p deb-root/etc/ytl-linux-digabi2-examnet/config/
+	cp conf/* deb-root/etc/ytl-linux-digabi2-examnet/config/
 
 	# NetworkManager configuration
-	mkdir -p $(DEB_ROOT)/etc/NetworkManager/conf.d/
-	cp -r NetworkManager/* $(DEB_ROOT)/etc/NetworkManager/conf.d/
+	mkdir -p deb-root/etc/NetworkManager/conf.d/
+	cp -r NetworkManager/* deb-root/etc/NetworkManager/conf.d/
 
 	# Defaults for individual dnsmasq services
-	mkdir -p $(DEB_ROOT)/etc/default
-	cp etc/default/* $(DEB_ROOT)/etc/default/
+	mkdir -p deb-root/etc/default
+	cp etc/default/* deb-root/etc/default/
 
 	# Bouncer
 	(cd bouncer; deno run tests)
@@ -49,37 +46,28 @@ deb:
 	(cd discovery && deno run tests)
 	(cd discovery && deno run build)
 
-	chmod 755 $(DEB_ROOT)/usr/local/sbin/*
+	chmod 755 deb-root/usr/local/sbin/*
 
 	# systemd unit files
-	mkdir -p $(DEB_ROOT)/etc/systemd/system/
-	cp ytl-linux-digabi2-examnet.service $(DEB_ROOT)/etc/systemd/system/
-	cp ytl-linux-digabi2-examnet-firewall.service $(DEB_ROOT)/etc/systemd/system/
-	cp ytl-linux-digabi2-examnet-discovery.service $(DEB_ROOT)/etc/systemd/system/
-	cp ytl-linux-digabi2-examnet-discovery.timer $(DEB_ROOT)/etc/systemd/system/
-	cp ytl-linux-digabi2-wait-for-listen-ip.service $(DEB_ROOT)/etc/systemd/system/
+	mkdir -p deb-root/etc/systemd/system/
+	cp ytl-linux-digabi2-examnet.service deb-root/etc/systemd/system/
+	cp ytl-linux-digabi2-examnet-firewall.service deb-root/etc/systemd/system/
+	cp ytl-linux-digabi2-examnet-discovery.service deb-root/etc/systemd/system/
+	cp ytl-linux-digabi2-examnet-discovery.timer deb-root/etc/systemd/system/
+	cp ytl-linux-digabi2-wait-for-listen-ip.service deb-root/etc/systemd/system/
 
-	chmod 644 $(DEB_ROOT)/etc/systemd/system/*
+	chmod 644 deb-root/etc/systemd/system/*
 
 	# docker.service drop-in to order docker after the listen-ip wait
-	mkdir -p $(DEB_ROOT)/etc/systemd/system/docker.service.d/
-	cp docker.service.d/wait-for-listen-ip.conf $(DEB_ROOT)/etc/systemd/system/docker.service.d/
-	chmod 644 $(DEB_ROOT)/etc/systemd/system/docker.service.d/*.conf
+	mkdir -p deb-root/etc/systemd/system/docker.service.d/
+	cp docker.service.d/wait-for-listen-ip.conf deb-root/etc/systemd/system/docker.service.d/
+	chmod 644 deb-root/etc/systemd/system/docker.service.d/*.conf
 
 	# Polkit policy
-	mkdir -p $(DEB_ROOT)/usr/share/polkit-1/actions/
-	cp ytl-linux-digabi2-examnet.policy $(DEB_ROOT)/usr/share/polkit-1/actions/
+	mkdir -p deb-root/usr/share/polkit-1/actions/
+	cp ytl-linux-digabi2-examnet.policy deb-root/usr/share/polkit-1/actions/
 
-	# Package documentation
-	mkdir -p $(DEB_ROOT)/usr/local/share/doc/$(NAME)
-	cp *.md $(DEB_ROOT)/usr/local/share/doc/$(NAME)/
-
-	fpm -C $(DEB_ROOT)/ -s dir --name $(NAME) --architecture amd64 -t deb --version "$(VERSION)" \
-		 --description "Digabi 2 exam network setup tool" \
-		 --maintainer "abitti@ylioppilastutkinto.fi" \
-		 --vendor "Matriculation Examination Board" \
-		 --url "https://github.com/digabi/ytl-linux" \
-		 $(DEPENDENCIES) \
-		 --after-install after-install.sh \
-		 --before-remove before-remove.sh \
-		.
+	ytl-fpm \
+		--after-install after-install.sh \
+		--before-remove before-remove.sh \
+		$(DEPENDENCIES)

@@ -12,12 +12,14 @@ VM_GRAPHICS_CONTROLLER := env('VM_GRAPHICS_CONTROLLER', 'vboxvga')
 
 AUTOINSTALL_URL := env('AUTOINSTALL_URL', 'https://digabi.github.io/ytl-linux/autoinstall-config-24/')
 
+export DENO_VERSION := `cat .deno-version | sed 's/^v//'`
+
 mod update 'tasks/update.just'
 
 # Lists all tasks in the order they appear in the justfile
 [private]
 default:
-    @just --list --unsorted
+    @just --list --list-submodules --unsorted
 
 # Format justfile
 [private]
@@ -31,20 +33,47 @@ build *flags: (download-ubuntu-base-image flags)
     #!/usr/bin/env bash
     set -euxo pipefail
 
-    docker rm --force --volumes ytl-linux-builder
-    docker build -t ytl-linux-build-img:latest -f builder/Dockerfile .
+    # Skip automatic build of deb builder in CI to speed up builds; this is a developer convenience
+    if [[ -z "${CI:-}" ]]; then
+      docker rm --force --volumes ytl-linux-builder
+      just build-image-builder
+    fi
 
     docker run \
       --name ytl-linux-builder \
-      --workdir /app \
+      --workdir /iso \
       --env "AUTOINSTALL_URL={{ AUTOINSTALL_URL }}" \
       --env 'BASE_IMAGE_FILE={{ BASE_IMAGE_FILE }}' \
       --env 'INSTALL_IMAGE_FILE={{ INSTALL_IMAGE_FILE }}' \
-      --volume './{{ BASE_IMAGE_FILE }}:/app/{{ BASE_IMAGE_FILE }}' \
+      --volume './{{ BASE_IMAGE_FILE }}:/iso/{{ BASE_IMAGE_FILE }}:ro' \
       ytl-linux-build-img:latest \
-      ./build-ytl-image
+      build-ytl-image
 
-    docker cp 'ytl-linux-builder:/app/{{ INSTALL_IMAGE_FILE }}' .
+    docker cp 'ytl-linux-builder:/iso/{{ INSTALL_IMAGE_FILE }}' .
+
+# Build deb package; must be invoked from a directory inside packages/
+deb:
+    #!/usr/bin/env bash
+    set -euxo pipefail
+
+    if [[ ! {{ invocation_directory() }} =~ .+\/packages\/.+ ]]; then
+      echo "Error: This command must be invoked from a directory inside packages/, no idea what package you're trying to build"
+      exit 1
+    fi
+
+    # Skip automatic build of deb builder in CI to speed up builds; this is a developer convenience
+    if [[ -z "${CI:-}" ]]; then
+      docker rm --force --volumes ytl-linux-deb-builder
+      just build-deb-builder
+    fi
+
+    docker run \
+      --rm \
+      --name ytl-linux-deb-builder \
+      --workdir /deb \
+      --volume '{{ invocation_directory() }}:/deb/deb-src' \
+      ytl-linux-deb-build-img:latest \
+      build-ytl-deb
 
 # Create a VirtualBox VM that will install ytl-install.iso from the locally built ytl-install.iso
 create-vb-vm:
@@ -65,6 +94,14 @@ serve:
     @echo "Build an ytl-install.iso image with the following command to use the local autoinstall config:"
     @echo "  AUTOINSTALL_URL=http://$(just get-default-iface-ip):8080/autoinstall-config-24/ just build"
     python3 -m http.server -d docs/ 8080
+
+[private]
+build-image-builder:
+    docker build --tag ytl-linux-build-img:latest --file builder/Dockerfile .
+
+[private]
+build-deb-builder:
+    docker build --tag ytl-linux-deb-build-img:latest --file deb-builder/Dockerfile --build-arg 'DENO_VERSION={{ DENO_VERSION }}' .
 
 [private]
 download-ubuntu-base-image *flags:

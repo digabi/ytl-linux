@@ -19,7 +19,7 @@ Sources for the deb packages are in the [`packages`](./packages) directory. The 
 
 The Ubuntu autoinstall config is in the [`docs`](./docs) directory and is published to GitHub Pages (https://digabi.github.io/ytl-linux) every time YTL Linux updates are released.
 
-Software for building the YTL Linux install ISO is in the [`builder`](./builder) folder.
+Software for building the YTL Linux install ISO is in the [`builder`](./builder) directory. Software for building YTL deb packages is in the [`deb-builder`](./deb-builder) directory.
 
 ## Releasing
 
@@ -76,9 +76,46 @@ just serve
 AUTOINSTALL_URL=http://<your-local-ip-address>:8080/autoinstall-config-24/ just build
 ```
 
+### Developing YTL deb packages
+
+Testing changes to YTL deb packages requires a testing setup of some sort; see [Testing YTL Linux](#testing-ytl-linux) below for more details. Deb packages can be built on any system, but they must be taken to an x86 machine to be installed and tested.
+
+To build a deb package, run the following command in the directory of the package in the `packages` directory:
+
+```bash
+just deb
+```
+
+The resultant deb can then be put on a USB drive (or your USB-drive-adjacent technology of choice), taken to the test machine, and installed with the following command:
+
+```bash
+sudo apt install --reinstall /path/to/your/deb
+```
+
+This mimics the process APT would use to install it from the package repository, but it uses your locally built package, and it also overwrites the existing package with your version - even if the version number has not been incremented.
+
+If you want to remove your local changes and revert to the public repo version, you must uninstall the affected package with the following command:
+
+```bash
+sudo dpkg --remove --force-depends ytl-linux-(...)
+```
+
+And then reinstall the affected package with `sudo apt install ytl-linux-(...)` as normal.
+
+> [!WARNING]
+> **Wait, why can't I just use the obvious solution of `apt remove ytl-linux-(...)`?**
+>
+> Answer: Because all* YTL deb packages are distributed as dependencies of `ytl-linux-customize-24`!
+>
+> If you `apt remove` a dependency of it, APT will also uninstall `ytl-linux-customize-24` and mark all other dependent `ytl-linux-*` packages as unneeded. This causes YTL customizations to the desktop to disappear, and `apt autoremove` will delete all YTL packages the next time you run it.
+>
+> 💡 **Tip:** If you have already made this quite typical mistake, getting back on track is easy; just run `sudo apt install ytl-linux-customize-24` and everything will return to normal.
+>
+> *\* = all except `ytl-linux-purge-deb`, for reasons explained [in its README](./packages/ytl-linux-purge-deb/README.md)*
+
 ## Testing YTL Linux
 
-YTL Linux is only built for x86 environments. It is strongly advised to use a machine with a native x86 CPU for testing, as x86 emulation on macOS is painfully sluggish (VM installation takes 1hr+ even on the most modern Macs, system commands may have multi-minute execution times, etc).
+YTL Linux and YTL deb packages are only built for x86 environments. It is strongly advised to use a machine with a native x86 CPU for testing, as x86 emulation on macOS is painfully sluggish (VM installation takes 1hr+ even on the most modern Macs, system commands may have multi-minute execution times, etc).
 
 ### On a native x86 system using VirtualBox
 
@@ -102,7 +139,7 @@ sudo usermod -aG vboxsf $USER
 sudo reboot now
 ```
 
-Debs can then be created with `make deb` on the host OS and installed in the VM with `sudo apt install --reinstall ./ytl-linux-(...).deb`.
+Debs can then be built on either the host OS or even inside the VM, depending on which you find more convenient for your workflow, and then installed with `apt install --reinstall (...)` as detailed above in [Developing YTL deb packages](#developing-ytl-deb-packages).
 
 ### On an ARM system with x86 emulation using UTM
 
