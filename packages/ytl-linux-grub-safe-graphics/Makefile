@@ -1,6 +1,6 @@
 export NAME := ytl-linux-grub-safe-graphics
-export DESCRIPTION := "Scripts to add/remove 'nomodesetä kernel parameter at /etc/default/grub"
-export VERSION := 0.1
+export DESCRIPTION := "Scripts to add/remove 'nomodeset' kernel parameter at /etc/default/grub"
+export VERSION := 0.1.0
 
 DEPENDENCIES := --depends policykit-1
 

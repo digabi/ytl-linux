@@ -5,6 +5,11 @@ set -euo pipefail
 # Copy from host volume for working, since it's read-only
 cp -r deb-src/* .
 
+# Clear deb-root if it's left over on the host machine to prevent confusion
+if [[ -d deb-root ]]; then
+  rm -rf deb-root/*
+fi
+
 # Run Makefile in package directory
 make deb
 

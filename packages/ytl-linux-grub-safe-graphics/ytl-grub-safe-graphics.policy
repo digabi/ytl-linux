@@ -7,7 +7,7 @@
 
   <action id="fi.ylioppilastutkinto.fi.ytl-grub-safe-graphics">
     <description>Modify GRUB settings to turn safe graphics mode on or off by adding or removing the "nomodeset" kernel parameter</description>
-    <message>Authentication is required to run the ytl-grub-safe-graphics</message>
+    <message>Authentication is required to run ytl-grub-safe-graphics</message>
     <icon_name>audio-x-generic</icon_name>
     <defaults>
      <allow_any>no</allow_any>
