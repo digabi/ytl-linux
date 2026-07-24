@@ -4,4 +4,4 @@ set -euo pipefail
 
 systemctl daemon-reload
 
-systemctl enable --now ytl-linux-update-check.timer
+systemctl enable ytl-linux-update-check.timer
