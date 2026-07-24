@@ -24,3 +24,6 @@ archive-digabi2-database:
     sudo tar cvzf "${archive_path}" "${mountpoint%/*}"
     echo "Digabi2 database archive created: ${archive_path}"
     open "{{ invocation_directory() }}"
+
+patch-server version:
+    @naksu2 --cli patch-server {{ version }}
