@@ -31,7 +31,7 @@ To update the APT repository and thus publish changes to end users, go to [Actio
 
 ### Publishing the publicly distributed ytl-install-24.iso
 
-Pushing a tag of the form 'v24.X' to the will trigger the [upload-image-24.yml workflow](https://github.com/digabi/ytl-linux/actions/workflows/upload-image-24.yml), which automatically builds the `ytl-install-24.iso` image and uploads it to https://linux.abitti.fi/ytl-install-24.iso, from where users are instructed to download it.
+Pushing a tag of the form 'v24.X' to the repository will trigger the [upload-image-24.yml workflow](https://github.com/digabi/ytl-linux/actions/workflows/upload-image-24.yml), which automatically builds the `ytl-install-24.iso` image and uploads it to https://linux.abitti.fi/ytl-install-24.iso, from where users are instructed to download it.
 
 Use Ubuntu version numbers with local build version number. Build number 2 of Ubuntu 24.04.3 would get version number (tag) `v24.04.3-2`.
 

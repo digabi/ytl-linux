@@ -23,5 +23,6 @@ deb:
 	cp downgrade-docker.sh deb-root/usr/local/sbin/
 
 	ytl-fpm \
+		$(DEPENDENCIES) \
 		--before-install before-install.sh \
 		--after-install after-install.sh

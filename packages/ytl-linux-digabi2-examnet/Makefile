@@ -23,8 +23,8 @@ deb:
 	cp lib/* deb-root/usr/local/libexec/ytl-linux-digabi2-examnet/lib/
 
 	# Config templates
-	mkdir -p ${DEB_ROOT}/etc/ytl-linux-digabi2-examnet/templates/
-	cp templates/* ${DEB_ROOT}/etc/ytl-linux-digabi2-examnet/templates
+	mkdir -p deb-root/etc/ytl-linux-digabi2-examnet/templates/
+	cp templates/* deb-root/etc/ytl-linux-digabi2-examnet/templates
 
 	# Examnet configs
 	mkdir -p deb-root/etc/ytl-linux-digabi2-examnet/config/
