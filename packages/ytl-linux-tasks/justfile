@@ -1,3 +1,6 @@
+# This fallback is to allow `just deb` to work during development; the runner script in production uses the --ceiling parameter to use only this file
+set fallback
+
 [private]
 default:
     @just --list --unsorted
@@ -14,6 +17,7 @@ migrate-package-keys:
 remove-virtualbox:
     './scripts/2026-04-16_remove-virtualbox.sh'
 
+# Creates a tarball of the Abitti 2 server database for e.g. troubleshooting or debugging
 archive-digabi2-database:
     #!/usr/bin/env bash
     set -euo pipefail

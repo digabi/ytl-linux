@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+REQUIRED_ENV_VARS=(
+  NAME
+  VERSION
+  DESCRIPTION
+)
+
+for var in "${REQUIRED_ENV_VARS[@]}"; do
+  if [[ -z "${!var}" ]]; then
+    echo "Error: Required environment variable '$var' is not set"
+    exit 1
+  fi
+done
+
+# Automatically copy README.md to /usr/local/share/doc/<package-name> if it exists
+if [[ -f README.md ]]; then
+  DOC_PATH="/usr/local/share/doc/$NAME"
+  DEB_DOC_PATH="deb-root$DOC_PATH"
+
+  mkdir -p "$DEB_DOC_PATH"
+  echo "Automatically copying README.md to $DOC_PATH"
+  cp README.md "$DEB_DOC_PATH"
+else
+  echo "This package does not have a README.md, cannot create package documentation"
+fi
+
+# FPM flags that are the same for all of our packages, to avoid duplication
+FPM_FLAGS=(
+  --force # Overwrite deb if it already exists
+  --chdir deb-root/
+  --input-type dir
+  --output-type deb
+  --architecture amd64
+  --name "$NAME"
+  --version "$VERSION"
+  --description "$DESCRIPTION"
+  --deb-no-default-config-files
+  --maintainer 'abitti@ylioppilastutkinto.fi'
+  --vendor 'Matriculation Examination Board'
+  --url 'https://github.com/digabi/ytl-linux'
+)
+
+set -x
+fpm "${FPM_FLAGS[@]}" "$@" .

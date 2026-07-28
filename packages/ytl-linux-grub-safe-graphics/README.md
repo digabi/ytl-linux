@@ -1,6 +1,6 @@
 # ytl-grub-safe-graphics
 
-Scripts to add/remove `nomodeset` kernel parameter at `/etc/default/grub`
+Tool to add/remove `nomodeset` kernel parameter in `/etc/default/grub` to dodge some graphics issues on certain problematic hardware.
 
 ## Acknowledgement
 

@@ -1,14 +1,11 @@
 # ytl-linux-tso-off
 
-This package places a script to `/etc/network/if-up.d` which turns TCP
-Segmentation Offload (TSO) setting off for all ethernet devices.
+When installed, this package places a script in `/etc/network/if-up.d` (for traditional Debian /etc/network) and `/etc/NetworkManager/dispatcher.d` (for modern NetworkManager) which turns off TCP Segmentation Offload (TSO) for all Ethernet devices.
 
-The `TCP off` setting appears to help Intel I217, I219(-LM) devices to deal with
-high VirtualBox VM network throughput taking place when running Abitti 1
-server.
+Disabling TSO appears to help certain network hardware (e.g. Intel I217, I219(-LM)) to deal with high network throughput taking place when running Abitti servers.
 
-The package is created with [fpm](https://github.com/jordansissel/fpm).
+To build the deb package, run:
 
-To create the deb run
-
-`make deb`
+```bash
+just deb
+```

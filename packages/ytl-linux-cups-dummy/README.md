@@ -1,6 +1,6 @@
-# cups-dummy
+# ytl-linux-cups-dummy
 
-This package provides dummy `lpq` and `lpstat` binaries so that the Cinnamon DE's [`printers@cinnamon` applet](https://github.com/linuxmint/cinnamon/tree/6.0.4/files/usr/share/cinnamon/applets/printers%40cinnamon.org) is happy with us and doesn't crash, leading to "Sorry, Ubuntu 24.04 has experienced an internal error."
+This package provides dummy `lpq` and `lpstat` binaries so that the Cinnamon DE's [`printers@cinnamon` applet](https://github.com/linuxmint/cinnamon/tree/6.0.4/files/usr/share/cinnamon/applets/printers%40cinnamon.org) is happy with us and doesn't crash with "Sorry, Ubuntu 24.04 has experienced an internal error."
 
 ## What our lpstat needs to do
 
@@ -10,4 +10,5 @@ This package provides dummy `lpq` and `lpstat` binaries so that the Cinnamon DE'
 - Return '' with lpstat -o
 
 ## What our lpq needs to do
+
 - Return 'no entries' with lpq -a

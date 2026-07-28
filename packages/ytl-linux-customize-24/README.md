@@ -1,15 +1,14 @@
 # ytl-linux-customize-24
 
-This directory contains stuff to create aforementioned Debian package which contains
-all UI customizations and small tools used by the YTL Linux.
+This package contains YTL specific customizations to Ubuntu 24.04, such as the desktop wallpaper and icon theme. It's also the means with which all YTL packages (with the exception of `ytl-linux-purge-deb`) are distributed to YTL Linux installs without requiring separate installation.
 
-The package is created with [fpm](https://github.com/jordansissel/fpm).
+To build the deb package, run:
 
-To create the deb run
+```bash
+just deb
+```
 
-`make deb`
-
-# Qogir icons
+## Qogir icons
 
  * Source: https://www.gnome-look.org/p/1296407
  * License: GPLv3

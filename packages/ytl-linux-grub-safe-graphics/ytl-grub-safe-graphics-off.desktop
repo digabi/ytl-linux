@@ -1,8 +1,8 @@
 [Desktop Entry]
 Version=1.0
 Name=Display: Normal Graphics On Boot
-Comment=Removes "nomodeset" boot parameter for normal graphics mode
-Exec=/usr/bin/pkexec /usr/local/sbin/ytl-grub-safe-graphics-off
+Comment=Removes "nomodeset" kernel parameter for normal graphics mode
+Exec=pkexec /usr/local/sbin/ytl-grub-safe-graphics off
 Terminal=false
 Type=Application
 Categories=Settings;DesktopSettings;
