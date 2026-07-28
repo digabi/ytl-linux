@@ -71,7 +71,7 @@ deb:
       --rm \
       --name ytl-linux-deb-builder \
       --workdir /deb \
-      --volume '{{ invocation_directory() }}:/deb/deb-src' \
+      --volume '{{ invocation_directory() }}:/deb-src' \
       ytl-linux-deb-build-img:latest \
       build-ytl-deb
 

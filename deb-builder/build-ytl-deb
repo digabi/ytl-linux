@@ -2,16 +2,19 @@
 
 set -euo pipefail
 
-# Copy from host volume for working, since it's read-only
-cp -r deb-src/* .
+# Copy from host volume for working
+cp -r /deb-src/* .
+
+# Ensure builder user owns all the files in the working directory
+chown -R builder:builder .
 
 # Clear deb-root if it's left over on the host machine to prevent confusion
 if [[ -d deb-root ]]; then
   rm -rf deb-root/*
 fi
 
-# Run Makefile in package directory
-make deb
+# Run 'make deb' as the builder user to prevent writing to other locations in the container 
+runuser builder --command 'make deb'
 
 # Copy built deb back to host volume
-cp ./*.deb deb-src/
+cp ./*.deb /deb-src
