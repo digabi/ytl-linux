@@ -1,0 +1,111 @@
+name: Remove old unreferenced Debian packages from S3
+
+on:
+  schedule:
+    - cron: '17 3 * * 0' # Run at 03:17 UTC every Sunday
+  workflow_dispatch:
+
+concurrency:
+  group: ytl-linux-debian-repository
+  cancel-in-progress: false
+
+jobs:
+  remove-old-unreferenced-debs:
+    runs-on: ubuntu-latest
+    env:
+      MAX_DELETE: 50
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install xz-utils zstd gzip
+      - name: Look up AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6.2.2 # Immutable tag
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-north-1
+      - name: Copy S3 bucket contents
+        run: aws s3 sync s3://ytl-linux/deb repository/deb
+      - name: Find old unreferenced Debian packages
+        run: |
+          set -euo pipefail
+          export LC_ALL=C
+          
+          mkdir -p repository/deb
+          
+          test -f repository/deb/dists/ytl-linux/Release || {
+            echo "Expected distribution metadata is missing" >&2
+            exit 1
+          }
+          
+          find repository/deb/dists -type f \
+            \( -name Packages -o \
+               -name Packages.gz -o \
+               -name Packages.xz -o \
+               -name Packages.zst \) \
+               -print0 |
+            while IFS= read -r -d '' packages; do
+              case "$packages" in
+                *.gz)  gzip -cd -- "$packages" ;;
+                *.xz)  xz -cd -- "$packages" ;;
+                *.zst) zstd -cd -- "$packages" ;;
+                *)     cat -- "$packages" ;;
+              esac
+            done |
+            awk '$1 == "Filename:" { print "deb/" $2 }' |
+            sort -u > referenced-debs.txt
+
+          find repository/deb/pool -type f -name '*.deb' -printf 'deb/pool/%P\n' |
+            sort -u > pool-debs.txt
+          comm -23 pool-debs.txt referenced-debs.txt > unreferenced-debs.txt
+
+          : > old-unreferenced-debs.txt
+          while IFS= read -r key; do
+            [[ -n "$key" ]] || continue
+            if find "repository/$key" -mtime +365 -print -quit | grep -q .; then
+              printf '%s\n' "$key" >> old-unreferenced-debs.txt
+            fi
+          done < unreferenced-debs.txt
+      - name: Validate counts and refuse to delete too many packages
+        run: |
+          set -euo pipefail
+          
+          referenced_debs_count=$(wc -l < referenced-debs.txt)
+          pool_debs_count=$(wc -l < pool-debs.txt)
+          unreferenced_debs_count=$(wc -l < unreferenced-debs.txt)
+          old_unreferenced_debs_count=$(wc -l < old-unreferenced-debs.txt)
+
+          echo "Referenced packages: $referenced_debs_count"
+          echo "Pool packages: $pool_debs_count"
+          echo "Unreferenced packages: $unreferenced_debs_count"
+          echo "Old unreferenced packages: $old_unreferenced_debs_count"
+          
+          if (( referenced_debs_count == 0 )); then
+            echo "No referenced packages found; refusing cleanup" >&2
+            exit 1
+          fi
+          
+          if (( old_unreferenced_debs_count > MAX_DELETE )); then
+            echo "Refusing to delete more than $MAX_DELETE packages. Is everything okay?" >&2
+            exit 1
+          fi
+
+      - name: Delete old unreferenced Debian packages
+        run: |
+          set -euo pipefail
+          while IFS= read -r key; do
+            echo "Removing unreferenced package: $key"
+            # TODO Remove dryrun flag when action is ready for use
+            aws s3 rm --dryrun "s3://ytl-linux/$key"
+          done < old-unreferenced-debs.txt
+      - name: Archive cleanup reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: unreferenced-debs-reports
+          path: '*.txt'
+          if-no-files-found: warn

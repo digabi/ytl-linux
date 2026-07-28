@@ -13,6 +13,10 @@ on:
         required: true
         default: false
 
+concurrency:
+  group: ytl-linux-debian-repository
+  cancel-in-progress: false
+
 jobs:
   test-unit:
     name: Unit tests
