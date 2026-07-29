@@ -2,7 +2,7 @@ name: Remove old unreferenced Debian packages from S3
 
 on:
   schedule:
-    - cron: '17 3 * * 0' # Run at 03:17 UTC every Sunday
+    - cron: '0 3 * * 0' # Run at 03:00 UTC every Sunday
   workflow_dispatch:
 
 concurrency:
