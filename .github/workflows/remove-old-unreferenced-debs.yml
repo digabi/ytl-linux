@@ -84,12 +84,12 @@ jobs:
           echo "Old unreferenced packages: $old_unreferenced_debs_count"
           
           if (( referenced_debs_count == 0 )); then
-            echo "No referenced packages found; refusing cleanup" >&2
+            echo "Error: No referenced packages found; refusing cleanup" >&2
             exit 1
           fi
           
           if (( old_unreferenced_debs_count > MAX_DELETE )); then
-            echo "Refusing to delete more than $MAX_DELETE packages. Is everything okay?" >&2
+            echo "Error: Would delete $old_unreferenced_debs_count, which is more than configured maximum $MAX_DELETE." >&2
             exit 1
           fi
 
