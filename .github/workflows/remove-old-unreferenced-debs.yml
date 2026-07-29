@@ -37,10 +37,10 @@ jobs:
           
           mkdir -p repository/deb
           
-          test -f repository/deb/dists/ytl-linux/Release || {
-            echo "Expected distribution metadata is missing" >&2
+          if [[ ! -f repository/deb/dists/ytl-linux/Release ]]; then
+            echo "Error: Expected distribution metadata is missing" >&2
             exit 1
-          }
+          fi
           
           find repository/deb/dists -type f \
             \( -name Packages -o \
@@ -65,8 +65,7 @@ jobs:
 
           : > old-unreferenced-debs.txt
           while IFS= read -r key; do
-            [[ -n "$key" ]] || continue
-            if find "repository/$key" -mtime +365 -print -quit | grep -q .; then
+            if [[ -n "$key" ]] && find "repository/$key" -mtime +365 -print -quit | grep -q .; then
               printf '%s\n' "$key" >> old-unreferenced-debs.txt
             fi
           done < unreferenced-debs.txt
