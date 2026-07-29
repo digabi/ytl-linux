@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: '0 3 * * 0' # Run at 03:00 UTC every Sunday
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Dry run; Uncheck this to actually remove packages
+        type: boolean
+        required: true
+        default: true
 
 concurrency:
   group: ytl-linux-debian-repository
@@ -14,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MAX_DELETE: 50
+      DRY_RUN: ${{ github.event_name != 'workflow_dispatch' || inputs.dry_run }}
     permissions:
       contents: read
     steps:
@@ -98,8 +105,11 @@ jobs:
           set -euo pipefail
           while IFS= read -r key; do
             echo "Removing unreferenced package: $key"
-            # TODO Remove dryrun flag when action is ready for use
-            aws s3 rm --dryrun "s3://ytl-linux/$key"
+            if [[ "$DRY_RUN" == "true" ]]; then
+              aws s3 rm --dryrun "s3://ytl-linux/$key"
+            else
+              aws s3 rm "s3://ytl-linux/$key"
+            fi
           done < old-unreferenced-debs.txt
       - name: Archive cleanup reports
         if: ${{ always() }}
