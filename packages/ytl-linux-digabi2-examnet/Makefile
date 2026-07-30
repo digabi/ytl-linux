@@ -1,9 +1,10 @@
 export NAME := ytl-linux-digabi2-examnet
 export DESCRIPTION := "Setup tools and background services for Abitti 2 exam networks"
-export VERSION := 2.0.0
+export VERSION := 2.1.0
 
 DEPENDENCIES := \
 	--depends apt \
+	--depends chrony \
 	--depends dnsmasq \
 	--depends dnsutils \
 	--depends ipset \
@@ -37,6 +38,10 @@ deb:
 	# Defaults for individual dnsmasq services
 	mkdir -p deb-root/etc/default
 	cp etc/default/* deb-root/etc/default/
+
+	# Chrony: serve NTP to exam LAN clients
+	mkdir -p deb-root/etc/chrony/conf.d
+	cp etc/chrony/conf.d/ytl-examnet.conf deb-root/etc/chrony/conf.d/
 
 	# Bouncer
 	(cd bouncer; deno run tests)
