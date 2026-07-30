@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+ZENITY_TITLE="YTL Linux System Reset"
+
+ZENITY=(zenity --title="$ZENITY_TITLE")
+
+if [[ $EUID -ne 0 ]]; then
+  echo "Error: This script must be run as root"
+  exit 1
+fi
+
+CONFIRMATION_TEXT=$(cat <<EOF
+<b>ATTENTION! Performing this operation will irrevocably destroy:</b>
+
+- <b>ALL</b> data related to the Abitti 2 server, including exam answers, answer backups, configuration, server logs, server images, etc.
+- <b>ALL</b> data related to Naksu 2, including settings, installation code, exam network configuration, etc.
+
+Any information that could be helpful for troubleshooting, backups that could normally be retrieved even after destroying the server, etc. will be <b>IRREVOCABLY DESTROYED</b>.
+
+The Abitti 2 server will have to be reinstalled afterwards. Naksu will still be present, but in a completely blank state.
+
+<b>DO NOT RUN THIS UNLESS YOU HAVE BEEN SPECIFICALLY INSTRUCTED TO AND/OR KNOW WHAT YOU ARE DOING.</b>
+
+<b>Are you still sure you want to reset the system?</b>
+EOF
+)
+
+# Confirm reset
+if ! "${ZENITY[@]}" --question --text "$CONFIRMATION_TEXT" --width=600; then
+  exit 0
+fi
+
+LOG_FILE=$(mktemp --tmpdir=/var/log ytl-linux-system-reset.XXXXXX)
+
+log() {
+  echo "$@" | tee -a "$LOG_FILE"
+}
+
+log "Starting system reset at $(date), outputting log to $LOG_FILE"
+
+run-command() {
+  log "Running command: $*"
+
+  set +e
+  "$@" 2>&1 | tee -a "$LOG_FILE"
+  EXIT_CODE=$?
+  set -e
+
+  if [[ $EXIT_CODE -ne 0 ]]; then
+    MESSAGE="Command '$*' failed with exit code $EXIT_CODE"
+
+    kill "$ZENITY_PID"
+
+    log "$MESSAGE"
+    "${ZENITY[@]}" --error --text "System reset failed: $MESSAGE"
+
+    exit 1
+  fi
+}
+
+(
+  if pgrep naksu2; then
+    # Close Naksu to prevent config files being occupied
+    log "Killing all Naksu 2 processes"
+    run-command killall naksu2
+  else
+    log "Naksu 2 is not running, not killing it"
+  fi
+
+  if [[ -n $(docker ps -q) ]]; then
+    # Stop Abitti 2 server
+    log "Stopping all Docker containers..."
+    run-command docker stop $(docker ps -q)
+  else
+    log "No Docker containers to stop"
+  fi
+
+  # Remove examnet settings
+  log "Removing examnet settings..."
+  run-command ytl-linux-digabi2-examnet --remove
+
+  if [[ -d /home/school/.local/share/digabi/naksu2 ]]; then
+    # Remove Naksu 2 settings
+    log "Removing Naksu 2 workdir..."
+    run-command rm -rf /home/school/.local/share/digabi/naksu2
+  else
+    log "No Naksu 2 workdir to remove"
+  fi
+
+  # Remove all Docker cruft
+  log "Clearing Docker system state..."
+  run-command docker system prune --all --force
+  run-command docker volume prune --all --force
+  
+  # There's a flaw in Zenity's --auto-close logic, where any line echoed to it that starts with a number will increment the progress bar.
+  # The logic for this is extremely flawed, and if any row starting with a number is sent to Zenity, it will be parsed as a percentage.
+  # In other words, if we pipe the output of `docker stop` to such a progress bar, a container ID of `863a25137240` will be treated as
+  # "the progress bar should be incremented to 86325137240/100%, and --auto-close will then immediately close the progress bar, because
+  # it will close when progress reaches 100. See https://stackoverflow.com/a/74148774, this bug is still present in Zenity as of time
+  # of writing (30.07.2026).
+  # 
+  # As such, we simply cannot reasonably pipe any output to Zenity and not expect some of it to unintentionally close the progress bar early.
+  # Conversely, there seems to be no way to spawn a Zenity progress bar that doesn't allow the user to take any action, backgrounding it, and
+  # then killing the process when tasks are done.
+  #
+  # As such, employ a massive hack:
+  #   1. Run cleanup commands in a subshell
+  #   2. Pipe the output to sed and delete all content to prevent Zenity's broken parsing logic from misinterpreting it
+  #   3. Pipe the output to Zenity, which will then display the progress bar, and close when the subshell exits
+) | sed 's/.*//' | "${ZENITY[@]}" --progress --pulsate --auto-close --no-cancel --text "System reset in progress, please do not touch anything..."
+
+"${ZENITY[@]}" --info --text "System reset complete."

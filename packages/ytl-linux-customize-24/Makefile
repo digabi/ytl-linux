@@ -18,7 +18,8 @@ DEPENDENCIES := \
 	--depends ytl-linux-digabi2-diagnostics \
 	--depends ytl-linux-cups-dummy \
 	--depends ytl-linux-update-checker \
-	--depends ytl-linux-grub-safe-graphics
+	--depends ytl-linux-grub-safe-graphics \
+	--depends ytl-linux-system-reset
 
 RECOMMENDS := --deb-recommends digabi-usb-monster
 
