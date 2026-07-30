@@ -20,3 +20,8 @@ systemctl enable ytl-linux-digabi2-examnet-firewall.service
 systemctl enable ytl-linux-digabi2-examnet-discovery.timer
 systemctl enable ytl-linux-digabi2-examnet-discovery.service
 systemctl enable ytl-linux-digabi2-wait-for-listen-ip.service
+
+# Serve NTP to exam LAN clients (config in /etc/chrony/conf.d/ytl-examnet.conf)
+systemctl enable chrony
+deb-systemd-invoke restart chrony >/dev/null || true
+
