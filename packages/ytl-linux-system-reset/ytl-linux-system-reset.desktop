@@ -1,8 +1,8 @@
 [Desktop Entry]
 Version=1.0
 Name=Reset System
-Comment=Reset YTL-Linux to a clean staet
-Comment[fi]=Nolla YTL-Linux puhtaaseen tilaan
+Comment=Reset YTL-Linux to a clean state
+Comment[fi]=Nollaa YTL-Linux puhtaaseen tilaan
 Comment[sv]=Nollställ YTL-Linux till ett rent stadium
 Exec=pkexec /usr/local/sbin/ytl-linux-system-reset
 Terminal=false

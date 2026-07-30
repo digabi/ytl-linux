@@ -11,8 +11,24 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 
+CONFIRMATION_TEXT=$(cat <<EOF
+<b>ATTENTION! Performing this operation will irrevocably destroy:</b>
+
+- <b>ALL</b> data related to the Abitti 2 server, including exam answers, answer backups, configuration, server logs, server images, etc.
+- <b>ALL</b> data related to Naksu 2, including settings, installation code, exam network configuration, etc.
+
+Any information that could be helpful for troubleshooting, backups that could normally be retrieved even after destroying the server, etc. will be <b>IRREVOCABLY DESTROYED</b>.
+
+The Abitti 2 server will have to be reinstalled afterwards. Naksu will still be present, but in a completely blank state.
+
+<b>DO NOT RUN THIS UNLESS YOU HAVE BEEN SPECIFICALLY INSTRUCTED TO AND/OR KNOW WHAT YOU ARE DOING.</b>
+
+<b>Are you still sure you want to reset the system?</b>
+EOF
+)
+
 # Confirm reset
-if ! "${ZENITY[@]}" --question --text "Are you sure you want to reset the system? This will remove all settings made in the system, including the Abitti 2 server, all Naksu 2 settings and all exam network configuration."; then
+if ! "${ZENITY[@]}" --question --text "$CONFIRMATION_TEXT" --width=600; then
   exit 0
 fi
 
