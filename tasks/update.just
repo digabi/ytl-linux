@@ -17,7 +17,7 @@ naksu2:
         exit 1
     fi
 
-    git add naksu2*.deb
+    git add -A 'naksu2*.deb'
     git commit -m "Update Naksu 2 to $NEW_NAKSU_VERSION"
     git push
 
@@ -40,7 +40,7 @@ anydesk:
         exit 1
     fi
 
-    git add anydesk-meb*.deb
+    git add -A 'anydesk-meb*.deb'
     git commit -m "Update AnyDesk to $NEW_ANYDESK_VERSION"
     git push
 
