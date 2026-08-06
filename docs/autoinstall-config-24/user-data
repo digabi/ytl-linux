@@ -208,6 +208,7 @@ autoinstall:
                -----END PGP PUBLIC KEY BLOCK-----
   packages:
     - cinnamon-core
+    - chrony # Chrony is also a dependency of examnet, but if we allow it to be installed that way, we get a conflict with systemd-timesyncd on fresh installs only
     - ytl-linux-customize-24
     - ytl-linux-purge-deb
     - snapd

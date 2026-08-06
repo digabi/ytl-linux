@@ -1,6 +1,6 @@
 export NAME := ytl-linux-digabi2-examnet
 export DESCRIPTION := "Setup tools and background services for Abitti 2 exam networks"
-export VERSION := 2.1.0
+export VERSION := 2.1.1
 
 DEPENDENCIES := \
 	--depends apt \
@@ -11,9 +11,6 @@ DEPENDENCIES := \
 	--depends iptables \
 	--depends jq \
 	--depends network-manager
-
-CONFLICTS := \
-	--conflicts systemd-timesyncd
 
 deb:
 	# Script files
