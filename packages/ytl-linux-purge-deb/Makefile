@@ -1,6 +1,6 @@
 export NAME := ytl-linux-purge-deb
 export DESCRIPTION := "Metapackage to remove obsolete deb packages installed by Ubuntu Autoinstall"
-export VERSION := 0.0.4
+export VERSION := 0.0.5
 
 CONFLICTS := \
 	--conflicts open-iscsi \
@@ -15,7 +15,8 @@ CONFLICTS := \
 	--conflicts cups-ipp-utils \
 	--conflicts cups-pdf \
 	--conflicts cups-ppdc \
-	--conflicts cups-server-common
+	--conflicts cups-server-common \
+	--conflicts update-manager
 
 deb:
 	ytl-fpm \
