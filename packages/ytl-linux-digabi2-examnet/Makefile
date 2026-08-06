@@ -12,6 +12,9 @@ DEPENDENCIES := \
 	--depends jq \
 	--depends network-manager
 
+CONFLICTS := \
+	--conflicts systemd-timesyncd
+
 deb:
 	# Script files
 	mkdir -p deb-root/usr/local/sbin/
@@ -76,3 +79,4 @@ deb:
 		--after-install after-install.sh \
 		--before-remove before-remove.sh \
 		$(DEPENDENCIES)
+		$(CONFLICTS)
