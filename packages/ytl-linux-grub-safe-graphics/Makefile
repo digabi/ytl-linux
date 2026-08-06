@@ -20,4 +20,5 @@ deb:
 	cp ytl-grub-safe-graphics.png deb-root/usr/local/share/pixmaps/
 
 	ytl-fpm \
+		--before-install before-install.sh \
 	  $(DEPENDENCIES)
