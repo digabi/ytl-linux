@@ -6,4 +6,4 @@ Exec=pkexec /usr/local/sbin/ytl-grub-safe-graphics on
 Terminal=false
 Type=Application
 Categories=Settings;DesktopSettings;
-Icon=/usr/local/share/pixmaps/ytl-grub-safe-graphics.png
+Icon=/usr/local/share/pixmaps/ytl-grub-safe-graphics-icon.png

@@ -1,6 +1,6 @@
 export NAME := ytl-linux-grub-safe-graphics
 export DESCRIPTION := "Scripts to add/remove 'nomodeset' kernel parameter at /etc/default/grub"
-export VERSION := 0.1.0
+export VERSION := 0.1.1
 
 DEPENDENCIES := --depends policykit-1
 
@@ -17,7 +17,7 @@ deb:
 	cp ytl-grub-safe-graphics.policy deb-root/usr/share/polkit-1/actions/
 
 	mkdir -p deb-root/usr/local/share/pixmaps/
-	cp ytl-grub-safe-graphics.png deb-root/usr/local/share/pixmaps/
+	cp ytl-grub-safe-graphics-icon.png deb-root/usr/local/share/pixmaps/
 
 	ytl-fpm \
 		--before-install before-install.sh \
