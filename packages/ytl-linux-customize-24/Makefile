@@ -1,11 +1,10 @@
 export NAME := ytl-linux-customize-24
 export DESCRIPTION := "YTL Linux specific customisations for Ubuntu 24.04"
-export VERSION := 2.0.0
+export VERSION := 2.0.1
 
 DEPENDENCIES := \
 	--depends ethtool \
 	--depends exfat-fuse \
-	--depends update-manager \
 	--depends gnome-icon-theme \
 	--depends dconf-cli \
 	--depends gnome-screenshot \
@@ -22,6 +21,8 @@ DEPENDENCIES := \
 	--depends ytl-linux-system-reset
 
 RECOMMENDS := --deb-recommends digabi-usb-monster
+
+CONFLICTS := --conflicts update-manager
 
 deb:
 	# Qogir icons
@@ -44,4 +45,5 @@ deb:
 		--after-install after-install.sh \
 		--after-remove after-remove.sh \
 		$(DEPENDENCIES) \
-		$(RECOMMENDS)
+		$(RECOMMENDS) \
+		$(CONFLICTS)
