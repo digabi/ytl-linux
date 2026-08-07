@@ -33,9 +33,13 @@ ${ALLOWLISTED_IPSET_CONFIGURATION}
 
 # Null-route all other traffic
 # This prevents software on the student computer from getting confused by when DNS queries work, but the TCP
-# request stalls (since this is not a router) for however long the client timeout is set to; possibly Infinity
+# request stalls for however long the client timeout is set to; possibly Infinity
 address=/#/0.0.0.0
 address=/#/::
+
+# Allow only A, AAAA, CNAME and MX lookups
+# Taken from https://en.wikipedia.org/wiki/List_of_DNS_record_types
+filter-rr=AFSDB,APL,CAA,CDNSKEY,CDS,CERT,CSYNC,DHCID,DLV,DNAME,DNSKEY,DS,EUI48,EUI64,HINFO,HIP,HTTPS,IPSECKEY,KEY,KX,LOC,MX,NAPTR,NS,NSEC,NSEC3,NSEC3PARAM,PTR,RP,RRSIG,SIG,SMIMEA,SOA,SRV,SSHFP,SVCB,TA,TKEY,TLSA,TSIG,TXT,URI,ZONEMD,AXFR,IXFR,OPT
 
 # Reduce DNS cache TTLs as Microsoft has very short TTL for the A records of the allowlisted servers
 max-cache-ttl=5
