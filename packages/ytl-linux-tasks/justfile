@@ -7,7 +7,7 @@ default:
 
 # A group of tasks essential for every healthy YTL Linux installation.
 [private]
-maintenance: migrate-package-keys remove-virtualbox
+maintenance: migrate-package-keys remove-virtualbox remove-systemd-timesyncd-and-update-manager
 
 # Installs public keys of package sources to supported location
 migrate-package-keys:
@@ -16,6 +16,10 @@ migrate-package-keys:
 # Remove VirtualBox 7.1 and its requirements (autopurge)
 remove-virtualbox:
     './scripts/2026-04-16_remove-virtualbox.sh'
+
+# Remove systemd-timesyncd and update-manager from existing installation
+remove-systemd-timesyncd-and-update-manager:
+    './scripts/2026-08-11_remove-systemd-timesyncd-and-update-manager.sh'
 
 # Creates a tarball of the Abitti 2 server database for e.g. troubleshooting or debugging
 archive-digabi2-database:
