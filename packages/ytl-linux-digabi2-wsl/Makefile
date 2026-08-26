@@ -1,6 +1,6 @@
 export NAME := ytl-linux-digabi2-wsl
 export DESCRIPTION := "Metapackage that install prerequisites for the Abitti 2 server (Docker, Naksu 2) - WSL version"
-export VERSION := 0.1.0
+export VERSION := 0.1.1
 
 DEPENDENCIES := \
 	--depends naksu2 \
