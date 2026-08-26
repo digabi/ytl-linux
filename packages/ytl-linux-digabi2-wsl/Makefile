@@ -18,6 +18,7 @@ CONFLICTS := \
 deb:
 	mkdir -p deb-root/usr/local/bin/
 	cp wslview deb-root/usr/local/bin/
+	cp wslvar deb-root/usr/local/bin/
 
 	mkdir -p deb-root/usr/share/applications/
 	cp wslview.desktop deb-root/usr/share/applications/
