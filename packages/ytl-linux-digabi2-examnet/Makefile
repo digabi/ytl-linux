@@ -1,6 +1,6 @@
 export NAME := ytl-linux-digabi2-examnet
 export DESCRIPTION := "Setup tools and background services for Abitti 2 exam networks"
-export VERSION := 2.1.1
+export VERSION := 2.1.2
 
 DEPENDENCIES := \
 	--depends apt \
