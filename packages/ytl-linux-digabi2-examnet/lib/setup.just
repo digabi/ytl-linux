@@ -119,6 +119,8 @@ apply net-device-wan net-device-lan server-number server-friendly-name: \
   just systemd enable ytl-linux-digabi2-examnet-discovery.service
   just systemd enable ytl-linux-digabi2-examnet-discovery.timer
 
+  just setup write-examnet-config "{{net-device-wan}}" "{{net-device-lan}}" "$SERVER_OWN_IP" "{{server-friendly-name}}"
+
   # (Re)start services
   just systemd restart systemd-resolved
   just systemd restart dnsmasq@docker
@@ -126,8 +128,6 @@ apply net-device-wan net-device-lan server-number server-friendly-name: \
   just systemd restart ytl-linux-digabi2-examnet
   just systemd restart ytl-linux-digabi2-examnet-discovery.timer
   just systemd restart ytl-linux-digabi2-examnet-discovery.service
-
-  just setup write-examnet-config "{{net-device-wan}}" "{{net-device-lan}}" "$SERVER_OWN_IP" "{{server-friendly-name}}"
 
   just internet-forwarding populate-ipset $SERVER_OWN_IP $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
 
