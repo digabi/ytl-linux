@@ -79,7 +79,9 @@ class UpdateDialog(Gtk.Window):
 
         translations = i18n(self.available_updates)
 
-        self.label_text = translations.label_text
+        self.label_text = translations.label_text_noupdates
+        if self.available_updates:
+            self.label_text = translations.label_text
 
         self.progress_bar_text = translations.progress_bar_text
 
@@ -253,6 +255,40 @@ class i18n:
 <b>The following software has available updates:</b>
 
 {available_updates}
+
+<span size="large"><b>Do you want to install the updates now?</b></span>
+        """}
+
+        self.label_text_noupdates = {
+            "fi": """
+<span size="large">YTL:n ohjelmistot ovat ajan tasalla</span>
+
+<b>
+    YTL:n ohjelmistot ovat ajan tasalla. Käyttöjärjestelmässä
+    saattaa olla tarjolla muita päivityksiä.
+</b>
+
+<span size="large"><b>Haluatko asentaa päivitykset nyt?</b></span>
+        """,
+
+            "sv": """
+<span size="large">SEN:s program är uppdaterade</span>
+
+<b>
+    SEN:s programvara är uppdaterad. Det kan finnas andra uppdateringar
+    tillgängliga för operativsystemet.
+</b>
+
+<span size="large"><b>Vill du installera uppdateringarna nu?</b></span>
+        """,
+
+            "en": """
+<span size="large">MEB software is up to date</span>
+
+<b>
+    MEB software is up to date. However, there may be operating
+    system updates available.
+</b>
 
 <span size="large"><b>Do you want to install the updates now?</b></span>
         """}
