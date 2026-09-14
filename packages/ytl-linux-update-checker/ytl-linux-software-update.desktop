@@ -6,4 +6,4 @@ Exec=pkexec /usr/local/sbin/ytl-linux-update-checker --force
 Terminal=false
 Type=Application
 Categories=System;Utility;
-Icon=/usr/local/share/pixmaps/ytl-linux-software-update.svg
+Icon=/usr/local/share/pixmaps/ytl-linux-update-checker.svg

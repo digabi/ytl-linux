@@ -27,7 +27,7 @@ deb:
 	cp ytl-linux-software-update.desktop deb-root/usr/share/applications/
 
 	mkdir -p deb-root/usr/local/share/pixmaps/
-	cp ytl-linux-software-update.svg deb-root/usr/local/share/pixmaps/
+	cp ytl-linux-update-checker.svg deb-root/usr/local/share/pixmaps/
 
 	ytl-fpm \
 		--after-install after-install.sh \

@@ -18,6 +18,8 @@ from gi.repository import Gtk  # pylint: disable=wrong-import-position # pyright
 CONFIG_PATH = Path("/var/lib/ytl-linux-update-check")
 SNOOZE_FILE_PATH = Path(CONFIG_PATH, "snoozed-until")
 SNOOZE_TIME = dt.timedelta(hours=24)
+ICON_PATH = Path("/usr/local/share/pixmaps/")
+ICON_FILE_PATH = Path(ICON_PATH, "ytl-linux-update-checker.svg")
 SYSLOG_IDENTIFIER = "ytl-linux-software-update"
 LOGLEVEL_INFO = 6
 LOGLEVEL_WARN = 4
@@ -70,6 +72,7 @@ class UpdateDialog(Gtk.Window):
         self.set_border_width(10)
         self.set_position(Gtk.WindowPosition.CENTER)
         self.set_default_size(400, 200)
+        self.set_icon_from_file(str(ICON_FILE_PATH))
         self.selected_lang = "fi"
         self.will_update = False
         self.proc: subprocess.Popen[bytes] | None = None
