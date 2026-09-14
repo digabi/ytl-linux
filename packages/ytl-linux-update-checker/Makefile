@@ -21,6 +21,13 @@ deb:
 
 	mkdir -p deb-root/usr/share/polkit-1/actions/
 	cp ytl-linux-software-update.policy deb-root/usr/share/polkit-1/actions/
+	cp ytl-linux-update-checker.policy deb-root/usr/share/polkit-1/actions/
+
+	mkdir -p deb-root/usr/share/applications/
+	cp ytl-linux-software-update.desktop deb-root/usr/share/applications/
+
+	mkdir -p deb-root/usr/local/share/pixmaps/
+	cp ytl-linux-software-update.svg deb-root/usr/local/share/pixmaps/
 
 	ytl-fpm \
 		--after-install after-install.sh \

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Name=YTL Linux Software Updates
+Comment=Install YTL Linux Software Updates
+Exec=pkexec /usr/local/sbin/ytl-linux-update-checker --force
+Terminal=false
+Type=Application
+Categories=System;Utility;
+Icon=/usr/local/share/pixmaps/ytl-linux-software-update.svg
