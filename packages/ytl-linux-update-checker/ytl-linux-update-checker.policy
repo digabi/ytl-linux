@@ -3,6 +3,7 @@
 <policyconfig>
   <vendor>Matriculation Examination Board</vendor>
   <vendor_url>http://github.com/digabi/ytl-linux/</vendor_url>
+  <icon_name>system-software-update</icon_name>
   <action id="fi.ylioppilastutkinto.fi.ytl-linux-update-checker">
     <description>Support GUI authentication for installing YTL Linux software updates</description>
     <message>Authentication is required to query software updates. Please enter your password.</message>
