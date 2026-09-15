@@ -33,4 +33,5 @@ deb:
 		--after-install after-install.sh \
 		--before-remove before-remove.sh \
 		--after-remove after-remove.sh \
+		--architecture all \
 		$(DEPENDENCIES)
