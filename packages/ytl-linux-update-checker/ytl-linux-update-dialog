@@ -18,6 +18,8 @@ from gi.repository import Gtk  # pylint: disable=wrong-import-position # pyright
 CONFIG_PATH = Path("/var/lib/ytl-linux-update-check")
 SNOOZE_FILE_PATH = Path(CONFIG_PATH, "snoozed-until")
 SNOOZE_TIME = dt.timedelta(hours=24)
+ICON_PATH = Path("/usr/local/share/pixmaps/")
+ICON_FILE_PATH = Path(ICON_PATH, "ytl-linux-update-checker.svg")
 SYSLOG_IDENTIFIER = "ytl-linux-software-update"
 LOGLEVEL_INFO = 6
 LOGLEVEL_WARN = 4
@@ -70,6 +72,7 @@ class UpdateDialog(Gtk.Window):
         self.set_border_width(10)
         self.set_position(Gtk.WindowPosition.CENTER)
         self.set_default_size(400, 200)
+        self.set_icon_from_file(str(ICON_FILE_PATH))
         self.selected_lang = "fi"
         self.will_update = False
         self.proc: subprocess.Popen[bytes] | None = None
@@ -79,7 +82,9 @@ class UpdateDialog(Gtk.Window):
 
         translations = i18n(self.available_updates)
 
-        self.label_text = translations.label_text
+        self.label_text = translations.label_text_noupdates
+        if self.available_updates:
+            self.label_text = translations.label_text
 
         self.progress_bar_text = translations.progress_bar_text
 
@@ -253,6 +258,40 @@ class i18n:
 <b>The following software has available updates:</b>
 
 {available_updates}
+
+<span size="large"><b>Do you want to install the updates now?</b></span>
+        """}
+
+        self.label_text_noupdates = {
+            "fi": """
+<span size="large">YTL:n ohjelmistot ovat ajan tasalla</span>
+
+<b>
+    YTL:n ohjelmistot ovat ajan tasalla. Käyttöjärjestelmässä
+    saattaa olla tarjolla muita päivityksiä.
+</b>
+
+<span size="large"><b>Haluatko asentaa päivitykset nyt?</b></span>
+        """,
+
+            "sv": """
+<span size="large">SEN:s program är uppdaterade</span>
+
+<b>
+    SEN:s programvara är uppdaterad. Det kan finnas andra uppdateringar
+    tillgängliga för operativsystemet.
+</b>
+
+<span size="large"><b>Vill du installera uppdateringarna nu?</b></span>
+        """,
+
+            "en": """
+<span size="large">MEB software is up to date</span>
+
+<b>
+    MEB software is up to date. However, there may be operating
+    system updates available.
+</b>
 
 <span size="large"><b>Do you want to install the updates now?</b></span>
         """}
