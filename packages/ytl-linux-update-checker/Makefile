@@ -24,7 +24,7 @@ deb:
 	cp ytl-linux-update-checker.policy deb-root/usr/share/polkit-1/actions/
 
 	mkdir -p deb-root/usr/share/applications/
-	cp ytl-linux-software-update.desktop deb-root/usr/share/applications/
+	cp ytl-linux-update-checker.desktop deb-root/usr/share/applications/
 
 	mkdir -p deb-root/usr/local/share/pixmaps/
 	cp ytl-linux-update-checker.svg deb-root/usr/local/share/pixmaps/
