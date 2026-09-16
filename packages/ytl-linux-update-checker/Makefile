@@ -1,6 +1,6 @@
 export NAME := ytl-linux-update-checker
 export DESCRIPTION := "YTL Linux automatic update checker and notifier tool"
-export VERSION := 0.4.3
+export VERSION := 0.5.0
 
 DEPENDENCIES := --depends python3-systemd --depends python3-gi --depends python3-gi-cairo --depends gir1.2-gtk-3.0
 
@@ -21,9 +21,17 @@ deb:
 
 	mkdir -p deb-root/usr/share/polkit-1/actions/
 	cp ytl-linux-software-update.policy deb-root/usr/share/polkit-1/actions/
+	cp ytl-linux-update-checker.policy deb-root/usr/share/polkit-1/actions/
+
+	mkdir -p deb-root/usr/share/applications/
+	cp ytl-linux-update-checker.desktop deb-root/usr/share/applications/
+
+	mkdir -p deb-root/usr/local/share/pixmaps/
+	cp ytl-linux-update-checker.svg deb-root/usr/local/share/pixmaps/
 
 	ytl-fpm \
 		--after-install after-install.sh \
 		--before-remove before-remove.sh \
 		--after-remove after-remove.sh \
+		--architecture all \
 		$(DEPENDENCIES)
