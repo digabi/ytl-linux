@@ -34,7 +34,7 @@ get-available-ip-range-for-docker error-code +reserved-ips:
     _USED=false
 
     for reserved in {{reserved-ips}}; do
-      if [[ $reserved == $range* ]]; then
+      if [[ ${reserved%%.*} == ${range%%.*} ]]; then
         _USED=true
         break
       fi
