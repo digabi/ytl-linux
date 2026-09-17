@@ -22,6 +22,7 @@ apply net-device-wan net-device-lan server-number server-friendly-name: \
     "PATH_NET_DEVICE_WAN_CONF"
     "PATH_SERVER_OWN_IP"
     "PATH_SERVER_FRIENDLY_NAME_CONF"
+    "PATH_EXAMNET_VERSION"
     "PATH_NETPLAN_CONF"
     "PATH_RESOLVED_CONF"
     "PATH_RESOLVED_CONF_TEMPLATE"
@@ -173,6 +174,7 @@ destroy: \
     "PATH_NET_DEVICE_WAN_CONF"
     "PATH_NET_DEVICE_LAN_CONF"
     "PATH_SERVER_FRIENDLY_NAME_CONF"
+    "PATH_EXAMNET_VERSION"
     "PATH_SERVER_OWN_IP"
     "PATH_DISCOVERY_DB"
     "PATH_DNSMASQ"
@@ -193,11 +195,12 @@ destroy: \
   just fs remove-file "$PATH_RESOLVED_CONF"
   just fs remove-file "$PATH_DOCKER_DAEMON_CONF"
 
-  just fs remove-file "$PATH_EXAMNET_CONFIG/server-friendly-name"
-  just fs remove-file "$PATH_EXAMNET_CONFIG/server-own-ip"
-  just fs remove-file "$PATH_EXAMNET_CONFIG/net-device-lan"
-  just fs remove-file "$PATH_EXAMNET_CONFIG/net-device-wan"
-  just fs remove-file "$PATH_EXAMNET_CONFIG/discovery.db"
+  just fs remove-file "$PATH_SERVER_FRIENDLY_NAME_CONF"
+  just fs remove-file "$PATH_SERVER_OWN_IP"
+  just fs remove-file "$PATH_NET_DEVICE_LAN_CONF"
+  just fs remove-file "$PATH_NET_DEVICE_WAN_CONF"
+  just fs remove-file "$PATH_DISCOVERY_DB"
+  just fs remove-file "$PATH_EXAMNET_VERSION"
 
   just fs empty-directory "$PATH_DNSMASQ"
 
@@ -237,6 +240,7 @@ write-examnet-config net-device-wan net-device-lan server-own-ip server-friendly
   just fs write-file "$PATH_NET_DEVICE_WAN_CONF" "{{net-device-wan}}"
   just fs write-file "$PATH_SERVER_OWN_IP" "{{server-own-ip}}"
   just fs write-file "$PATH_SERVER_FRIENDLY_NAME_CONF" "{{server-friendly-name}}"
+  just fs write-file "$PATH_EXAMNET_VERSION" "$EXAMNET_VERSION"
 
 [private]
 assert-devices-different wan-network-device lan-network-device:
