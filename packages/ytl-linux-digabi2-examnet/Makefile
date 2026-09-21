@@ -1,6 +1,6 @@
 export NAME := ytl-linux-digabi2-examnet
 export DESCRIPTION := "Setup tools and background services for Abitti 2 exam networks"
-export VERSION := 2.1.3
+export VERSION := 2.2.0
 
 DEPENDENCIES := \
 	--depends apt \
@@ -17,7 +17,7 @@ deb:
 	mkdir -p deb-root/usr/local/sbin/
 	cp ytl-linux-digabi2-examnet-legacy deb-root/usr/local/sbin/
 	cp ytl-linux-digabi2-docker-configure.sh deb-root/usr/local/sbin/
-	cp ytl-linux-digabi2-examnet deb-root/usr/local/sbin/
+	sed "s/^export EXAMNET_VERSION=.*/export EXAMNET_VERSION=${VERSION}/" ytl-linux-digabi2-examnet >deb-root/usr/local/sbin/ytl-linux-digabi2-examnet
 
 	mkdir -p deb-root/usr/local/libexec/ytl-linux-digabi2-examnet/lib
 	cp justfile deb-root/usr/local/libexec/ytl-linux-digabi2-examnet/justfile

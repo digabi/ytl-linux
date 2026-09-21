@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+export EXAMNET_VERSION=undefined
+
 # Naksu uses exit codes 6, 20, 24, 25 so these should not be changed
 export EXIT_CODE_GENERIC_ERROR=1                # Generic unexpected errors
 export EXIT_CODE_MUST_BE_ROOT=2                 # The script must be executed by root or sudo
@@ -77,6 +79,7 @@ export PATH_SERVER_FRIENDLY_NAME_CONF="$PATH_EXAMNET_CONFIG/server-friendly-name
 export PATH_NET_DEVICE_LAN_CONF="$PATH_EXAMNET_CONFIG/net-device-lan"
 export PATH_NET_DEVICE_WAN_CONF="$PATH_EXAMNET_CONFIG/net-device-wan"
 export PATH_SERVER_OWN_IP="$PATH_EXAMNET_CONFIG/server-own-ip"
+export PATH_EXAMNET_VERSION="$PATH_EXAMNET_CONFIG/examnet-version"
 export PATH_DISCOVERY_DB="$PATH_EXAMNET_CONFIG/discovery.db"
 export PATH_JUSTFILE="${PATH_JUSTFILE:-/usr/local/libexec/ytl-linux-digabi2-examnet/justfile}"
 export PATH_NCSI_HOSTNAMES="$PATH_EXAMNET_CONFIG/ncsi-hostnames"

@@ -276,6 +276,7 @@ describe('examnet (just port)', () => {
     test('runs destroy without error even if waiting for network online fails', async () => {
       await writeToTempDir(mockBinDir, 'nm-online', mockScriptReturningErrorCode)
       await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '10.0.10.1')
+      await writeToTempDir(mockExamnetConfigDir, 'examnet-version', '1.0.0')
       await runExamnetWithArguments(['--remove'], ENV_TEST_MODE)
       await assertCalls([
         callSystemctl('disable', 'ytl-linux-digabi2-examnet', '--now'),
@@ -286,6 +287,7 @@ describe('examnet (just port)', () => {
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.service', '--now'),
         callRm(`${mockExamnetConfigDir}/server-own-ip`),
         callRm(`${mockExamnetConfigDir}/discovery.db`),
+        callRm(`${mockExamnetConfigDir}/examnet-version`),
         callRmRecursive(`${mockDnsmasqDir}/conf.d`, `${mockDnsmasqDir}/docker`, `${mockDnsmasqDir}/lan`),
         callSed(`${mockEtcDir}/hosts`),
         callSudoTeeWriteToFile(`${mockEtcDir}/hosts`),
@@ -312,6 +314,7 @@ describe('examnet (just port)', () => {
     })
     test('runs destroy when correct parameters are given', async () => {
       await writeToTempDir(mockExamnetConfigDir, 'server-own-ip', '10.0.10.1')
+      await writeToTempDir(mockExamnetConfigDir, 'examnet-version', '1.0.0')
       await runExamnetWithArguments(['--remove'], ENV_TEST_MODE)
       await assertCalls([
         callSystemctl('disable', 'ytl-linux-digabi2-examnet', '--now'),
@@ -322,6 +325,7 @@ describe('examnet (just port)', () => {
         callSystemctl('disable', 'ytl-linux-digabi2-examnet-discovery.service', '--now'),
         callRm(`${mockExamnetConfigDir}/server-own-ip`),
         callRm(`${mockExamnetConfigDir}/discovery.db`),
+        callRm(`${mockExamnetConfigDir}/examnet-version`),
         callRmRecursive(`${mockDnsmasqDir}/conf.d`, `${mockDnsmasqDir}/docker`, `${mockDnsmasqDir}/lan`),
         callSed(`${mockEtcDir}/hosts`),
         callSudoTeeWriteToFile(`${mockEtcDir}/hosts`),
@@ -722,6 +726,7 @@ describe('examnet (just port)', () => {
       await assertFileExists(mockExamnetConfigDir, 'net-device-wan')
       await assertFileExists(mockExamnetConfigDir, 'server-own-ip')
       await assertFileExists(mockExamnetConfigDir, 'server-friendly-name', 'ktp1\n')
+      await assertFileExists(mockExamnetConfigDir, 'examnet-version', 'undefined\n')
       await assertFileExists(mockResolvedDir, 'ytl-linux.conf')
       await assertFileExists(
         mockDnsmasqDockerDir,
@@ -958,6 +963,7 @@ describe('examnet (just port)', () => {
       await assertFileExists(mockExamnetConfigDir, 'net-device-wan')
       await assertFileExists(mockExamnetConfigDir, 'server-own-ip')
       await assertFileExists(mockExamnetConfigDir, 'server-friendly-name', 'perunakellari\n')
+      await assertFileExists(mockExamnetConfigDir, 'examnet-version', 'undefined\n')
       await assertFileExists(mockResolvedDir, 'ytl-linux.conf')
       await assertFileExists(
         mockDnsmasqDockerDir,
