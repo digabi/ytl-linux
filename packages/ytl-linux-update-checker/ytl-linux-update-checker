@@ -30,7 +30,7 @@ APT_FLAGS_CHECK_YTL_LINUX_ONLY=(-o Dir::Etc::sourcelist="sources.list.d/ytl-linu
 
 apt-get update "${APT_FLAGS_CHECK_YTL_LINUX_ONLY[@]}" | log
 
-UPGRADE_DRY_RUN_RESULT="$(apt-get upgrade --dry-run "${APT_FLAGS_CHECK_YTL_LINUX_ONLY[@]}")"
+UPGRADE_DRY_RUN_RESULT="$(apt-get upgrade --with-new-pkgs --dry-run "${APT_FLAGS_CHECK_YTL_LINUX_ONLY[@]}")"
 log "${UPGRADE_DRY_RUN_RESULT}"
 
 if [[ -n "$FORCE" ]] || echo "${UPGRADE_DRY_RUN_RESULT}" | grep -q "The following packages will be upgraded"; then
