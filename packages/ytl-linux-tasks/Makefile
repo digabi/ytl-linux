@@ -3,6 +3,15 @@ export DESCRIPTION := "Command runner specialized for YTL Linux administration t
 export VERSION := 0.7.0
 
 deb:
+	# Check that all scripts in the scripts folder are executable
+	for script in scripts/*; do \
+		if [ ! -x $$script ]; then \
+			echo "Error: Script $$script is not executable, this will cause it to not run in YTL-Linux"; \
+			echo "Fix the permissions with: chmod +x $$script"; \
+			exit 1; \
+		fi; \
+	done
+
 	# Install a more up-to-date version of just than is available in the Ubuntu repos
 
 	# Unzip stored tarball
