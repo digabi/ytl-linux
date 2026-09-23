@@ -1,6 +1,6 @@
 export NAME := ytl-linux-update-checker
 export DESCRIPTION := "YTL Linux automatic update checker and notifier tool"
-export VERSION := 0.5.0
+export VERSION := 0.6.0
 
 DEPENDENCIES := --depends python3-systemd --depends python3-gi --depends python3-gi-cairo --depends gir1.2-gtk-3.0
 
