@@ -24,6 +24,7 @@ export function bouncerApp(config: Config): (req: Request) => Response {
     return match(url.pathname)
       .with('/connecttest.txt', () => new Response('Microsoft Connect Test'))
       .with('/ncsi.txt', () => new Response('Microsoft NCSI'))
+      .with('/generate_204', () => new Response(null, { status: 204 })) // ChromeOS online detection
       .otherwise(() => new Response(null, { status: 404 }))
   }
 
