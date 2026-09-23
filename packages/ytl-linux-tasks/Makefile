@@ -1,6 +1,6 @@
 export NAME := ytl-linux-tasks
 export DESCRIPTION := "Command runner specialized for YTL Linux administration tasks"
-export VERSION := 0.6.0
+export VERSION := 0.7.0
 
 deb:
 	# Install a more up-to-date version of just than is available in the Ubuntu repos
