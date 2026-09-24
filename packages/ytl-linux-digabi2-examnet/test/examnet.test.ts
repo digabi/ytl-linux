@@ -786,8 +786,11 @@ describe('examnet (just port)', () => {
           '\n' +
           '# Redirect requests for Windows Network Connection Status Indicator (NCSI) to our local NCSI spoofer (digabi2-examnet-bouncer)\n' +
           'host-record=dns.msftncsi.com,www.msftncsi.com,www.msftconnecttest.com,ipv6.msftconnecttest.com,192.168.10.1\n' +
+          '# Redirect requests for Chromium online connectivity check to our local NCSI spoofer (digabi2-examnet-bouncer)\n' +
+          'host-record=clients3.google.com,192.168.10.1\n' +
           '# Avoid resolving NCSI IPv6 addresses from upstream DNS\n' +
           'host-record=dns.msftncsi.com,www.msftncsi.com,www.msftconnecttest.com,ipv6.msftconnecttest.com,::\n' +
+          'host-record=clients3.google.com,::\n' +
           '\n' +
           '# Forward also requests to allowlisted domains to upstream\n' +
           'server=/endpoint.security.microsoft.com/#\n' +
@@ -1023,8 +1026,11 @@ describe('examnet (just port)', () => {
           '\n' +
           '# Redirect requests for Windows Network Connection Status Indicator (NCSI) to our local NCSI spoofer (digabi2-examnet-bouncer)\n' +
           'host-record=dns.msftncsi.com,www.msftncsi.com,www.msftconnecttest.com,ipv6.msftconnecttest.com,192.168.10.1\n' +
+          '# Redirect requests for Chromium online connectivity check to our local NCSI spoofer (digabi2-examnet-bouncer)\n' +
+          'host-record=clients3.google.com,192.168.10.1\n' +
           '# Avoid resolving NCSI IPv6 addresses from upstream DNS\n' +
           'host-record=dns.msftncsi.com,www.msftncsi.com,www.msftconnecttest.com,ipv6.msftconnecttest.com,::\n' +
+          'host-record=clients3.google.com,::\n' +
           '\n' +
           '# Forward also requests to allowlisted domains to upstream\n' +
           'server=/endpoint.security.microsoft.com/#\n' +
@@ -1304,6 +1310,7 @@ describe('examnet (just port)', () => {
       'ncsi-hostnames',
       'dns.msftncsi.com,www.msftncsi.com,www.msftconnecttest.com,ipv6.msftconnecttest.com'
     )
+    await writeToTempDir(mockExamnetConfigDir, 'chromium-online-hostnames', 'clients3.google.com')
     await writeToTempDir(mockExamnetConfigDir, 'discovery.db', 'foo')
     await writeToTempDir(mockTemplatesDir, 'resolved.conf.template', 'foobar')
     await writeToTempDir(mockTemplatesDir, 'rsyslog-apparmor-local.template', '$PATH_INTERNET_FORWARDING_LOGS rw,\n')
@@ -1403,8 +1410,11 @@ describe('examnet (just port)', () => {
         '\n' +
         '# Redirect requests for Windows Network Connection Status Indicator (NCSI) to our local NCSI spoofer (digabi2-examnet-bouncer)\n' +
         'host-record=${NCSI_HOSTNAMES_LIST},${SERVER_OWN_IP}\n' +
+        '# Redirect requests for Chromium online connectivity check to our local NCSI spoofer (digabi2-examnet-bouncer)\n' +
+        'host-record=${CHROMIUM_ONLINE_HOSTNAMES_LIST},${SERVER_OWN_IP}\n' +
         '# Avoid resolving NCSI IPv6 addresses from upstream DNS\n' +
         'host-record=${NCSI_HOSTNAMES_LIST},::\n' +
+        'host-record=${CHROMIUM_ONLINE_HOSTNAMES_LIST},::\n' +
         '\n' +
         '# Forward also requests to allowlisted domains to upstream\n' +
         '${ALLOWLISTED_SERVER_CONFIGURATION}\n' +
@@ -1539,7 +1549,7 @@ function callBouncer(mockNaksu2CertsDir: string) {
   return {
     cmd: 'ytl-linux-digabi2-bouncer',
     argv: [
-      `    {        "config": {            "friendlyName": "foobar",             "canonicalHostname": "ktp1.1000.koe.abitti.net",             "ncsiHostnames": ["dns.msftncsi.com","www.msftncsi.com","www.msftconnecttest.com","ipv6.msftconnecttest.com"],             "searchDomain": "internal",             "serverOwnIp": "10.0.10.1",             "ports": {"discovery": 26464, "bouncer": 80}         },         "secrets": {"cert":"${mockNaksu2CertsDir}/fullchain.pem","key":"${mockNaksu2CertsDir}/key.pem"}     }`
+      `    {        "config": {            "friendlyName": "foobar",             "canonicalHostname": "ktp1.1000.koe.abitti.net",             "ncsiHostnames": ["dns.msftncsi.com","www.msftncsi.com","www.msftconnecttest.com","ipv6.msftconnecttest.com"],             "chromiumOnlineHostnames": ["clients3.google.com"],             "searchDomain": "internal",             "serverOwnIp": "10.0.10.1",             "ports": {"discovery": 26464, "bouncer": 80}         },         "secrets": {"cert":"${mockNaksu2CertsDir}/fullchain.pem","key":"${mockNaksu2CertsDir}/key.pem"}     }`
     ]
   }
 }

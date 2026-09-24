@@ -5,6 +5,7 @@ export const config = ConfigSchema.parse({
   canonicalHostname: randomUUID(),
   friendlyName: randomUUID(),
   ncsiHostnames: [randomUUID()],
+  chromiumOnlineHostnames: [randomUUID()],
   ports: { discovery: 26464, bouncer: 80 },
   searchDomain: randomUUID(),
   serverOwnIp: randomUUID()

@@ -20,11 +20,13 @@ start: \
     "PATH_NAKSU2_FULLCHAIN_PEM"
     "PATH_NAKSU2_KEY_PEM"
     "PATH_NCSI_HOSTNAMES"
+    "PATH_CHROMIUM_ONLINE_HOSTNAMES"
   ) \
   (fs::assert-file-exists env("PATH_SERVER_OWN_IP") EXIT_CODE_CANNOT_START_BOUNCER) \
   (fs::assert-file-exists env("PATH_SERVER_FRIENDLY_NAME_CONF") EXIT_CODE_CANNOT_START_BOUNCER) \
   (fs::assert-file-exists env("PATH_NAKSU2_DOMAIN") EXIT_CODE_CANNOT_START_BOUNCER) \
   (fs::assert-file-exists env("PATH_NCSI_HOSTNAMES") EXIT_CODE_CANNOT_START_BOUNCER) \
+  (fs::assert-file-exists env("PATH_CHROMIUM_ONLINE_HOSTNAMES") EXIT_CODE_CANNOT_START_BOUNCER) \
   (fs::assert-file-exists env("PATH_NAKSU2_FULLCHAIN_PEM") EXIT_CODE_CANNOT_START_BOUNCER) \
   (fs::assert-file-exists env("PATH_NAKSU2_KEY_PEM") EXIT_CODE_CANNOT_START_BOUNCER)
   #!/usr/bin/env bash
@@ -40,6 +42,7 @@ start: \
   fi
 
   NCSI_HOSTNAMES=$(jq -Rc '.|split(",")|map(select(.!=""))' "$PATH_NCSI_HOSTNAMES")
+  CHROMIUM_ONLINE_HOSTNAMES=$(jq -Rc '.|split(",")|map(select(.!=""))' "$PATH_CHROMIUM_ONLINE_HOSTNAMES")
 
   CONFIG=$(cat <<EOF
       {\
@@ -47,6 +50,7 @@ start: \
               "friendlyName": "$SERVER_FRIENDLY_NAME", \
               "canonicalHostname": "$CANONICAL_HOSTNAME", \
               "ncsiHostnames": ${NCSI_HOSTNAMES}, \
+              "chromiumOnlineHostnames": ${CHROMIUM_ONLINE_HOSTNAMES}, \
               "searchDomain": "$FRIENDLY_NAME_SEARCH_DOMAIN", \
               "serverOwnIp": "$SERVER_OWN_IP", \
               "ports": {"discovery": $DISCOVERY_PORT, "bouncer": $BOUNCER_PORT} \

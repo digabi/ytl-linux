@@ -16,7 +16,27 @@ Deno.test('NCSI handler responds correctly', async () => {
     expect(await resp.text()).toBe('Microsoft NCSI')
   }
   {
+    const resp = app(new Request(`http://${config.ncsiHostnames[0]}/generate_204`))
+    expect(resp.ok).toBe(false)
+  }
+  {
     const resp = app(new Request(`http://${config.ncsiHostnames[0]}/`))
+    expect(resp.ok).toBe(false)
+  }
+})
+
+Deno.test('Chromium online handler responds correctly', async () => {
+  {
+    const resp = app(new Request(`http://${config.chromiumOnlineHostnames[0]}/generate_204`))
+    expect(resp.ok).toBe(true)
+    expect(await resp.status).toBe(204)
+  }
+  {
+    const resp = app(new Request(`http://${config.chromiumOnlineHostnames[0]}/ncsi.txt`))
+    expect(resp.ok).toBe(false)
+  }
+  {
+    const resp = app(new Request(`http://${config.chromiumOnlineHostnames[0]}/`))
     expect(resp.ok).toBe(false)
   }
 })

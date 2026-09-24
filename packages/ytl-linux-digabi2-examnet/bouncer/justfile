@@ -24,6 +24,7 @@ start: generate-dev-conf
             "friendlyName": $(jq -Rc . "$PATH_SERVER_FRIENDLY_NAME_CONF"),
             "canonicalHostname": $(jq -Rc . "$PATH_NAKSU2_DOMAIN"),
             "ncsiHostnames": $(jq -Rc '.|split(",")|map(select(.!=""))' "$PATH_EXAMNET_CONFIG/ncsi-hostnames"),
+            "chromiumOnlineHostnames": $(jq -Rc '.|split(",")|map(select(.!=""))' "$PATH_EXAMNET_CONFIG/chromium-online-hostnames"),
             "searchDomain": "internal",
             "serverOwnIp": $(jq -Rc . "$PATH_SERVER_OWN_IP"),
             "ports": {"discovery": 26242, "bouncer": 80}
