@@ -15,7 +15,6 @@ DEPENDENCIES := \
 deb:
 	# Script files
 	mkdir -p deb-root/usr/local/sbin/
-	cp ytl-linux-digabi2-examnet-legacy deb-root/usr/local/sbin/
 	cp ytl-linux-digabi2-docker-configure.sh deb-root/usr/local/sbin/
 	sed "s/^export EXAMNET_VERSION=.*/export EXAMNET_VERSION=${VERSION}/" ytl-linux-digabi2-examnet >deb-root/usr/local/sbin/ytl-linux-digabi2-examnet
 
