@@ -4,6 +4,7 @@ export const ConfigSchema = z.object({
   friendlyName: z.string(),
   canonicalHostname: z.string(),
   ncsiHostnames: z.array(z.string()),
+  chromiumOnlineHostnames: z.array(z.string()),
   searchDomain: z.string(),
   serverOwnIp: z.string(),
   ports: z.object({

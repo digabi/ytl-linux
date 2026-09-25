@@ -19,8 +19,11 @@ dhcp-option=option:domain-name,${FRIENDLY_NAME_SEARCH_DOMAIN}
 
 # Redirect requests for Windows Network Connection Status Indicator (NCSI) to our local NCSI spoofer (digabi2-examnet-bouncer)
 host-record=${NCSI_HOSTNAMES_LIST},${SERVER_OWN_IP}
+# Redirect requests for Chromium online connectivity check to our local NCSI spoofer (digabi2-examnet-bouncer)
+host-record=${CHROMIUM_ONLINE_HOSTNAMES_LIST},${SERVER_OWN_IP}
 # Avoid resolving NCSI IPv6 addresses from upstream DNS
 host-record=${NCSI_HOSTNAMES_LIST},::
+host-record=${CHROMIUM_ONLINE_HOSTNAMES_LIST},::
 
 # Use WAN device nameservers as upstream
 resolv-file=/etc/resolv.conf

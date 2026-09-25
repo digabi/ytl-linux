@@ -2,7 +2,7 @@ import { match } from '@gabriel/ts-pattern'
 import { Config } from './config.ts'
 
 export function bouncerApp(config: Config): (req: Request) => Response {
-  const { ncsiHostnames, friendlyName } = config
+  const { ncsiHostnames, chromiumOnlineHostnames, friendlyName } = config
   const friendlyHostname = `${friendlyName}.${config.searchDomain}`
 
   return function bouncerHandler(req: Request): Response {
@@ -16,6 +16,10 @@ export function bouncerApp(config: Config): (req: Request) => Response {
         x => ncsiHostnames.includes(x),
         () => ncsiHandler(req)
       )
+      .when(
+        x => chromiumOnlineHostnames.includes(x),
+        () => chromiumOnlineHandler(req)
+      )
       .otherwise(() => new Response(null, { status: 404 }))
   }
 
@@ -24,6 +28,13 @@ export function bouncerApp(config: Config): (req: Request) => Response {
     return match(url.pathname)
       .with('/connecttest.txt', () => new Response('Microsoft Connect Test'))
       .with('/ncsi.txt', () => new Response('Microsoft NCSI'))
+      .otherwise(() => new Response(null, { status: 404 }))
+  }
+
+  function chromiumOnlineHandler(req: Request): Response {
+    const url = new URL(req.url)
+    return match(url.pathname)
+      .with('/generate_204', () => new Response(null, { status: 204 })) // ChromeOS online detection
       .otherwise(() => new Response(null, { status: 404 }))
   }
 

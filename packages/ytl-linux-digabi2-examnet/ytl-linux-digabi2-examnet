@@ -83,6 +83,7 @@ export PATH_EXAMNET_VERSION="$PATH_EXAMNET_CONFIG/examnet-version"
 export PATH_DISCOVERY_DB="$PATH_EXAMNET_CONFIG/discovery.db"
 export PATH_JUSTFILE="${PATH_JUSTFILE:-/usr/local/libexec/ytl-linux-digabi2-examnet/justfile}"
 export PATH_NCSI_HOSTNAMES="$PATH_EXAMNET_CONFIG/ncsi-hostnames"
+export PATH_CHROMIUM_ONLINE_HOSTNAMES="$PATH_EXAMNET_CONFIG/chromium-online-hostnames"
 export FILENAME_INTERNET_FORWARDING_LOGS="ytl-linux-internet-forwarding.log"
 export BIN_DIGABI2_EXAMNET_BOUNCER=${BIN_DIGABI2_EXAMNET_BOUNCER:-/usr/local/libexec/ytl-linux-digabi2-examnet/bouncer}
 export BIN_DIGABI2_EXAMNET_DISCOVERY=${BIN_DIGABI2_EXAMNET_DISCOVERY:-/usr/local/libexec/ytl-linux-digabi2-examnet/discovery}

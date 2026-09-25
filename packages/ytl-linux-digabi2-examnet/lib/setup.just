@@ -73,8 +73,10 @@ apply net-device-wan net-device-lan server-number server-friendly-name: \
   export DHCP_RANGE_START
   export DHCP_RANGE_END
 
-  NCSI_HOSTNAMES_LIST=$(cat $PATH_EXAMNET_CONFIG/ncsi-hostnames)
+  NCSI_HOSTNAMES_LIST=$(cat $PATH_NCSI_HOSTNAMES)
   export NCSI_HOSTNAMES_LIST
+  CHROMIUM_ONLINE_HOSTNAMES_LIST=$(cat $PATH_CHROMIUM_ONLINE_HOSTNAMES)
+  export CHROMIUM_ONLINE_HOSTNAMES_LIST
 
   just network configure-networkmanager "yo-{{net-device-lan}}" "{{net-device-lan}}" "$SERVER_OWN_IP/16"
 
