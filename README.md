@@ -57,6 +57,7 @@ just update vendored-just
 ```
 
 **2. Publish the component**
+
 Running any of the commands above will not yet push the changes to end users; to do so, you need to publish the APT repository as detailed above in [Publishing YTL deb packages](#publishing-ytl-deb-packages).
 
 ## Development
