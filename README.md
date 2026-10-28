@@ -27,7 +27,12 @@ Software for building the YTL Linux install ISO is in the [`builder`](./builder)
 
 The packages and the package repository are built in the [Update Debian repository](https://github.com/digabi/ytl-linux/actions/workflows/reprepro.yml) workflow automatically on push to `main`. Vendored packages in the [`debs`](./debs) directory will also be included in the APT repository as-is.
 
-To update the APT repository and thus publish changes to end users, go to [Actions](https://github.com/digabi/ytl-linux/actions/workflows/reprepro.yml), click "Run workflow" and tick the "Publish built .deb packages" option.
+To update the APT repository and thus publish changes to end users: 
+1. Go to [Actions](https://github.com/digabi/ytl-linux/actions/workflows/reprepro.yml),
+2. Click on "Update Debian Repository" in the left sidebar
+3. Click on "Run Workflow" dropdown -> check "Publish built .deb packages" -> Run workflow.
+4. When the "Update Debian Repository" job is finished, Naksu 2 has been published.
+5. Check it yourself: Naksu reads the latest version from [https://linux.abitti.fi/meta/naksu2-latest-version.json](https://linux.abitti.fi/meta/naksu2-latest-version.json)
 
 ### Publishing the publicly distributed ytl-install-24.iso
 
@@ -36,6 +41,8 @@ Pushing a tag of the form 'v24.X' to the repository will trigger the [upload-ima
 Use Ubuntu version numbers with local build version number. Build number 2 of Ubuntu 24.04.3 would get version number (tag) `v24.04.3-2`.
 
 ### Updating additional software components
+
+**1. Update the component**
 
 ```bash
 # Naksu 2
@@ -49,7 +56,8 @@ just update anydesk
 just update vendored-just
 ```
 
-Running any of these will not yet push the changes to end users; to do so, you need to publish the APT repository as detailed in [Publishing YTL deb packages](#publishing-ytl-deb-packages).
+**2. Publish the component**
+Running any of the commands above will not yet push the changes to end users; to do so, you need to publish the APT repository as detailed above in [Publishing YTL deb packages](#publishing-ytl-deb-packages).
 
 ## Development
 
