@@ -31,8 +31,7 @@ To update the APT repository and thus publish changes to end users:
 1. Go to [Actions](https://github.com/digabi/ytl-linux/actions/workflows/reprepro.yml),
 2. Click on "Update Debian Repository" in the left sidebar
 3. Click on "Run Workflow" dropdown -> check "Publish built .deb packages" -> Run workflow.
-4. When the "Update Debian Repository" job is finished, Naksu 2 has been published.
-5. Check it yourself: Naksu reads the latest version from [https://linux.abitti.fi/meta/naksu2-latest-version.json](https://linux.abitti.fi/meta/naksu2-latest-version.json)
+4. When the "Update Debian Repository" job is finished, all YTL deb packages (e.g. Naksu 2, AnyDesk, examnet etc.) have been published.
 
 ### Publishing the publicly distributed ytl-install-24.iso
 
