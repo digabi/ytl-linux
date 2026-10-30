@@ -32,6 +32,9 @@ deb:
 	cp ytl-linux-background.svg deb-root/usr/share/backgrounds/meb/
 	sed -i 's/@VERSION/Ubuntu 24.04/' deb-root/usr/share/backgrounds/meb/ytl-linux-background.svg
 
+	# YTL Linux "Start" menu icon
+	cp ytl-linux-start-menu-icon.svg deb-root/usr/share/icons/hicolor/symbolic/apps/fi.ylioppilastutkinto.ytl-linux-start-menu.svg
+
 	# dconf default settings
 	mkdir -p deb-root/etc/dconf/profile/
 	cp dconf/user deb-root/etc/dconf/profile/
