@@ -36,6 +36,10 @@ deb:
 	mkdir -p deb-root/usr/share/icons/hicolor/symbolic/apps/
 	install -D -m 644 ytl-linux-start-menu-icon.svg deb-root/usr/share/icons/hicolor/symbolic/apps/fi.ylioppilastutkinto.ytl-linux-start-menu.svg
 
+	# Desktop shortcuts
+	mkdir -p deb-root/home/school/Desktop
+	cp desktop/*.desktop deb-root/home/school/Desktop/
+
 	# dconf default settings
 	mkdir -p deb-root/etc/dconf/profile/
 	cp dconf/user deb-root/etc/dconf/profile/

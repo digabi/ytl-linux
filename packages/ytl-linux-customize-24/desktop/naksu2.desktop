@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Naksu 2
+Comment=Setup utility for exam server
+GenericName=Naksu2
+Exec=naksu2 %U
+Icon=naksu2
+Type=Application
+StartupNotify=true
+Categories=GNOME;GTK;Utility;
