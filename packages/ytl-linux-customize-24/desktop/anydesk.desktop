@@ -1,10 +1,10 @@
 [Desktop Entry]
 Type=Application
-Name=MEB Remote Control (AnyDesk)
-GenericName=MEB Remote Control (AnyDesk)
-X-GNOME-FullName=MEB Remote Control (AnyDesk)
+Name=AnyDesk (MEB)
+GenericName=AnyDesk (MEB)
+X-GNOME-FullName=AnyDesk (MEB)
 Exec=/usr/local/bin/anydesk-meb-notification
-Icon=/usr/local/lib/anydesk-meb/anydesk-meb.png
+Icon=com.anydesk.Anydesk
 Terminal=false
 TryExec=anydesk
 Categories=Network;System;Utility;
