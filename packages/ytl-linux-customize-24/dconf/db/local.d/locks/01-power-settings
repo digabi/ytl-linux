@@ -1,0 +1,3 @@
+# If we do not lock these properties, the System Settings application will always override the values in dconf and they won't take effect
+/org/cinnamon/desktop/session/idle-delay
+/org/cinnamon/desktop/screensaver/idle-activation-enabled

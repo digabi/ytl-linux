@@ -53,12 +53,9 @@ deb:
 
 	cp desktop/*.desktop deb-root/home/school/Desktop/
 
-	# dconf default settings
-	mkdir -p deb-root/etc/dconf/profile/
-	cp dconf/user deb-root/etc/dconf/profile/
-	mkdir -p deb-root/etc/dconf/db/local.d/
-	cp dconf/01-power-settings deb-root/etc/dconf/db/local.d/
-	cp dconf/02-desktop-theme deb-root/etc/dconf/db/local.d/
+	# dconf settings
+	mkdir -p deb-root/etc/dconf/
+	cp -r dconf/* deb-root/etc/dconf/
 
 	ytl-fpm \
 		--after-install after-install.sh \

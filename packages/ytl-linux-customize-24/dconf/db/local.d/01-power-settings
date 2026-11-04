@@ -10,3 +10,6 @@ sleep-inactive-battery-timeout=0
 # Disable screensaver
 [org/cinnamon/desktop/screensaver]
 idle-activation-enabled=false
+
+[org/cinnamon/desktop/session]
+idle-delay=uint32 0
