@@ -2,9 +2,9 @@ UBUNTU_DOWNLOAD_URL := 'https://releases.ubuntu.com/noble/ubuntu-24.04.3-live-se
 BASE_IMAGE_FILE := 'ubuntu.iso'
 INSTALL_IMAGE_FILE := 'ytl-install-24.iso'
 
-VM_NAME := env('VM_NAME', 'YTL Linux')
+export VM_NAME := env('VM_NAME', 'YTL Linux')
 VM_DISK_SIZE := env('VM_DISK_SIZE', '51200')
-VM_DISK_PATH := env('VM_DISK_PATH', `echo "$HOME/VirtualBox VMs/{{ VM_NAME }}"`)
+VM_DISK_PATH := env('VM_DISK_PATH', "$HOME/VirtualBox VMs/$VM_NAME")
 VM_MEMORY_SIZE := env('VM_MEMORY_SIZE', '4096')
 VM_CPUS := env('VM_CPUS', '2')
 VM_VIDEO_MEMORY_SIZE := env('VM_VIDEO_MEMORY_SIZE', '16')

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=AnyDesk (MEB)
+GenericName=AnyDesk (MEB)
+X-GNOME-FullName=AnyDesk (MEB)
+Exec=/usr/local/bin/anydesk-meb-notification
+Icon=com.anydesk.Anydesk
+Terminal=false
+TryExec=anydesk
+Categories=Network;System;Utility;

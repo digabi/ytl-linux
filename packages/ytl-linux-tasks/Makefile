@@ -1,6 +1,6 @@
 export NAME := ytl-linux-tasks
 export DESCRIPTION := "Command runner specialized for YTL Linux administration tasks"
-export VERSION := 0.7.0
+export VERSION := 0.8.0
 
 deb:
 	# Check that all scripts in the scripts folder are executable

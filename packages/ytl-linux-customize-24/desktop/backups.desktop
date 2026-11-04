@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Name=Answers Backups
+Comment=Open Abitti 2 answers backups folder
+Exec=ytl-tasks open-answers-backups
+Terminal=false
+Type=Application
+Categories=System;Utility;
+Icon=fi.ylioppilastutkinto.answers-backups

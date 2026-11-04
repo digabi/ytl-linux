@@ -39,3 +39,16 @@ archive-digabi2-database:
 
 patch-server version:
     @naksu2 --cli patch-server {{ version }}
+
+open-answers-backups:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    ANSWERS_BACKUPS_DIR="{{ data_local_directory() }}/digabi/naksu2/answers-backups"
+
+    if [[ ! -d "$ANSWERS_BACKUPS_DIR" ]]; then
+        # Ensure consistent behaviour even when there are no answers backups
+        mkdir -p "$ANSWERS_BACKUPS_DIR"
+    fi
+
+    open "$ANSWERS_BACKUPS_DIR"
