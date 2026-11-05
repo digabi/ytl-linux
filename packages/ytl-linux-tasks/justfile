@@ -14,7 +14,8 @@ maintenance: migrate-package-keys \
 
 # Same as maintenance, but executed as the school user
 [private]
-user-maintenance:
+user-maintenance: \
+    add-desktop-shortcuts
 
 # Installs public keys of package sources to supported location
 migrate-package-keys:
@@ -31,6 +32,9 @@ remove-systemd-timesyncd-and-update-manager:
 # Remove VirtualBox source if installed
 remove-virtualbox-source:
     './scripts/system/2026-09-23_remove-virtualbox-source.sh'
+
+add-desktop-shortcuts:
+    './scripts/user/add-desktop-shortcuts.sh'
 
 # Creates a tarball of the Abitti 2 server database for e.g. troubleshooting or debugging
 archive-digabi2-database:
