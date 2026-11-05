@@ -1,6 +1,6 @@
 export NAME := ytl-linux-customize-24
 export DESCRIPTION := "YTL Linux specific customisations for Ubuntu 24.04"
-export VERSION := 2.1.0
+export VERSION := 2.2.0
 
 DEPENDENCIES := \
 	--depends ethtool \
