@@ -12,6 +12,10 @@ maintenance: migrate-package-keys \
     remove-systemd-timesyncd-and-update-manager \
     remove-virtualbox-source
 
+# Same as maintenance, but executed as the school user
+[private]
+user-maintenance:
+
 # Installs public keys of package sources to supported location
 migrate-package-keys:
     './scripts/system/2026-02-18_migrate-package-keys.py'
