@@ -1,10 +1,10 @@
 export NAME := ytl-linux-tasks
 export DESCRIPTION := "Command runner specialized for YTL Linux administration tasks"
-export VERSION := 0.8.0
+export VERSION := 0.9.0
 
 deb:
 	# Check that all scripts in the scripts folder are executable
-	for script in scripts/*; do \
+	for script in scripts/**/*; do \
 		if [ ! -x $$script ]; then \
 			echo "Error: Script $$script is not executable, this will cause it to not run in YTL-Linux"; \
 			echo "Fix the permissions with: chmod +x $$script"; \
@@ -27,6 +27,7 @@ deb:
 	install -D -m 644 justfile deb-root/usr/local/share/ytl-linux-tasks/justfile
 	install -D -m 755 ytl-tasks deb-root/usr/local/bin/ytl-tasks
 	install -D -m 644 ytl-tasks-maintenance.service deb-root/etc/systemd/system/ytl-tasks-maintenance.service
+	install -D -m 644 ytl-tasks-user-maintenance.service deb-root/etc/systemd/system/ytl-tasks-user-maintenance.service
 	cp -r scripts deb-root/usr/local/share/ytl-linux-tasks/scripts
 
 	ytl-fpm \

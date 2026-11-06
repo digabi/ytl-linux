@@ -1,0 +1,12 @@
+[Unit]
+Description=YTL Linux userspace maintenance tasks
+After=ytl-tasks-maintenance.service
+
+[Service]
+Type=oneshot
+User=school
+Group=school
+ExecStart=/usr/local/bin/ytl-tasks user-maintenance
+
+[Install]
+WantedBy=multi-user.target
