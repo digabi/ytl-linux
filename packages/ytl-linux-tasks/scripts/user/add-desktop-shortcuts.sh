@@ -36,6 +36,12 @@ copy-shortcut-to-desktop() {
   echo "Made $TARGET executable"
 }
 
+# The desktop directory might not exist on the system's inaugural boot, create it just in case
+if [[ ! -f "$HOME/Desktop" ]]; then
+  echo "Desktop directory does not exist, creating it"
+  mkdir -p "$HOME/Desktop"
+fi
+
 for source in "${SHORTCUTS_TO_ADD_TO_DESKTOP[@]}"; do
   TARGET_SHORTCUT="$HOME/Desktop/$(basename "$source")"
 
