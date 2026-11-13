@@ -719,7 +719,17 @@ describe('examnet (just port)', () => {
         callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.timer'),
         callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.service'),
         ...callDig(
-          'endpoint.security.microsoft.com smartscreen-prod.microsoft.com smartscreen.microsoft.com wdcp.microsoft.com wdcpalt.microsoft.com wd.microsoft.com ctldl.windowsupdate.com crl.microsoft.com chromeos-staging.abitti.fi chromeos.abitti.fi'
+          'endpoint.security.microsoft.com ' +
+            'smartscreen-prod.microsoft.com ' +
+            'smartscreen.microsoft.com ' +
+            'wdcp.microsoft.com ' +
+            'wdcpalt.microsoft.com ' +
+            'wd.microsoft.com ' +
+            'ctldl.windowsupdate.com ' +
+            'crl.microsoft.com ' +
+            'chromeos-staging.abitti.fi ' +
+            'chromeos.abitti.fi ' +
+            'register.appattest.apple.com'
         )
       ])
       await assertFileExists(mockExamnetConfigDir, 'net-device-lan')
@@ -803,6 +813,7 @@ describe('examnet (just port)', () => {
           'server=/crl.microsoft.com/#\n' +
           'server=/chromeos-staging.abitti.fi/#\n' +
           'server=/chromeos.abitti.fi/#\n' +
+          'server=/register.appattest.apple.com/#\n' +
           '\n' +
           '# IP addresses of allowlisted domains are added to ipset that is used to allow forwarding traffic to those domains in iptables\n' +
           'ipset=/endpoint.security.microsoft.com/ytl_internet_allowlist\n' +
@@ -815,6 +826,7 @@ describe('examnet (just port)', () => {
           'ipset=/crl.microsoft.com/ytl_internet_allowlist\n' +
           'ipset=/chromeos-staging.abitti.fi/ytl_internet_allowlist\n' +
           'ipset=/chromeos.abitti.fi/ytl_internet_allowlist\n' +
+          'ipset=/register.appattest.apple.com/ytl_internet_allowlist\n' +
           '\n' +
           '# Null-route all other traffic\n' +
           '# This prevents software on the student computer from getting confused by when DNS queries work, but the TCP\n' +
@@ -962,7 +974,17 @@ describe('examnet (just port)', () => {
         callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.timer'),
         callSystemctl('restart', 'ytl-linux-digabi2-examnet-discovery.service'),
         ...callDig(
-          'endpoint.security.microsoft.com smartscreen-prod.microsoft.com smartscreen.microsoft.com wdcp.microsoft.com wdcpalt.microsoft.com wd.microsoft.com ctldl.windowsupdate.com crl.microsoft.com chromeos-staging.abitti.fi chromeos.abitti.fi'
+          'endpoint.security.microsoft.com ' +
+            'smartscreen-prod.microsoft.com ' +
+            'smartscreen.microsoft.com ' +
+            'wdcp.microsoft.com ' +
+            'wdcpalt.microsoft.com ' +
+            'wd.microsoft.com ' +
+            'ctldl.windowsupdate.com ' +
+            'crl.microsoft.com ' +
+            'chromeos-staging.abitti.fi ' +
+            'chromeos.abitti.fi ' +
+            'register.appattest.apple.com'
         )
       ])
 
@@ -1047,6 +1069,7 @@ describe('examnet (just port)', () => {
           'server=/crl.microsoft.com/#\n' +
           'server=/chromeos-staging.abitti.fi/#\n' +
           'server=/chromeos.abitti.fi/#\n' +
+          'server=/register.appattest.apple.com/#\n' +
           '\n' +
           '# IP addresses of allowlisted domains are added to ipset that is used to allow forwarding traffic to those domains in iptables\n' +
           'ipset=/endpoint.security.microsoft.com/ytl_internet_allowlist\n' +
@@ -1059,6 +1082,7 @@ describe('examnet (just port)', () => {
           'ipset=/crl.microsoft.com/ytl_internet_allowlist\n' +
           'ipset=/chromeos-staging.abitti.fi/ytl_internet_allowlist\n' +
           'ipset=/chromeos.abitti.fi/ytl_internet_allowlist\n' +
+          'ipset=/register.appattest.apple.com/ytl_internet_allowlist\n' +
           '\n' +
           '# Null-route all other traffic\n' +
           '# This prevents software on the student computer from getting confused by when DNS queries work, but the TCP\n' +
