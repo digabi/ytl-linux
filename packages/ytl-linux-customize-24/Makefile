@@ -1,6 +1,6 @@
 export NAME := ytl-linux-customize-24
 export DESCRIPTION := "YTL Linux specific customisations for Ubuntu 24.04"
-export VERSION := 2.2.0
+export VERSION := 2.3.0
 
 DEPENDENCIES := \
 	--depends ethtool \
@@ -18,7 +18,10 @@ DEPENDENCIES := \
 	--depends ytl-linux-cups-dummy \
 	--depends ytl-linux-update-checker \
 	--depends ytl-linux-grub-safe-graphics \
-	--depends ytl-linux-system-reset
+	--depends ytl-linux-system-reset \
+	--depends ytl-linux-tso-off \
+	--depends wireshark \
+	--depends net-tools
 
 RECOMMENDS := --deb-recommends digabi-usb-monster
 
