@@ -52,6 +52,19 @@ async function main() {
     case 'apparmor_parser':
       console.log('')
       break
+    case 'docker':
+      if (argv[0] === 'ps' && process.env.MOCK_DOCKER_PS_FAIL) {
+        process.exit(1)
+      }
+      if (argv[0] === 'network' && argv[1] === 'ls') {
+        const existing = (process.env.MOCK_DOCKER_NETWORKS ?? '').split('\n').filter(Boolean)
+        const nameFilter = argv[3]
+        const networkName = nameFilter?.match(/^name=\^(.+)\$$/)?.[1]
+        if (networkName && existing.includes(networkName)) {
+          console.log('network-id')
+        }
+      }
+      break
   }
 }
 

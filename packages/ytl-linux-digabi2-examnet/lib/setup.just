@@ -111,8 +111,7 @@ apply net-device-wan net-device-lan server-number server-friendly-name: \
   export DOCKER_NETWORK_DNS_RESOLVER_IP
   export DOCKER_NETWORK_POOL_BASE_IP
 
-  just fs create-file-from-template "$PATH_DOCKER_DAEMON_CONF" "$PATH_DOCKER_DAEMON_CONF_TEMPLATE" $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
-  just systemd restart docker
+  just network prepare-docker-for-address-pool
 
   # Enable relevant systemd services
   just systemd enable ytl-linux-digabi2-examnet

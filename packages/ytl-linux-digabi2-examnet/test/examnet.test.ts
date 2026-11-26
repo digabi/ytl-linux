@@ -556,7 +556,9 @@ describe('examnet (just port)', () => {
           'nat',
           'POSTROUTING',
           '--out-interface eth0 --match comment --comment ytl_internet_allowlist --match set --match-set ytl_internet_allowlist dst --jump MASQUERADE'
-        )
+        ),
+        ...callPrepareDockerForAddressPool(),
+        callSystemctl('stop', 'docker')
       ])
     })
     test('returns error if running ipset fails', async () => {
@@ -705,7 +707,9 @@ describe('examnet (just port)', () => {
           '--out-interface eth0 --match comment --comment ytl_internet_allowlist --match set --match-set ytl_internet_allowlist dst --jump MASQUERADE'
         ),
 
-        callSystemctl('restart', 'docker'),
+        ...callPrepareDockerForAddressPool(),
+        callSystemctl('stop', 'docker'),
+        callSystemctl('start', 'docker'),
         callSystemctl('enable', 'ytl-linux-digabi2-examnet'),
         callSystemctl('enable', 'dnsmasq@docker'),
         callSystemctl('enable', 'dnsmasq@lan'),
@@ -960,7 +964,9 @@ describe('examnet (just port)', () => {
           '--out-interface eth0 --match comment --comment ytl_internet_allowlist --match set --match-set ytl_internet_allowlist dst --jump MASQUERADE'
         ),
 
-        callSystemctl('restart', 'docker'),
+        ...callPrepareDockerForAddressPool(),
+        callSystemctl('stop', 'docker'),
+        callSystemctl('start', 'docker'),
         callSystemctl('enable', 'ytl-linux-digabi2-examnet'),
         callSystemctl('enable', 'dnsmasq@docker'),
         callSystemctl('enable', 'dnsmasq@lan'),
@@ -1135,6 +1141,76 @@ describe('examnet (just port)', () => {
           '}\n'
       )
       await assertFileExists(mockNaksu2CertsDir, 'domain.txt', 'ktp1.999.koe.abitti.net\n')
+    })
+
+    test('removes Abitti 2 server Docker networks without deleting containers', async () => {
+      await unlink(join(mockBinDir, 'sed'))
+      await writeToTempDir(mockNaksu2WorkDir, 'compose.yml', 'name: digabi2\n')
+      await runExamnetWithArguments(['eth0', 'eth1', '1'], {
+        ...ENV_TEST_MODE,
+        MOCK_DOCKER_NETWORKS: 'digabi2_ktpjs_internal_network\ndigabi2_ktpjs_public_network'
+      })
+
+      const calls = await readCalls()
+      const dockerCalls = calls.filter(call => call.cmd === 'docker')
+      assert.deepEqual(dockerCalls, [
+        callDockerPs(),
+        callDockerNetworkLs('digabi2_ktpjs_internal_network'),
+        callDockerNetworkRm('digabi2_ktpjs_internal_network'),
+        callDockerNetworkLs('digabi2_ktpjs_public_network'),
+        callDockerNetworkRm('digabi2_ktpjs_public_network')
+      ])
+
+      const stopDocker = calls.findIndex(
+        call => call.cmd === 'systemctl' && call.argv[0] === 'stop' && call.argv[1] === 'docker'
+      )
+      const removeNetworks = calls.findIndex(call => call.cmd === 'docker' && call.argv[1] === 'rm')
+      assert.ok(removeNetworks < stopDocker)
+      assert.equal(
+        calls.some(
+          call => call.argv.includes('down') || call.argv.includes('container') || call.argv.includes('compose')
+        ),
+        false
+      )
+      await assertFileExists(mockNaksu2WorkDir, 'compose.yml', 'name: digabi2\n')
+    })
+
+    test('starts Docker without daemon.json when the daemon is down, then removes Abitti 2 networks', async () => {
+      await unlink(join(mockBinDir, 'sed'))
+      await writeToTempDir(mockDockerDir, 'daemon.json', 'old daemon json\n')
+      await runExamnetWithArguments(['eth0', 'eth1', '1'], {
+        ...ENV_TEST_MODE,
+        MOCK_DOCKER_PS_FAIL: '1',
+        MOCK_DOCKER_NETWORKS: 'digabi2_ktpjs_internal_network\ndigabi2_ktpjs_public_network'
+      })
+
+      const calls = await readCalls()
+      const stopDocker = calls.findIndex(
+        call => call.cmd === 'systemctl' && call.argv[0] === 'stop' && call.argv[1] === 'docker'
+      )
+      assert.deepEqual(calls.slice(stopDocker - 7, stopDocker + 3), [
+        callDockerPs(),
+        callSystemctl('reset-failed', 'docker'),
+        callSystemctl('start', 'docker'),
+        callDockerNetworkLs('digabi2_ktpjs_internal_network'),
+        callDockerNetworkRm('digabi2_ktpjs_internal_network'),
+        callDockerNetworkLs('digabi2_ktpjs_public_network'),
+        callDockerNetworkRm('digabi2_ktpjs_public_network'),
+        callSystemctl('stop', 'docker'),
+        callSystemctl('start', 'docker'),
+        callRm(`${mockDockerDir}/daemon.json.backup`)
+      ])
+      await assertFileExists(
+        mockDockerDir,
+        'daemon.json',
+        '{\n' +
+          '  "dns": ["172.17.0.1"],\n' +
+          '  "default-address-pools":\n' +
+          '  [\n' +
+          '    {"base": "172.17.0.0/16", "size":24}\n' +
+          '  ]\n' +
+          '}\n'
+      )
     })
   })
 
@@ -1329,6 +1405,7 @@ describe('examnet (just port)', () => {
     await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-bouncer', mockScript)
     await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-discovery', mockScript)
     await writeToTempDir(mockBinDir, 'ytl-linux-digabi2-docker-configure.sh', mockScript)
+    await writeToTempDir(mockBinDir, 'docker', mockScript)
     // external programs that are not mocked:
     // - grep
     // - tr
@@ -1498,6 +1575,17 @@ describe('examnet (just port)', () => {
     }
   }
 
+  async function readCalls() {
+    const calls = (await readFile(callsLog, 'utf8')).trim()
+    if (!calls) {
+      return []
+    }
+    return calls
+      .split('\n')
+      .filter(Boolean)
+      .map(line => JSON.parse(line))
+  }
+
   async function assertCalls(expectedCalls: Object[]) {
     const calls = (await readFile(callsLog, 'utf8')).trim()
     const callsLines = calls.split('\n')
@@ -1604,6 +1692,26 @@ function callIpAddrShow(networkDevice: string) {
 
 function callSystemctl(cmd: string, service: string, flags?: string) {
   return { cmd: 'systemctl', argv: [cmd, flags, service].filter(Boolean) }
+}
+
+function callDockerPs() {
+  return { cmd: 'docker', argv: ['ps'] }
+}
+
+function callDockerNetworkLs(name: string) {
+  return { cmd: 'docker', argv: ['network', 'ls', '--filter', `name=^${name}$`, '--quiet'] }
+}
+
+function callDockerNetworkRm(name: string) {
+  return { cmd: 'docker', argv: ['network', 'rm', name] }
+}
+
+function callPrepareDockerForAddressPool() {
+  return [
+    callDockerPs(),
+    callDockerNetworkLs('digabi2_ktpjs_internal_network'),
+    callDockerNetworkLs('digabi2_ktpjs_public_network')
+  ]
 }
 
 function callApparmorParser(profile: string) {

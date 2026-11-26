@@ -131,3 +131,56 @@ assert-device-exists device:
     just log error "Network device {{device}} does not exist"
     exit $EXIT_CODE_NO_SUCH_NETWORK_DEVICE
   fi
+
+# Remove Abitti 2 networks before writing daemon.json so Docker can start.
+# If Docker is down, move daemon.json aside and start it first.
+prepare-docker-for-address-pool:
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  DAEMON_JSON="$PATH_DOCKER_DAEMON_CONF"
+  BACKUP="${DAEMON_JSON}.backup"
+  MOVED=0
+
+  systemd_docker() {
+    if ! systemctl "$1" docker >/dev/null; then
+      if [[ "$MOVED" == 1 && ! -f "$DAEMON_JSON" ]]; then
+        mv "$BACKUP" "$DAEMON_JSON"
+      fi
+      just log error "Failed to $1 systemd unit 'docker'"
+      exit $EXIT_CODE_CANNOT_CHANGE_SERVICE_STATE
+    fi
+  }
+
+  if ! docker ps >/dev/null 2>&1; then
+    just log info "Docker is not running. Starting it with default network settings so Abitti 2 networks can be removed"
+    if [[ -f "$DAEMON_JSON" ]]; then
+      just log info "Moving $DAEMON_JSON aside so Docker can start"
+      if ! mv "$DAEMON_JSON" "$BACKUP"; then
+        just log error "Failed to move $DAEMON_JSON aside"
+        exit $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
+      fi
+      MOVED=1
+    fi
+    systemd_docker reset-failed
+    systemd_docker start
+  fi
+
+  for name in digabi2_ktpjs_internal_network digabi2_ktpjs_public_network; do
+    if ! network_id=$(docker network ls --filter "name=^${name}$" --quiet); then
+      just log error "Failed to check whether Docker network $name exists"
+      exit $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
+    fi
+    if [[ -n "$network_id" ]]; then
+      just log info "Removing Docker network $name"
+      if ! docker network rm "$name"; then
+        just log error "Failed to remove Docker network $name. Stop the server if it is still running, then save the network settings again"
+        exit $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
+      fi
+    fi
+  done
+
+  systemd_docker stop
+  just fs create-file-from-template "$DAEMON_JSON" "$PATH_DOCKER_DAEMON_CONF_TEMPLATE" $EXIT_CODE_CANNOT_CONFIGURE_EXAMNET
+  systemd_docker start
+  just fs remove-file "$BACKUP"
